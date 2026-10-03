@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safe Walk — Kavach Campus</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { background: var(--bg-body); }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* ── Sidebar (Reused) ── */
+    .sidebar { width: 260px; background: var(--bg-surface); border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; z-index: var(--z-fixed); transition: transform var(--transition-base); }
+    .sidebar-header { padding: var(--space-6); display: flex; align-items: center; gap: var(--space-3); border-bottom: 1px solid var(--gray-200); }
+    .sidebar-header svg { width: 32px; height: 32px; }
+    .sidebar-header-text { font-family: var(--font-display); font-weight: var(--font-bold); font-size: var(--text-lg); }
+    .sidebar-nav { flex: 1; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overflow-y: auto; }
+    .nav-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); color: var(--text-secondary); border-radius: var(--radius-lg); font-weight: var(--font-medium); transition: all var(--transition-fast); text-decoration: none; }
+    .nav-item:hover { background: var(--gray-100); color: var(--text-primary); }
+    .nav-item.active { background: var(--primary-alpha); color: var(--secondary); font-weight: var(--font-semibold); }
+    
+    /* ── Main Content ── */
+    .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { height: 70px; background: var(--bg-surface); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-6); position: sticky; top: 0; z-index: var(--z-sticky); }
+    .content-area { padding: var(--space-6) var(--space-8); flex: 1; overflow-y: auto; }
+    .page-title { font-size: var(--text-2xl); font-weight: var(--font-bold); margin-bottom: var(--space-1); }
+    .page-subtitle { color: var(--text-secondary); margin-bottom: var(--space-8); }
+
+    /* ── Safe Walk UI ── */
+    .map-placeholder { background: var(--gray-200); border-radius: var(--radius-xl); height: 400px; display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); margin-bottom: var(--space-6); position: relative; overflow: hidden; }
+    .map-placeholder img { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
+    .map-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px); }
+    
+    .status-panel { background: var(--bg-surface); border-radius: var(--radius-xl); border: 1px solid var(--gray-200); padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); max-width: 500px; margin: 0 auto; text-align: center; }
+    
+    .tracking-pulse { width: 64px; height: 64px; background: var(--success-bg); color: var(--success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; position: relative; }
+    .tracking-pulse::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--success); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+    
+    @keyframes ping {
+      75%, 100% { transform: scale(2); opacity: 0; }
+    }
+
+    .contacts-list { display: flex; gap: var(--space-2); justify-content: center; flex-wrap: wrap; margin-top: var(--space-4); }
+    .contact-badge { background: var(--gray-100); padding: var(--space-2) var(--space-4); border-radius: 999px; font-size: var(--text-sm); font-weight: var(--font-medium); display: flex; align-items: center; gap: var(--space-2); }
+    
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; transform: translateX(-100%); }
+      .content-area { padding: var(--space-4); }
+      .map-placeholder { height: 250px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg viewBox="0 0 40 40" fill="none"><path d="M20 2L4 10V20C4 30 12 38 20 40C28 38 36 30 36 20V10L20 2Z" fill="url(#sg)"/><path d="M15 20L18 23L25 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="sg" x1="4" y1="2" x2="36" y2="40"><stop stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs></svg>
+        <span class="sidebar-header-text">Kavach</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/pages/student-dashboard.html" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Overview
+        </a>
+        <a href="/pages/safe-walk.html" class="nav-item active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+          Safe Walk
+        </a>
+        <a href="/pages/contacts.html" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Trusted Contacts
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </header>
+
+      <div class="content-area">
+        <h1 class="page-title">Safe Walk</h1>
+        <p class="page-subtitle">Share your live location with trusted contacts or campus security while walking alone.</p>
+
+        <!-- Active View (Hidden initially) -->
+        <div id="active-view" style="display:none">
+          <div id="map" class="map-placeholder animate-fade-in-up" style="border-radius:12px;box-shadow:var(--shadow-md); z-index: 1;">
+          </div>
+
+          <div class="status-panel animate-fade-in-up" style="animation-delay:0.1s">
+            <div class="tracking-pulse">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            
+            <h2 style="font-size:var(--text-xl);font-weight:var(--font-bold);margin-top:var(--space-2)">You are being protected</h2>
+            <p style="color:var(--text-secondary)">Your live location is being shared with:</p>
+            
+            <div class="contacts-list">
+              <div class="contact-badge">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--success)"></div>
+                Campus Security Room
+              </div>
+              <div class="contact-badge">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--success)"></div>
+                Mom (Trusted Contact)
+              </div>
+            </div>
+
+            <button class="btn btn-outline" style="margin-top:var(--space-4);color:var(--danger);border-color:var(--danger)" onclick="stopSafeWalk()">
+              End Safe Walk
+            </button>
+          </div>
+        </div>
+
+        <!-- Setup View -->
+        <div id="setup-view" class="status-panel animate-fade-in-up" style="max-width:600px;margin:var(--space-12) auto">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" style="margin:0 auto"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+          
+          <h2 style="font-size:var(--text-2xl);font-weight:var(--font-bold);margin-top:var(--space-4)">Start Safe Walk</h2>
+          <p style="color:var(--text-secondary)">Walking alone at night? Start Safe Walk to continuously share your location with Campus Security and your Trusted Contacts.</p>
+          
+          <div style="text-align:left;background:var(--gray-50);padding:var(--space-4);border-radius:var(--radius-lg);margin-top:var(--space-4)">
+            <label class="form-label">Share location with:</label>
+            <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+              <label style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" checked disabled> Campus Security (Default)
+              </label>
+              <label style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" checked> Trusted Contacts (All)
+              </label>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-lg" style="margin-top:var(--space-6)" onclick="startSafeWalk()">
+            Start Tracking
+          </button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    if (!App.requireAuth()) window.location.href = '/index.html';
+
+    let watchId = null;
+    let map = null;
+    let userMarker = null;
+
+    function initMap(lat, lng) {
+      if (!map) {
+        map = L.map('map').setView([lat, lng], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        userMarker = L.marker([lat, lng]).addTo(map)
+          .bindPopup('You are here')
+          .openPopup();
+      } else {
+        map.setView([lat, lng], 16);
+        userMarker.setLatLng([lat, lng]);
+      }
+    }
+
+    function startSafeWalk() {
+      if (navigator.geolocation) {
+        document.getElementById('setup-view').style.display = 'none';
+        document.getElementById('active-view').style.display = 'block';
+        
+        watchId = navigator.geolocation.watchPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            initMap(latitude, longitude);
+            
+            // In a real app, emit this via WebSocket to backend:
+            // socket.emit('location_update', { lat: latitude, lng: longitude });
+          },
+          (err) => {
+            console.error('Geolocation error:', err);
+            App.toast('Location access issue.', 'error');
+            stopSafeWalk();
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+        );
+        
+        App.toast('Safe Walk started. You are being tracked securely.', 'success');
+        
+        // Timeout to let map container size update after changing display block
+        setTimeout(() => { if (map) map.invalidateSize(); }, 300);
+      } else {
+        App.toast('Geolocation is not supported by your browser.', 'error');
+      }
+    }
+
+    function stopSafeWalk() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      document.getElementById('active-view').style.display = 'none';
+      document.getElementById('setup-view').style.display = 'block';
+      App.toast('Safe Walk ended. Location sharing stopped.', 'info');
+    }
+  </script>
+</body>
+</html>

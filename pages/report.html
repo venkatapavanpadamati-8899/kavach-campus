@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Incident — Kavach Campus</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <style>
+    body { background: var(--bg-body); }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* ── Sidebar (Reused) ── */
+    .sidebar { width: 260px; background: var(--bg-surface); border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; z-index: var(--z-fixed); transition: transform var(--transition-base); }
+    .sidebar-header { padding: var(--space-6); display: flex; align-items: center; gap: var(--space-3); border-bottom: 1px solid var(--gray-200); }
+    .sidebar-header svg { width: 32px; height: 32px; }
+    .sidebar-header-text { font-family: var(--font-display); font-weight: var(--font-bold); font-size: var(--text-lg); }
+    .sidebar-nav { flex: 1; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overflow-y: auto; }
+    .nav-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); color: var(--text-secondary); border-radius: var(--radius-lg); font-weight: var(--font-medium); transition: all var(--transition-fast); text-decoration: none; }
+    .nav-item:hover { background: var(--gray-100); color: var(--text-primary); }
+    .nav-item.active { background: var(--primary-alpha); color: var(--secondary); font-weight: var(--font-semibold); }
+    .sidebar-footer { padding: var(--space-4); border-top: 1px solid var(--gray-200); }
+    .user-profile { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); }
+    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--secondary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: var(--font-bold); }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-weight: var(--font-semibold); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: var(--text-xs); color: var(--text-tertiary); }
+    
+    /* ── Main Content ── */
+    .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { height: 70px; background: var(--bg-surface); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-6); position: sticky; top: 0; z-index: var(--z-sticky); }
+    .content-area { padding: var(--space-6) var(--space-8); flex: 1; overflow-y: auto; }
+    .page-title { font-size: var(--text-2xl); font-weight: var(--font-bold); margin-bottom: var(--space-1); }
+    .page-subtitle { color: var(--text-secondary); margin-bottom: var(--space-8); }
+
+    /* ── Form Styles ── */
+    .report-card { background: var(--bg-surface); border-radius: var(--radius-xl); padding: var(--space-8); border: 1px solid var(--gray-200); max-width: 800px; }
+    .form-section { margin-bottom: var(--space-8); }
+    .form-section-title { font-size: var(--text-lg); font-weight: var(--font-semibold); margin-bottom: var(--space-4); padding-bottom: var(--space-2); border-bottom: 1px solid var(--gray-200); }
+    .radio-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-3); }
+    .radio-card { border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: var(--space-4); cursor: pointer; transition: all var(--transition-fast); display: flex; align-items: flex-start; gap: var(--space-3); }
+    .radio-card input { margin-top: 4px; }
+    .radio-card:hover { border-color: var(--secondary); background: rgba(79, 70, 229, 0.02); }
+    .radio-card.selected { border-color: var(--secondary); background: var(--primary-alpha); box-shadow: 0 0 0 1px var(--secondary); }
+    .radio-label { font-weight: var(--font-medium); display: block; margin-bottom: 2px; }
+    .radio-desc { font-size: var(--text-xs); color: var(--text-secondary); }
+    
+    .file-upload-zone { border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); padding: var(--space-8); text-align: center; cursor: pointer; transition: all var(--transition-fast); background: var(--gray-50); }
+    .file-upload-zone:hover, .file-upload-zone.dragover { border-color: var(--secondary); background: rgba(79, 70, 229, 0.05); }
+    .file-upload-icon { width: 48px; height: 48px; margin: 0 auto var(--space-3); color: var(--gray-400); }
+    .file-list { margin-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+    .file-item { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md); border: 1px solid var(--gray-200); }
+    .file-item-name { font-size: var(--text-sm); font-weight: var(--font-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-item-remove { color: var(--danger); background: none; border: none; cursor: pointer; padding: var(--space-1); }
+
+    .ai-notice { background: var(--primary-alpha); border: 1px solid rgba(79, 70, 229, 0.3); padding: var(--space-4); border-radius: var(--radius-lg); display: flex; gap: var(--space-3); margin-top: var(--space-8); align-items: flex-start; }
+    .ai-notice svg { color: var(--secondary); flex-shrink: 0; }
+    .ai-notice p { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; line-height: 1.5; }
+
+    /* ── Success Modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: var(--z-modal); display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .modal-overlay.active { display: flex; }
+    .modal-card { background: var(--bg-surface); border-radius: var(--radius-2xl); padding: var(--space-8); max-width: 440px; width: 100%; text-align: center; animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; transform: translateX(-100%); }
+      .content-area { padding: var(--space-4); }
+      .report-card { padding: var(--space-4); border: none; border-radius: 0; background: transparent; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg viewBox="0 0 40 40" fill="none"><path d="M20 2L4 10V20C4 30 12 38 20 40C28 38 36 30 36 20V10L20 2Z" fill="url(#sg)"/><path d="M15 20L18 23L25 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="sg" x1="4" y1="2" x2="36" y2="40"><stop stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs></svg>
+        <span class="sidebar-header-text">Kavach</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/pages/student-dashboard.html" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Overview
+        </a>
+        <a href="/pages/report.html" class="nav-item active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Report Incident
+        </a>
+        <a href="/pages/my-cases.html" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          My Cases
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline" style="width:100%" onclick="window.location.href='/pages/login.html'">Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </header>
+
+      <div class="content-area">
+        <h1 class="page-title">Report an Incident</h1>
+        <p class="page-subtitle">Your report will be securely analyzed by AI and routed to the appropriate campus authorities.</p>
+
+        <div class="report-card animate-fade-in-up">
+          <form id="report-form">
+            <!-- Basic Details -->
+            <div class="form-section">
+              <h2 class="form-section-title">Incident Details</h2>
+              <div class="form-group">
+                <label class="form-label" for="subject">Subject *</label>
+                <input type="text" id="subject" class="form-input" placeholder="Brief summary of the incident" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="description">Detailed Description *</label>
+                <textarea id="description" class="form-input" rows="6" placeholder="Please provide as much detail as possible. What happened? Who was involved? When did this occur?" required></textarea>
+                <p style="font-size:var(--text-xs);color:var(--text-tertiary);margin-top:var(--space-1)">Please be detailed. The AI will use this text to categorize the severity and route it correctly.</p>
+              </div>
+            </div>
+
+            <!-- Location -->
+            <div class="form-section">
+              <h2 class="form-section-title">Location</h2>
+              <div class="form-group">
+                <label class="form-label" for="campus_zone">Campus Zone</label>
+                <select id="campus_zone" class="form-input">
+                  <option value="">Select Zone</option>
+                  <option value="Hostel Area">Hostel Area</option>
+                  <option value="Academic Block">Academic Block</option>
+                  <option value="Library">Library</option>
+                  <option value="Cafeteria/Canteen">Cafeteria / Canteen</option>
+                  <option value="Sports Complex">Sports Complex</option>
+                  <option value="Main Gate">Main Gate / Perimeter</option>
+                  <option value="Off-Campus">Off-Campus</option>
+                  <option value="Online/Cyber">Online / Cyber</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Anonymity -->
+            <div class="form-section">
+              <h2 class="form-section-title">Reporting Options</h2>
+              <div class="radio-group">
+                <label class="radio-card selected" id="opt-standard">
+                  <input type="radio" name="is_anonymous" value="false" checked onchange="updateAnonymousUI()">
+                  <div>
+                    <span class="radio-label">Standard Report</span>
+                    <span class="radio-desc">Your identity will be shared with the investigating staff.</span>
+                  </div>
+                </label>
+                <label class="radio-card" id="opt-anon">
+                  <input type="radio" name="is_anonymous" value="true" onchange="updateAnonymousUI()">
+                  <div>
+                    <span class="radio-label">Anonymous Report</span>
+                    <span class="radio-desc">Your identity will be hidden from everyone except the Super Admin.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Evidence -->
+            <div class="form-section">
+              <h2 class="form-section-title">Evidence (Optional)</h2>
+              <p style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-3)">Upload photos, videos, or audio recordings related to the incident.</p>
+              
+              <div class="file-upload-zone" id="drop-zone">
+                <svg class="file-upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div style="font-weight:var(--font-medium);margin-bottom:4px">Click to upload or drag files here</div>
+                <div style="font-size:var(--text-xs);color:var(--text-tertiary)">Images, video, or audio up to 50MB</div>
+                <input type="file" id="evidence-files" multiple accept="image/*,video/*,audio/*,.pdf" style="display:none">
+              </div>
+              
+              <div class="file-list" id="file-list"></div>
+            </div>
+
+            <!-- Notice -->
+            <div class="ai-notice">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              <p><strong>AI Processing:</strong> Your report will be instantly analyzed by our AI system to determine severity and category, ensuring it is routed to the correct department immediately. False or malicious reporting is strictly monitored.</p>
+            </div>
+
+            <div style="margin-top:var(--space-8);display:flex;justify-content:flex-end;gap:var(--space-4)">
+              <button type="button" class="btn btn-outline" onclick="window.history.back()">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                <span class="btn-text">Submit Report</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal-overlay" id="success-modal">
+    <div class="modal-card">
+      <div style="width:80px;height:80px;border-radius:50%;background:var(--success-bg);color:var(--success);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-4)">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h2 style="font-size:var(--text-2xl);margin-bottom:var(--space-2)">Report Submitted</h2>
+      <p style="color:var(--text-secondary);margin-bottom:var(--space-6)">Your case ID is <strong id="success-case-id" style="color:var(--text-primary);font-family:monospace"></strong>.<br>The AI has analyzed and routed your report to the appropriate authorities.</p>
+      
+      <div style="background:var(--gray-50);padding:var(--space-4);border-radius:var(--radius-lg);margin-bottom:var(--space-6);text-align:left">
+        <div style="font-size:var(--text-xs);color:var(--text-tertiary);text-transform:uppercase;margin-bottom:4px">AI Assessment</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-weight:500">Severity:</span>
+          <span id="ai-severity" style="font-weight:600"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-weight:500">Category:</span>
+          <span id="ai-category" style="font-weight:600"></span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-lg" style="width:100%" onclick="window.location.href='/pages/my-cases.html'">View My Cases</button>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    if (!App.requireAuth()) throw new Error("Auth");
+
+    // UI Updates
+    function updateAnonymousUI() {
+      const isAnon = document.querySelector('input[name="is_anonymous"]:checked').value === 'true';
+      document.getElementById('opt-anon').classList.toggle('selected', isAnon);
+      document.getElementById('opt-standard').classList.toggle('selected', !isAnon);
+    }
+
+    // File Upload handling
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('evidence-files');
+    const fileList = document.getElementById('file-list');
+    let selectedFiles = [];
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+    function handleFiles(files) {
+      for (const file of files) {
+        if (selectedFiles.length >= 10) break; // Limit
+        if (file.size > 50 * 1024 * 1024) { App.toast(`${file.name} is too large (>50MB)`, 'error'); continue; }
+        selectedFiles.push(file);
+      }
+      renderFiles();
+    }
+
+    function renderFiles() {
+      fileList.innerHTML = '';
+      selectedFiles.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.innerHTML = `
+          <div class="file-item-name">📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)</div>
+          <button type="button" class="file-item-remove" onclick="removeFile(${index})">✕</button>
+        `;
+        fileList.appendChild(item);
+      });
+    }
+
+    function removeFile(index) {
+      selectedFiles.splice(index, 1);
+      renderFiles();
+    }
+
+    // Submission
+    document.getElementById('report-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      
+      const data = {
+        subject: document.getElementById('subject').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        campus_zone: document.getElementById('campus_zone').value,
+        is_anonymous: document.querySelector('input[name="is_anonymous"]:checked').value === 'true'
+      };
+
+      if (!data.subject || !data.description) {
+        App.toast('Subject and description are required', 'error');
+        return;
+      }
+
+      App.showLoading(btn, 'Analyzing & Routing...');
+
+      try {
+        // 1. Create Report
+        const res = await API.cases.create(data);
+        
+        // 2. Upload Evidence if any
+        if (selectedFiles.length > 0) {
+          try {
+            await API.evidence.upload(res.case.id, selectedFiles);
+          } catch (err) {
+            console.error('Evidence upload failed:', err);
+            App.toast('Report created, but some evidence failed to upload.', 'warning');
+          }
+        }
+
+        App.hideLoading(btn);
+
+        // 3. Show Success Modal
+        document.getElementById('success-case-id').textContent = res.case.case_number;
+        
+        const badgeColor = { L1: 'var(--info)', L2: 'var(--warning)', L3: 'var(--danger)', L4: 'var(--danger)' };
+        const sevEl = document.getElementById('ai-severity');
+        sevEl.textContent = res.case.severity;
+        sevEl.style.color = badgeColor[res.case.severity] || 'var(--text-primary)';
+        
+        document.getElementById('ai-category').textContent = (res.case.category || 'General').replace('_', ' ');
+
+        document.getElementById('success-modal').classList.add('active');
+
+      } catch (err) {
+        App.hideLoading(btn);
+        App.toast(err.error || 'Failed to submit report. Please try again.', 'error');
+      }
+    });
+  </script>
+</body>
+</html>

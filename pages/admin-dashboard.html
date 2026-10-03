@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Kavach Campus</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <style>
+    body { background: var(--bg-body); }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* ── Sidebar (Reused) ── */
+    .sidebar { width: 260px; background: var(--bg-surface); border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; z-index: var(--z-fixed); transition: transform var(--transition-base); }
+    .sidebar-header { padding: var(--space-6); display: flex; align-items: center; gap: var(--space-3); border-bottom: 1px solid var(--gray-200); }
+    .sidebar-header svg { width: 32px; height: 32px; }
+    .sidebar-header-text { font-family: var(--font-display); font-weight: var(--font-bold); font-size: var(--text-lg); }
+    .sidebar-nav { flex: 1; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); overflow-y: auto; }
+    .nav-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); color: var(--text-secondary); border-radius: var(--radius-lg); font-weight: var(--font-medium); transition: all var(--transition-fast); text-decoration: none; }
+    .nav-item:hover { background: var(--gray-100); color: var(--text-primary); }
+    .nav-item.active { background: var(--primary-alpha); color: var(--secondary); font-weight: var(--font-semibold); }
+    .sidebar-footer { padding: var(--space-4); border-top: 1px solid var(--gray-200); }
+    .user-profile { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); margin-bottom: var(--space-4); }
+    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--secondary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: var(--font-bold); }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-weight: var(--font-semibold); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: var(--text-xs); color: var(--text-tertiary); background: var(--gray-100); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+    
+    /* ── Main Content ── */
+    .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { height: 70px; background: var(--bg-surface); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-6); position: sticky; top: 0; z-index: var(--z-sticky); }
+    .content-area { padding: var(--space-6) var(--space-8); flex: 1; overflow-y: auto; }
+    .page-title { font-size: var(--text-2xl); font-weight: var(--font-bold); margin-bottom: var(--space-1); }
+    .page-subtitle { color: var(--text-secondary); margin-bottom: var(--space-6); }
+
+    /* ── System Overview ── */
+    .admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6); }
+    .stat-card { background: var(--bg-surface); border-radius: var(--radius-xl); border: 1px solid var(--gray-200); padding: var(--space-6); display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--secondary); border-radius: 4px 0 0 4px; }
+    .stat-title { font-size: var(--text-sm); color: var(--text-secondary); font-weight: var(--font-semibold); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: var(--space-2); }
+    .stat-value { font-size: 36px; font-weight: 900; font-family: var(--font-display); color: var(--text-primary); line-height: 1; }
+
+    /* ── Data Table ── */
+    .data-card { background: var(--bg-surface); border: 1px solid var(--gray-200); border-radius: var(--radius-xl); overflow: hidden; }
+    .data-header { padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-4); }
+    .data-title { font-size: var(--text-lg); font-weight: var(--font-semibold); }
+    
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: var(--gray-50); padding: var(--space-3) var(--space-6); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); font-weight: var(--font-semibold); border-bottom: 1px solid var(--gray-200); }
+    td { padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--gray-100); font-size: var(--text-sm); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--gray-50); }
+    
+    .td-case { font-family: monospace; font-weight: var(--font-bold); color: var(--text-secondary); }
+    .td-subject { font-weight: var(--font-medium); color: var(--text-primary); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .action-btn { background: var(--primary-alpha); color: var(--secondary); border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
+    .action-btn:hover { background: var(--secondary); color: white; }
+    
+    .filters-bar { padding: var(--space-3) var(--space-6); background: var(--gray-50); border-bottom: 1px solid var(--gray-200); display: flex; gap: var(--space-4); }
+    .filter-select { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--gray-300); font-size: 13px; }
+
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; transform: translateX(-100%); }
+      .content-area { padding: var(--space-4); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg viewBox="0 0 40 40" fill="none"><path d="M20 2L4 10V20C4 30 12 38 20 40C28 38 36 30 36 20V10L20 2Z" fill="url(#sg)"/><path d="M15 20L18 23L25 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="sg" x1="4" y1="2" x2="36" y2="40"><stop stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs></svg>
+        <span class="sidebar-header-text">Kavach</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/pages/admin-dashboard.html" class="nav-item active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          System Overview
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-avatar" id="nav-avatar">A</div>
+          <div class="user-info">
+            <div class="user-name" id="nav-name">Admin User</div>
+            <div class="user-role" id="nav-role" style="background:var(--danger-bg);color:var(--danger)">SUPER_ADMIN</div>
+          </div>
+        </div>
+        <button class="btn btn-outline" style="width:100%" onclick="window.location.href='/pages/login.html'">Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div style="font-weight:600;color:var(--danger)">Super Admin Portal</div>
+      </header>
+
+      <div class="content-area">
+        <h1 class="page-title">Global Overview</h1>
+        <p class="page-subtitle">Master control panel for all campus incidents and routing.</p>
+
+        <div class="admin-stats">
+          <div class="stat-card animate-fade-in-up">
+            <div class="stat-title">Total Active Cases</div>
+            <div class="stat-value" id="stat-active">0</div>
+          </div>
+          <div class="stat-card animate-fade-in-up" style="animation-delay:0.1s">
+            <div class="stat-title">L4 Emergencies (SOS)</div>
+            <div class="stat-value" id="stat-sos" style="color:var(--danger)">0</div>
+          </div>
+          <div class="stat-card animate-fade-in-up" style="animation-delay:0.2s">
+            <div class="stat-title">Escalated Cases</div>
+            <div class="stat-value" id="stat-escalated" style="color:var(--warning)">0</div>
+          </div>
+          <div class="stat-card animate-fade-in-up" style="animation-delay:0.3s">
+            <div class="stat-title">Unassigned Cases</div>
+            <div class="stat-value" id="stat-unassigned">0</div>
+          </div>
+        </div>
+
+        <div class="data-card animate-fade-in-up" style="animation-delay:0.4s">
+          <div class="data-header">
+            <h2 class="data-title">All System Cases</h2>
+          </div>
+          <div class="filters-bar">
+            <select class="filter-select" id="filter-status" onchange="renderTable()">
+              <option value="ALL">All Statuses</option>
+              <option value="OPEN">Open</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="RESOLVED">Resolved</option>
+            </select>
+            <select class="filter-select" id="filter-dept" onchange="renderTable()">
+              <option value="ALL">All Departments</option>
+              <option value="SECURITY">Security</option>
+              <option value="MEDICAL">Medical</option>
+              <option value="WARDEN">Warden</option>
+              <option value="HOD">HOD</option>
+              <option value="WOMENS_CELL">Women's Cell</option>
+              <option value="COUNSELOR">Counselor</option>
+            </select>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Case ID</th>
+                  <th>Severity</th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th>Subject</th>
+                  <th>Flags</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="queue-body">
+                <tr><td colspan="7" style="text-align:center;color:var(--text-secondary)">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    if (!App.requireAuth()) throw new Error("Auth");
+
+    const user = API.getUser();
+    if (user.role !== 'SUPER_ADMIN') {
+      // Fallback redirection for security
+      window.location.href = user.role === 'STUDENT' ? '/pages/student-dashboard.html' : '/pages/staff-dashboard.html';
+    }
+
+    document.getElementById('nav-name').textContent = user.full_name;
+
+    let allCases = [];
+
+    async function loadAdminData() {
+      try {
+        const res = await API.cases.getAll(); 
+        allCases = res.cases || [];
+        calculateStats();
+        renderTable();
+      } catch (err) {
+        console.error(err);
+        App.toast('Failed to load admin data', 'error');
+      }
+    }
+
+    function calculateStats() {
+      let active = 0, sos = 0, escalated = 0, unassigned = 0;
+      
+      allCases.forEach(c => {
+        if (c.status !== 'RESOLVED' && c.status !== 'CLOSED' && c.status !== 'REJECTED') active++;
+        if (c.severity === 'L4') sos++;
+        if (c.is_escalated) escalated++;
+        if (!c.assigned_to_role) unassigned++;
+      });
+
+      document.getElementById('stat-active').textContent = active;
+      document.getElementById('stat-sos').textContent = sos;
+      document.getElementById('stat-escalated').textContent = escalated;
+      document.getElementById('stat-unassigned').textContent = unassigned;
+    }
+
+    function renderTable() {
+      const fStatus = document.getElementById('filter-status').value;
+      const fDept = document.getElementById('filter-dept').value;
+      
+      let filtered = allCases.filter(c => {
+        let matchStatus = fStatus === 'ALL' || c.status === fStatus;
+        let matchDept = fDept === 'ALL' || c.assigned_to_role === fDept;
+        return matchStatus && matchDept;
+      });
+
+      const tbody = document.getElementById('queue-body');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:32px;">No cases match the selected filters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(c => {
+        let flags = '';
+        if (c.is_escalated) flags += '<span class="badge badge-error" style="font-size:10px;margin-right:4px">ESCALATED</span>';
+        if (c.is_anonymous) flags += '<span class="badge badge-info" style="font-size:10px;margin-right:4px">ANON</span>';
+        
+        return `
+          <tr>
+            <td class="td-case">${c.case_number}</td>
+            <td>${App.severityBadge(c.severity)}</td>
+            <td style="font-size:12px;font-weight:600;color:var(--text-secondary)">${c.assigned_to_role || 'NONE'}</td>
+            <td>${App.statusBadge(c.status)}</td>
+            <td class="td-subject" title="${c.subject}">${App.escapeHtml(c.subject)}</td>
+            <td>${flags}</td>
+            <td><a href="/pages/staff-case-details.html?id=${c.id}" class="action-btn">Override</a></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAdminData);
+  </script>
+</body>
+</html>

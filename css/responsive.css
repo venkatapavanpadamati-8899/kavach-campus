@@ -1,0 +1,127 @@
+/* ============================================
+   KAVACH CAMPUS — RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* ── Mobile First: 320px base ── */
+
+/* ── Small phones (375px) ── */
+@media (max-width: 374px) {
+  .container { padding: 0 var(--space-4); }
+  .section { padding: var(--space-10) 0; }
+  .text-5xl, .hero-title { font-size: var(--text-3xl) !important; }
+  .text-4xl { font-size: var(--text-2xl) !important; }
+  .btn-lg { padding: var(--space-3) var(--space-6); font-size: var(--text-sm); }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+
+/* ── Phones (up to 640px) ── */
+@media (max-width: 640px) {
+  :root {
+    --sidebar-width: 0px;
+  }
+  .container { padding: 0 var(--space-4); }
+  .section { padding: var(--space-12) 0; }
+
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+
+  .sidebar {
+    transform: translateX(-100%);
+    width: 280px;
+    z-index: var(--z-modal);
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  .main-content {
+    margin-left: 0;
+    padding: var(--space-4);
+  }
+
+  .top-bar { padding: 0 var(--space-4); }
+
+  .modal { padding: var(--space-6); margin: var(--space-4); }
+  .modal-overlay { padding: var(--space-4); }
+
+  .hero-title { font-size: var(--text-4xl); }
+  .hero-subtitle { font-size: var(--text-lg); }
+  .hero-buttons { flex-direction: column; width: 100%; }
+  .hero-buttons .btn { width: 100%; }
+
+  .auth-page { flex-direction: column; }
+  .auth-visual { display: none; }
+  .auth-form-panel { padding: var(--space-6); }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .sos-button { width: 140px; height: 140px; }
+  .sos-button .sos-text { font-size: var(--text-2xl); }
+
+  .toast-container { left: var(--space-4); right: var(--space-4); max-width: none; }
+
+  .dashboard-header { flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+
+  .case-meta { flex-direction: column; }
+  .case-actions { flex-direction: column; }
+  .case-actions .btn { width: 100%; }
+
+  .hide-mobile { display: none !important; }
+}
+
+/* ── Tablets (641px – 1024px) ── */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+
+  .sidebar {
+    width: 72px;
+    overflow: visible;
+  }
+  .sidebar .nav-text { display: none; }
+  .sidebar .nav-icon { margin: 0 auto; }
+  .sidebar .sidebar-logo-text { display: none; }
+  .main-content { margin-left: 72px; }
+
+  .auth-visual { width: 40%; }
+  .auth-form-panel { width: 60%; }
+
+  .hero-title { font-size: var(--text-4xl); }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .hide-tablet { display: none !important; }
+}
+
+/* ── Small desktop (1025px – 1280px) ── */
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .grid-4 { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── Large desktop (1440px+) ── */
+@media (min-width: 1440px) {
+  .container { max-width: var(--container-2xl); }
+  .hero-title { font-size: var(--text-6xl); }
+}
+
+/* ── Ultra-wide (1920px+) ── */
+@media (min-width: 1920px) {
+  .container { max-width: 1600px; }
+}
+
+/* ── Landscape phones ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .auth-page { overflow-y: auto; }
+  .sos-button { width: 100px; height: 100px; }
+  .section { padding: var(--space-8) 0; }
+}
+
+/* ── Print ── */
+@media print {
+  .sidebar, .top-bar, .btn, .sos-button, .toast-container { display: none !important; }
+  .main-content { margin-left: 0; padding: 0; }
+  body { background: white; color: black; }
+  .card { box-shadow: none; border: 1px solid #ddd; }
+}
+
+/* ── Show/Hide utilities ── */
+.show-mobile { display: none !important; }
+@media (max-width: 640px) {
+  .show-mobile { display: flex !important; }
+}

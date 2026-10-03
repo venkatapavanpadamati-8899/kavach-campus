@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — Kavach Campus</title>
+  <meta name="description" content="Create your Kavach Campus account">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <style>
+    .auth-page { min-height:100vh; display:flex; }
+    .auth-visual { flex:1; background:var(--bg-hero-gradient); position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    .auth-visual::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 30% 50%,rgba(79,70,229,0.2) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(124,58,237,0.15) 0%,transparent 50%); }
+    .auth-visual-content { position:relative; z-index:2; text-align:center; padding:var(--space-8); max-width:400px; }
+    .auth-visual-content h2 { color:#fff; font-family:var(--font-display); font-size:var(--text-3xl); font-weight:var(--font-bold); margin-bottom:var(--space-3); }
+    .auth-visual-content p { color:rgba(255,255,255,0.6); line-height:var(--leading-relaxed); }
+    .auth-form-panel { flex:1; display:flex; align-items:center; justify-content:center; padding:var(--space-8); background:var(--bg-body); overflow-y:auto; }
+    .auth-form-container { width:100%; max-width:460px; animation:fadeInUp 0.6s ease-out; }
+    .auth-logo { display:flex; align-items:center; gap:var(--space-3); margin-bottom:var(--space-6); text-decoration:none; }
+    .auth-logo svg { width:36px; height:36px; }
+    .auth-logo-text { font-family:var(--font-display); font-weight:var(--font-bold); font-size:var(--text-xl); }
+    .auth-logo-text span { font-weight:var(--font-normal); color:var(--text-secondary); }
+    .auth-title { font-size:var(--text-2xl); font-weight:var(--font-bold); margin-bottom:var(--space-2); }
+    .auth-subtitle { color:var(--text-secondary); margin-bottom:var(--space-6); }
+    .auth-form { display:flex; flex-direction:column; gap:var(--space-4); }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4); }
+    .auth-error { background:var(--danger-bg); color:var(--danger); padding:var(--space-3) var(--space-4); border-radius:var(--radius-md); font-size:var(--text-sm); display:none; }
+    .auth-error.visible { display:flex; align-items:center; gap:var(--space-2); }
+    .auth-footer { text-align:center; margin-top:var(--space-6); font-size:var(--text-sm); color:var(--text-secondary); }
+    .auth-footer a { color:var(--secondary); font-weight:var(--font-semibold); }
+    .progress-steps { display:flex; gap:var(--space-2); margin-bottom:var(--space-6); }
+    .progress-step { flex:1; height:4px; border-radius:var(--radius-full); background:var(--gray-200); transition:background 0.3s; }
+    .progress-step.active { background:linear-gradient(90deg,var(--secondary),var(--accent)); }
+    .password-strength { font-size:var(--text-xs); margin-top:var(--space-1); }
+    .strength-weak { color:var(--danger); }
+    .strength-medium { color:var(--warning); }
+    .strength-strong { color:var(--success); }
+    @media (max-width:640px) { .auth-visual{display:none} .form-row{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-visual hide-mobile">
+      <div class="auth-visual-content">
+        <svg width="100" height="100" viewBox="0 0 120 120" fill="none" style="margin:0 auto var(--space-6);animation:float 4s ease-in-out infinite">
+          <path d="M60 5L10 28V60C10 90 35 112 60 118C85 112 110 90 110 60V28L60 5Z" fill="url(#sg5)" opacity="0.9"/>
+          <path d="M40 58L52 70L80 42" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs><linearGradient id="sg5" x1="10" y1="5" x2="110" y2="118"><stop stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>
+        </svg>
+        <h2>Join Kavach Campus</h2>
+        <p>Create your account and be part of a safer campus community.</p>
+      </div>
+    </div>
+
+    <div class="auth-form-panel">
+      <div class="auth-form-container">
+        <a href="/" class="auth-logo">
+          <svg viewBox="0 0 40 40" fill="none"><path d="M20 2L4 10V20C4 30 12 38 20 40C28 38 36 30 36 20V10L20 2Z" fill="url(#sg6)"/><path d="M15 20L18 23L25 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="sg6" x1="4" y1="2" x2="36" y2="40"><stop stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs></svg>
+          <span class="auth-logo-text">KAVACH <span>CAMPUS</span></span>
+        </a>
+
+        <div class="progress-steps">
+          <div class="progress-step active"></div>
+          <div class="progress-step" id="step2"></div>
+          <div class="progress-step" id="step3"></div>
+        </div>
+
+        <h1 class="auth-title">Create Account</h1>
+        <p class="auth-subtitle">Student registration — enter your details below</p>
+
+        <div class="auth-error" id="reg-error">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <span id="reg-error-text"></span>
+        </div>
+
+        <form class="auth-form" id="register-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="full_name">Full Name *</label>
+            <input type="text" id="full_name" class="form-input" placeholder="Enter your full name" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="student_id">Student ID</label>
+              <input type="text" id="student_id" class="form-input" placeholder="e.g. 22CS101">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="department">Department</label>
+              <select id="department" class="form-input">
+                <option value="">Select</option>
+                <option value="CSE">Computer Science</option>
+                <option value="ECE">Electronics</option>
+                <option value="EEE">Electrical</option>
+                <option value="MECH">Mechanical</option>
+                <option value="CIVIL">Civil</option>
+                <option value="IT">Information Technology</option>
+                <option value="MBA">MBA</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">College Email *</label>
+            <input type="email" id="email" class="form-input" placeholder="you@college.edu" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="phone">Phone Number</label>
+              <input type="tel" id="phone" class="form-input" placeholder="+91 XXXXX XXXXX">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="year">Year</label>
+              <select id="year" class="form-input">
+                <option value="">Select</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Password *</label>
+            <input type="password" id="password" class="form-input" placeholder="Min 8 characters" required minlength="8">
+            <div class="password-strength" id="pw-strength"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="confirm_password">Confirm Password *</label>
+            <input type="password" id="confirm_password" class="form-input" placeholder="Re-enter password" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" id="register-btn" style="width:100%">
+            <span class="btn-text">Create Account</span>
+          </button>
+        </form>
+
+        <div class="auth-footer">
+          Already have an account? <a href="/pages/login.html">Sign In</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    if (API.isLoggedIn()) window.location.href = '/pages/student-dashboard.html';
+
+    // Password strength indicator
+    document.getElementById('password').addEventListener('input', (e) => {
+      const pw = e.target.value;
+      const el = document.getElementById('pw-strength');
+      const step2 = document.getElementById('step2');
+      if (pw.length < 8) { el.className='password-strength strength-weak'; el.textContent='Weak — need at least 8 characters'; }
+      else if (pw.length < 12 || !/[A-Z]/.test(pw) || !/[0-9]/.test(pw)) { el.className='password-strength strength-medium'; el.textContent='Medium — add uppercase and numbers'; step2.classList.add('active'); }
+      else { el.className='password-strength strength-strong'; el.textContent='Strong password ✓'; step2.classList.add('active'); }
+    });
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('reg-error');
+      errorEl.classList.remove('visible');
+
+      const data = {
+        full_name: document.getElementById('full_name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        password: document.getElementById('password').value,
+        student_id: document.getElementById('student_id').value.trim(),
+        department: document.getElementById('department').value,
+        year: document.getElementById('year').value ? parseInt(document.getElementById('year').value) : null,
+      };
+
+      const confirmPw = document.getElementById('confirm_password').value;
+
+      if (!data.full_name || !data.email || !data.password) {
+        errorEl.classList.add('visible');
+        document.getElementById('reg-error-text').textContent = 'Please fill in all required fields.';
+        return;
+      }
+      if (data.password !== confirmPw) {
+        errorEl.classList.add('visible');
+        document.getElementById('reg-error-text').textContent = 'Passwords do not match.';
+        return;
+      }
+      if (data.password.length < 8) {
+        errorEl.classList.add('visible');
+        document.getElementById('reg-error-text').textContent = 'Password must be at least 8 characters.';
+        return;
+      }
+
+      const btn = document.getElementById('register-btn');
+      App.showLoading(btn, 'Creating account...');
+
+      try {
+        const result = await API.auth.register(data);
+        document.getElementById('step3').classList.add('active');
+        // Redirect to OTP page
+        let otpUrl = `/pages/otp.html?email=${encodeURIComponent(data.email)}&purpose=REGISTRATION`;
+        if (result._dev_otp) otpUrl += `&dev_otp=${result._dev_otp}`;
+        window.location.href = otpUrl;
+      } catch (err) {
+        App.hideLoading(btn);
+        errorEl.classList.add('visible');
+        document.getElementById('reg-error-text').textContent = err.error || 'Registration failed.';
+      }
+    });
+  </script>
+</body>
+</html>

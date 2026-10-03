@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case Details — Kavach Campus</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <style>
+    body { background: var(--bg-body); }
+    .topbar { height: 70px; background: var(--bg-surface); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--space-6); position: sticky; top: 0; z-index: var(--z-sticky); }
+    .back-btn { display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); text-decoration: none; font-weight: var(--font-medium); transition: color var(--transition-fast); }
+    .back-btn:hover { color: var(--text-primary); }
+
+    .content-area { padding: var(--space-6) var(--space-8); max-width: 1000px; margin: 0 auto; width: 100%; }
+
+    /* ── Header ── */
+    .case-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4); }
+    .case-title-area h1 { font-size: var(--text-3xl); font-weight: var(--font-bold); margin-bottom: var(--space-2); }
+    .meta-list { display: flex; gap: var(--space-4); color: var(--text-secondary); font-size: var(--text-sm); flex-wrap: wrap; }
+    .meta-item { display: flex; align-items: center; gap: 4px; }
+    .badges { display: flex; gap: var(--space-2); }
+
+    /* ── Layout ── */
+    .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); align-items: start; }
+
+    /* ── Details Card ── */
+    .card { background: var(--bg-surface); border-radius: var(--radius-xl); border: 1px solid var(--gray-200); padding: var(--space-6); margin-bottom: var(--space-6); }
+    .card-title { font-size: var(--text-lg); font-weight: var(--font-semibold); margin-bottom: var(--space-4); padding-bottom: var(--space-2); border-bottom: 1px solid var(--gray-200); }
+    .description-box { font-size: var(--text-base); line-height: 1.6; color: var(--text-primary); white-space: pre-wrap; margin-bottom: var(--space-6); }
+    
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+    .info-item { background: var(--gray-50); padding: var(--space-3); border-radius: var(--radius-md); }
+    .info-label { font-size: var(--text-xs); color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 2px; }
+    .info-value { font-weight: var(--font-medium); }
+
+    /* ── Timeline ── */
+    .timeline { display: flex; flex-direction: column; gap: 0; position: relative; padding-left: 16px; }
+    .timeline::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; background: var(--gray-200); }
+    .timeline-item { position: relative; padding-left: var(--space-6); padding-bottom: var(--space-6); }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-dot { position: absolute; left: -21px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--secondary); border: 2px solid var(--bg-surface); box-shadow: 0 0 0 2px var(--gray-200); }
+    .timeline-item.system .timeline-dot { background: var(--gray-400); }
+    .timeline-content { background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--gray-200); }
+    .timeline-header { display: flex; justify-content: space-between; margin-bottom: var(--space-2); font-size: var(--text-sm); }
+    .timeline-author { font-weight: var(--font-semibold); color: var(--text-primary); }
+    .timeline-time { color: var(--text-tertiary); }
+    .timeline-text { font-size: var(--text-sm); color: var(--text-secondary); white-space: pre-wrap; }
+    
+    /* ── Evidence ── */
+    .evidence-list { display: flex; flex-direction: column; gap: var(--space-2); }
+    .evidence-item { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3); background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-md); }
+    .evidence-name { font-size: var(--text-sm); font-weight: var(--font-medium); display: flex; align-items: center; gap: var(--space-2); }
+    .evidence-action { color: var(--secondary); text-decoration: none; font-size: var(--text-sm); font-weight: var(--font-medium); }
+
+    /* ── Add Update Form ── */
+    .add-update-form { margin-top: var(--space-6); }
+    
+    @media (max-width: 992px) {
+      .grid-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <a href="#" onclick="window.history.back(); return false;" class="back-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to Cases
+    </a>
+    <div style="font-family:var(--font-display);font-weight:bold;color:var(--secondary)">Kavach Campus</div>
+  </header>
+
+  <main class="content-area" id="main-content" style="display:none">
+    <div class="case-header animate-fade-in-up">
+      <div class="case-title-area">
+        <h1 id="case-subject">Loading...</h1>
+        <div class="meta-list">
+          <div class="meta-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span id="case-date"></span>
+          </div>
+          <div class="meta-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+            <span id="case-number" style="font-family:monospace;font-weight:bold"></span>
+          </div>
+        </div>
+      </div>
+      <div class="badges" id="case-badges"></div>
+    </div>
+
+    <div class="grid-layout">
+      <!-- Left Col: Details & Timeline -->
+      <div>
+        <div class="card animate-fade-in-up" style="animation-delay:0.1s">
+          <h2 class="card-title">Incident Details</h2>
+          <div class="description-box" id="case-description"></div>
+          
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Reported By</div>
+              <div class="info-value" id="case-reporter"></div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Location / Zone</div>
+              <div class="info-value" id="case-location"></div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Assigned To</div>
+              <div class="info-value" id="case-assigned"></div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Category</div>
+              <div class="info-value" id="case-category"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card animate-fade-in-up" style="animation-delay:0.2s">
+          <h2 class="card-title">Updates & Timeline</h2>
+          <div class="timeline" id="timeline-list"></div>
+          
+          <form class="add-update-form" id="update-form">
+            <div class="form-group">
+              <label class="form-label" for="update-text">Add a comment / update</label>
+              <textarea id="update-text" class="form-input" rows="3" placeholder="Type your message here..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-update">Submit Update</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Right Col: Evidence -->
+      <div>
+        <div class="card animate-fade-in-up" style="animation-delay:0.3s">
+          <h2 class="card-title">Evidence</h2>
+          <div class="evidence-list" id="evidence-list">
+            <p style="font-size:var(--text-sm);color:var(--text-secondary)">No evidence attached.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    if (!App.requireAuth()) throw new Error("Auth");
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const caseId = urlParams.get('id');
+
+    if (!caseId) {
+      window.location.href = '/pages/student-dashboard.html';
+    }
+
+    async function loadCase() {
+      try {
+        const res = await API.cases.getDetails(caseId);
+        renderCase(res.case, res.timeline, res.evidence);
+        document.getElementById('main-content').style.display = 'block';
+      } catch (err) {
+        App.toast('Failed to load case details', 'error');
+        console.error(err);
+      }
+    }
+
+    function renderCase(c, timeline, evidence) {
+      document.getElementById('case-subject').textContent = c.subject;
+      document.getElementById('case-date').textContent = App.formatDateTime(c.created_at);
+      document.getElementById('case-number').textContent = c.case_number;
+      
+      const badgeHTML = `
+        ${App.severityBadge(c.severity || 'L1')}
+        ${App.statusBadge(c.status)}
+        ${c.is_anonymous ? '<span class="badge badge-info">Anonymous</span>' : ''}
+      `;
+      document.getElementById('case-badges').innerHTML = badgeHTML;
+
+      document.getElementById('case-description').textContent = c.description;
+      const user = API.getUser();
+      document.getElementById('case-reporter').textContent = c.is_anonymous && user.role === 'STUDENT' ? 'Anonymous Student' : (c.reporter_name || 'Unknown');
+      document.getElementById('case-location').textContent = c.location || c.campus_zone || 'Not specified';
+      document.getElementById('case-assigned').textContent = c.assigned_to_role || 'Unassigned';
+      document.getElementById('case-category').textContent = (c.category || 'General').replace('_', ' ');
+
+      // Timeline
+      const timelineEl = document.getElementById('timeline-list');
+      if (timeline && timeline.length > 0) {
+        timelineEl.innerHTML = timeline.map(t => {
+          const isSystem = t.action === 'STATUS_CHANGE' || t.action === 'ESCALATED' || t.action === 'CREATED';
+          return `
+            <div class="timeline-item ${isSystem ? 'system' : ''}">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <span class="timeline-author">${t.actor_name || 'System'} ${isSystem ? '<span style="font-size:10px;color:var(--text-tertiary)">(System)</span>' : ''}</span>
+                  <span class="timeline-time">${new Date(t.created_at).toLocaleString()}</span>
+                </div>
+                <div class="timeline-text">${App.escapeHtml(t.note || t.action)}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        timelineEl.innerHTML = '<p style="color:var(--text-secondary);font-size:var(--text-sm)">No updates yet.</p>';
+      }
+
+      // Evidence
+      const evEl = document.getElementById('evidence-list');
+      if (evidence && evidence.length > 0) {
+        evEl.innerHTML = evidence.map(e => `
+          <div class="evidence-item">
+            <div class="evidence-name">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+              ${e.original_filename}
+            </div>
+            <a href="${e.file_url}" target="_blank" class="evidence-action">View</a>
+          </div>
+        `).join('');
+      }
+
+      // Hide form if closed
+      if (c.status === 'RESOLVED' || c.status === 'CLOSED' || c.status === 'REJECTED') {
+        const form = document.getElementById('update-form');
+        form.innerHTML = '<div style="padding:16px;background:var(--warning-bg);color:var(--warning-text);border-radius:8px;font-size:14px;">This case is closed. No further updates can be added.</div>';
+      }
+    }
+
+    // Handle Update form
+    document.getElementById('update-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-update');
+      const note = document.getElementById('update-text').value.trim();
+      
+      if (!note) return;
+
+      App.showLoading(btn);
+      try {
+        await API.cases.addUpdate(caseId, note);
+        App.toast('Update added successfully', 'success');
+        document.getElementById('update-text').value = '';
+        await loadCase(); // reload
+      } catch (err) {
+        App.toast(err.error || 'Failed to add update', 'error');
+      } finally {
+        App.hideLoading(btn);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadCase);
+  </script>
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Kavach Campus</title>
+  <meta name="description" content="Login to Kavach Campus safety platform">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo/favicon.svg">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+    }
+    .auth-visual {
+      flex: 1;
+      background: var(--bg-hero-gradient);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .auth-visual::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 30% 50%, rgba(79, 70, 229, 0.2) 0%, transparent 60%),
+        radial-gradient(ellipse at 70% 80%, rgba(124, 58, 237, 0.15) 0%, transparent 50%);
+    }
+    .auth-visual-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: var(--space-8);
+      max-width: 400px;
+    }
+    .auth-visual-shield {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto var(--space-6);
+      animation: float 4s ease-in-out infinite;
+    }
+    .auth-visual h2 {
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: var(--font-bold);
+      margin-bottom: var(--space-3);
+    }
+    .auth-visual p {
+      color: rgba(255,255,255,0.6);
+      font-size: var(--text-base);
+      line-height: var(--leading-relaxed);
+    }
+    .auth-visual-particles {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .auth-form-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8);
+      background: var(--bg-body);
+    }
+    .auth-form-container {
+      width: 100%;
+      max-width: 420px;
+      animation: fadeInUp 0.6s ease-out;
+    }
+    .auth-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-8);
+    }
+    .auth-logo svg { width: 40px; height: 40px; }
+    .auth-logo-text {
+      font-family: var(--font-display);
+      font-weight: var(--font-bold);
+      font-size: var(--text-xl);
+    }
+    .auth-logo-text span { font-weight: var(--font-normal); color: var(--text-secondary); }
+    .auth-title {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-bold);
+      margin-bottom: var(--space-2);
+    }
+    .auth-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: var(--space-8);
+    }
+    .auth-form { display: flex; flex-direction: column; gap: var(--space-5); }
+    .password-toggle {
+      position: absolute;
+      right: var(--space-3);
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      padding: var(--space-1);
+    }
+    .auth-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--text-sm);
+    }
+    .auth-options label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    .auth-options a {
+      color: var(--secondary);
+      font-weight: var(--font-medium);
+    }
+    .auth-options a:hover { text-decoration: underline; }
+    .auth-footer {
+      text-align: center;
+      margin-top: var(--space-8);
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    .auth-footer a {
+      color: var(--secondary);
+      font-weight: var(--font-semibold);
+    }
+    .auth-error {
+      background: var(--danger-bg);
+      color: var(--danger);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      display: none;
+      align-items: center;
+      gap: var(--space-2);
+      animation: shake 0.4s ease-in-out;
+    }
+    .auth-error.visible { display: flex; }
+    .auth-success {
+      background: var(--success-bg);
+      color: var(--success);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+    .auth-success.visible { display: flex; align-items: center; gap: var(--space-2); }
+    .dev-otp-notice {
+      background: var(--warning-bg);
+      color: var(--warning);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      margin-top: var(--space-4);
+      display: none;
+    }
+    .dev-otp-notice.visible { display: block; }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <!-- Left: Visual -->
+    <div class="auth-visual hide-mobile">
+      <div class="auth-visual-particles" id="particles"></div>
+      <div class="auth-visual-content">
+        <svg class="auth-visual-shield" viewBox="0 0 120 120" fill="none">
+          <path d="M60 5L10 28V60C10 90 35 112 60 118C85 112 110 90 110 60V28L60 5Z" fill="url(#sg3)" opacity="0.9"/>
+          <path d="M60 20L22 38V60C22 84 40 102 60 108C80 102 98 84 98 60V38L60 20Z" fill="rgba(255,255,255,0.06)"/>
+          <path d="M42 60L53 71L78 46" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs><linearGradient id="sg3" x1="10" y1="5" x2="110" y2="118"><stop stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>
+        </svg>
+        <h2>Welcome Back</h2>
+        <p>Access your campus safety dashboard. Report incidents, track cases, and stay safe.</p>
+      </div>
+    </div>
+
+    <!-- Right: Login Form -->
+    <div class="auth-form-panel">
+      <div class="auth-form-container">
+        <a href="/" class="auth-logo">
+          <svg viewBox="0 0 40 40" fill="none"><path d="M20 2L4 10V20C4 30 12 38 20 40C28 38 36 30 36 20V10L20 2Z" fill="url(#sg4)"/><path d="M15 20L18 23L25 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="sg4" x1="4" y1="2" x2="36" y2="40"><stop stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs></svg>
+          <span class="auth-logo-text">KAVACH <span>CAMPUS</span></span>
+        </a>
+
+        <h1 class="auth-title">Sign In</h1>
+        <p class="auth-subtitle">Enter your credentials to access your account</p>
+
+        <div class="auth-error" id="login-error">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <span id="login-error-text"></span>
+        </div>
+
+        <div class="auth-success" id="login-success">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span id="login-success-text"></span>
+        </div>
+
+        <form class="auth-form" id="login-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="email">Email or College ID</label>
+            <div class="input-group">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <input type="email" id="email" class="form-input" placeholder="you@college.edu" required autocomplete="email" aria-describedby="email-error">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <div class="input-group">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="password" id="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password" style="padding-right:48px">
+              <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Toggle password visibility">
+                <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="auth-options">
+            <label><input type="checkbox" id="remember"> Remember me</label>
+            <a href="/pages/forgot-password.html">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" id="login-btn" style="width:100%">
+            <span class="btn-text">Sign In</span>
+          </button>
+        </form>
+
+        <div class="dev-otp-notice" id="dev-otp-notice">
+          <strong>⚠ Dev Mode:</strong> Account not verified. OTP: <code id="dev-otp-code"></code>
+          <br><a href="#" id="go-verify-link" style="color:var(--secondary);font-weight:600">Verify Now →</a>
+        </div>
+
+        <div class="auth-footer">
+          Don't have an account? <a href="/pages/register.html">Create Account</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    // If already logged in, redirect
+    if (API.isLoggedIn()) {
+      const user = API.getUser();
+      window.location.href = App.isStaff()
+        ? '/pages/staff-dashboard.html'
+        : '/pages/student-dashboard.html';
+    }
+
+    function togglePassword() {
+      const input = document.getElementById('password');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    // Generate particles
+    const pc = document.getElementById('particles');
+    if (pc) {
+      for (let i = 0; i < 20; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--tx:${(Math.random()-0.5)*150}px;--ty:${-100-Math.random()*200}px;--dur:${12+Math.random()*15}s;animation-delay:${Math.random()*8}s;width:${2+Math.random()*2}px;height:${2+Math.random()*2}px`;
+        pc.appendChild(p);
+      }
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('login-error');
+      const successEl = document.getElementById('login-success');
+      const btn = document.getElementById('login-btn');
+
+      errorEl.classList.remove('visible');
+      successEl.classList.remove('visible');
+      document.getElementById('dev-otp-notice').classList.remove('visible');
+
+      if (!email || !password) {
+        errorEl.classList.add('visible');
+        document.getElementById('login-error-text').textContent = 'Please enter your email and password.';
+        return;
+      }
+
+      App.showLoading(btn, 'Signing in...');
+
+      try {
+        const data = await API.auth.login(email, password);
+        API.setToken(data.token);
+        API.setUser(data.user);
+
+        successEl.classList.add('visible');
+        document.getElementById('login-success-text').textContent = 'Login successful! Redirecting...';
+
+        setTimeout(() => {
+          const role = data.user.role;
+          if (['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+            window.location.href = '/pages/admin-dashboard.html';
+          } else if (['STAFF', 'MENTOR', 'COUNSELOR', 'HOD', 'SECURITY', 'WOMENS_CELL', 'PRINCIPAL'].includes(role)) {
+            window.location.href = '/pages/staff-dashboard.html';
+          } else {
+            window.location.href = '/pages/student-dashboard.html';
+          }
+        }, 800);
+      } catch (err) {
+        App.hideLoading(btn);
+
+        if (err.code === 'NOT_VERIFIED') {
+          // Show OTP notice
+          const notice = document.getElementById('dev-otp-notice');
+          notice.classList.add('visible');
+          if (err._dev_otp) {
+            document.getElementById('dev-otp-code').textContent = err._dev_otp;
+          }
+          document.getElementById('go-verify-link').href = `/pages/otp.html?email=${encodeURIComponent(email)}&purpose=REGISTRATION`;
+          errorEl.classList.add('visible');
+          document.getElementById('login-error-text').textContent = 'Account not verified. Please verify your email.';
+        } else {
+          errorEl.classList.add('visible');
+          document.getElementById('login-error-text').textContent = err.error || 'Login failed. Please try again.';
+          // Shake animation
+          document.getElementById('login-form').classList.add('animate-shake');
+          setTimeout(() => document.getElementById('login-form').classList.remove('animate-shake'), 500);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
