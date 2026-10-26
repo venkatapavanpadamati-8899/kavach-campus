@@ -53,3 +53,11 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# supabase runtime & secrets
+supabase/.temp/
+supabase/.branches/
+*.env
+**/*.env
+**/.env*
+
