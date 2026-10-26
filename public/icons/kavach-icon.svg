@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Kavach Campus">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2563eb"/><stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#0a0d14"/>
+  <path d="M256 64 416 124v116c0 109-67 177-160 208C163 417 96 349 96 240V124L256 64Z" fill="url(#g)"/>
+  <path d="M256 154v164M174 236h164" stroke="#fff" stroke-width="40" stroke-linecap="round"/>
+</svg>

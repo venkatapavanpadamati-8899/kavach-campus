@@ -1,0 +1,29 @@
+# Kavach Campus Local Development Configuration
+# Generated and validated for Supabase CLI 2.121.0
+project_id = "kavach_campus"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+health_timeout = "2m"
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 54329
+
+[db.migrations]
+# Disable auto-migration execution during local startup to avoid
+# duplicate version collisions (001, 002, 008) and prevent execution
+# of hardcoded user promotion scripts (006, 008_complete).
+enabled = false
+
+[db.seed]
+enabled = false

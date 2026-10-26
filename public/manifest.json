@@ -1,0 +1,48 @@
+{
+  "name": "Kavach Campus - Safety & Emergency Response",
+  "short_name": "Kavach Campus",
+  "description": "Next-generation institutional safety, incident reporting, emergency response, and verified student support platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0d14",
+  "theme_color": "#1e3a8a",
+  "categories": ["safety", "utilities", "education"],
+  "icons": [
+    {
+      "src": "/icons/kavach-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/kavach-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Instant SOS",
+      "short_name": "SOS",
+      "description": "Trigger immediate emergency campus alert with live GPS coordinates",
+      "url": "/student/sos",
+      "icons": [{ "src": "/icons/kavach-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Safe Walk",
+      "short_name": "SafeWalk",
+      "description": "Start real-time safety companion route session",
+      "url": "/student/safe-walk",
+      "icons": [{ "src": "/icons/kavach-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Report Incident",
+      "short_name": "Report",
+      "description": "Submit confidential safety incident or hazard report",
+      "url": "/student/report",
+      "icons": [{ "src": "/icons/kavach-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}

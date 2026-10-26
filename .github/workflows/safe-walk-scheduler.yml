@@ -1,0 +1,56 @@
+name: Kavach Safe Walk & Escalation Scheduler
+
+on:
+  schedule:
+    # Runs every 5 minutes to satisfy the life-safety response interval
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    # Allows manual immediate trigger from GitHub Actions tab for testing
+
+jobs:
+  run-escalation-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Safe Walk Timeout Check
+        run: |
+          if [ -z "${{ secrets.VERCEL_PROJECT_URL }}" ] || [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::CRITICAL LIFE-SAFETY ALERT: VERCEL_PROJECT_URL or CRON_SECRET is not configured in repository secrets."
+            exit 1
+          fi
+          
+          RESPONSE=$(curl -s -S --connect-timeout 10 --max-time 30 -w "\n%{http_code}" -X POST "${{ secrets.VERCEL_PROJECT_URL }}/api/cron/safe-walk-timeout" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Safe Walk Timeout Response HTTP Status: $HTTP_STATUS"
+          echo "Response Body: $BODY"
+          
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::error::Safe walk timeout endpoint returned unexpected status: $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: Trigger Staff Escalation Check
+        run: |
+          if [ -z "${{ secrets.VERCEL_PROJECT_URL }}" ] || [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::CRITICAL LIFE-SAFETY ALERT: VERCEL_PROJECT_URL or CRON_SECRET is not configured in repository secrets."
+            exit 1
+          fi
+          
+          RESPONSE=$(curl -s -S --connect-timeout 10 --max-time 30 -w "\n%{http_code}" -X POST "${{ secrets.VERCEL_PROJECT_URL }}/api/cron/escalate" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Staff Escalation Response HTTP Status: $HTTP_STATUS"
+          echo "Response Body: $BODY"
+          
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::error::Escalation endpoint returned unexpected status: $HTTP_STATUS"
+            exit 1
+          fi
