@@ -7,6 +7,46 @@ import { createClient } from '@/lib/supabase/client';
 import { validateStudentRegistrationNumber } from '@/lib/verification/id-card';
 import { InteractiveSafetyCharacter } from '@/components/animations/InteractiveSafetyCharacter';
 
+// Comprehensive branch-to-department mapping across academic programs
+const BRANCH_DEPARTMENT_MAP: Record<string, string> = {
+  // Engineering / B.Tech / B.E.
+  'CSE': 'Computer Science and Engineering',
+  'CSE_AIML': 'CSE (Artificial Intelligence & Machine Learning)',
+  'CSE_DS': 'CSE (Data Science)',
+  'CSE_CYBER': 'CSE (Cyber Security)',
+  'CSE_IOT': 'CSE (Internet of Things)',
+  'IT': 'Information Technology',
+  'ECE': 'Electronics and Communication Engineering',
+  'EEE': 'Electrical and Electronics Engineering',
+  'MECH': 'Mechanical Engineering',
+  'CIVIL': 'Civil Engineering',
+  'CHEM': 'Chemical Engineering',
+  'BIOTECH': 'Biotechnology',
+  'AGRI': 'Agricultural Engineering',
+  'AERO': 'Aerospace Engineering',
+  'AUTO': 'Automobile Engineering',
+  'MECHATRONICS': 'Mechatronics Engineering',
+  // Degree Programs
+  'BSC_CS': 'B.Sc. Computer Science',
+  'BSC_MATHS': 'B.Sc. Mathematics',
+  'BSC_PHYSICS': 'B.Sc. Physics',
+  'BSC_CHEM': 'B.Sc. Chemistry',
+  'BSC_STATS': 'B.Sc. Statistics',
+  'BCOM_GEN': 'B.Com. General',
+  'BCOM_CA': 'B.Com. Computer Applications',
+  'BCOM_FA': 'B.Com. Finance & Accounting',
+  'BBA_GEN': 'Bachelor of Business Administration',
+  'BBA_BA': 'BBA Business Analytics',
+  'BCA_GEN': 'Bachelor of Computer Applications',
+  'BA_GEN': 'Bachelor of Arts',
+  // Diploma / Polytechnic
+  'DIPLOMA_CSE': 'Diploma in Computer Engineering',
+  'DIPLOMA_ECE': 'Diploma in Electronics & Communication',
+  'DIPLOMA_EEE': 'Diploma in Electrical & Electronics',
+  'DIPLOMA_MECH': 'Diploma in Mechanical Engineering',
+  'DIPLOMA_CIVIL': 'Diploma in Civil Engineering',
+};
+
 export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -17,12 +57,13 @@ export default function RegisterPage() {
     password: '',
     role: 'STUDENT',
     registrationNumber: '',
-    degree: 'B.Tech — Bachelor of Technology',
-    department: '',
-    branch: '',
-    section: '',
-    academicYear: '1st Year'
+    degree: 'B.Tech',
+    branch: 'CSE',
+    department: 'Computer Science and Engineering',
+    section: 'A',
+    academicYear: 'Year 1'
   });
+  const [customDepartment, setCustomDepartment] = useState('');
   const [consent, setConsent] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
@@ -31,6 +72,34 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [campusVerificationRequired, setCampusVerificationRequired] = useState(false);
+
+  const handleProgramChange = (prog: string) => {
+    let defaultBranch = 'CSE';
+    if (prog === 'B.Sc.') defaultBranch = 'BSC_CS';
+    else if (prog === 'B.Com.') defaultBranch = 'BCOM_GEN';
+    else if (prog === 'BBA') defaultBranch = 'BBA_GEN';
+    else if (prog === 'BCA') defaultBranch = 'BCA_GEN';
+    else if (prog === 'B.A.') defaultBranch = 'BA_GEN';
+    else if (prog === 'Diploma') defaultBranch = 'DIPLOMA_CSE';
+    else if (prog === 'Other') defaultBranch = 'OTHER';
+
+    const mappedDept = BRANCH_DEPARTMENT_MAP[defaultBranch] || '';
+    setFormData(prev => ({
+      ...prev,
+      degree: prog,
+      branch: defaultBranch,
+      department: mappedDept,
+    }));
+  };
+
+  const handleBranchChange = (branchVal: string) => {
+    const mappedDept = BRANCH_DEPARTMENT_MAP[branchVal] || (branchVal === 'OTHER' ? customDepartment : branchVal);
+    setFormData(prev => ({
+      ...prev,
+      branch: branchVal,
+      department: mappedDept,
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -43,8 +112,8 @@ export default function RegisterPage() {
       setGoogleLoading(true);
       setError('');
       const supabase = createClient();
-      const callbackUrl = typeof window !== 'undefined' && window.location.origin 
-        ? `${window.location.origin}/api/auth/callback` 
+      const callbackUrl = typeof window !== 'undefined' && window.location.origin
+        ? `${window.location.origin}/api/auth/callback`
         : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback`;
 
       const { error: oauthErr } = await supabase.auth.signInWithOAuth({
@@ -109,7 +178,7 @@ export default function RegisterPage() {
           setLoading(false);
           return;
         }
-        if (!/^[6-9]\d{9}$/.test(formData.guardianPhone.replace(/\D/g, ''))) {
+        if (formData.guardianPhone && !/^[6-9]\d{9}$/.test(formData.guardianPhone.replace(/\D/g, ''))) {
           setError('Please enter a valid 10-digit parent or guardian mobile number.');
           setLoading(false);
           return;
@@ -146,9 +215,9 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) {
         throw new Error(data.error || 'Registration failed');
       }
@@ -163,7 +232,7 @@ export default function RegisterPage() {
         const tokenQuery = data.clientToken ? `&token=${encodeURIComponent(data.clientToken)}` : '';
         router.push(`/verify-otp?email=${encodeURIComponent(emailTrimmed)}${tokenQuery}`);
       }, 2000);
-      
+
     } catch (err: unknown) {
       setError((err instanceof Error ? err.message : "An unexpected error occurred"));
     } finally {
@@ -173,12 +242,12 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div 
-        style={{ 
-          minHeight: '100vh', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           position: 'relative',
           backgroundImage: "linear-gradient(180deg, rgba(10, 15, 30, 0.65) 0%, rgba(15, 23, 42, 0.78) 100%), url('/images/auth_campus_bg.jpg')",
           backgroundSize: 'cover',
@@ -187,14 +256,14 @@ export default function RegisterPage() {
         }}
       >
         <div className="ambient-light"></div>
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-          className="glass-panel" 
-          style={{ 
-            width: '100%', 
-            maxWidth: '460px', 
-            padding: '40px', 
-            textAlign: 'center', 
+          className="glass-panel"
+          style={{
+            width: '100%',
+            maxWidth: '460px',
+            padding: '40px',
+            textAlign: 'center',
             borderRadius: '20px',
             background: 'rgba(15, 23, 42, 0.88)',
             backdropFilter: 'blur(16px)',
@@ -216,13 +285,13 @@ export default function RegisterPage() {
   }
 
   return (
-    <div 
-      style={{ 
-        minHeight: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        position: 'relative', 
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
         padding: '32px 16px',
         backgroundImage: "linear-gradient(180deg, rgba(10, 15, 30, 0.65) 0%, rgba(15, 23, 42, 0.78) 100%), url('/images/auth_campus_bg.jpg')",
         backgroundSize: 'cover',
@@ -233,18 +302,18 @@ export default function RegisterPage() {
     >
       <div className="ambient-light"></div>
       <div className="ambient-light-alt"></div>
-      
-      <motion.div 
+
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="glass-panel" 
-        style={{ 
-          width: '100%', 
-          maxWidth: '520px', 
-          padding: '36px 32px', 
-          position: 'relative', 
-          zIndex: 10, 
+        className="glass-panel"
+        style={{
+          width: '100%',
+          maxWidth: '520px',
+          padding: '36px 32px',
+          position: 'relative',
+          zIndex: 10,
           borderRadius: '20px',
           background: 'rgba(15, 23, 42, 0.84)',
           backdropFilter: 'blur(16px)',
@@ -324,7 +393,7 @@ export default function RegisterPage() {
         </div>
 
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
             style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: 'var(--accent-red)', marginBottom: '20px', fontSize: '0.9rem' }}
           >
@@ -341,15 +410,15 @@ export default function RegisterPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ position: 'relative' }}>
               <Mail size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-              <input 
-                type="email" 
-                name="email" 
-                placeholder={formData.role === 'STUDENT' ? 'Email Address (College or Personal Gmail)' : 'Official Faculty Email'} 
-                className="input-field" 
-                style={{ paddingLeft: '44px' }} 
-                value={formData.email} 
-                onChange={handleChange} 
-                required 
+              <input
+                type="email"
+                name="email"
+                placeholder={formData.role === 'STUDENT' ? 'Email Address (College or Personal Gmail)' : 'Official Faculty Email'}
+                className="input-field"
+                style={{ paddingLeft: '44px' }}
+                value={formData.email}
+                onChange={handleChange}
+                required
               />
             </div>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', paddingLeft: '4px' }}>
@@ -359,59 +428,36 @@ export default function RegisterPage() {
 
           <div style={{ position: 'relative' }}>
             <Phone size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-            <input 
-              type="tel" 
-              name="phone" 
-              placeholder="10-Digit Mobile Number (e.g. 9876543210)" 
-              className="input-field" 
-              style={{ paddingLeft: '44px' }} 
-              value={formData.phone} 
-              onChange={handleChange} 
-              maxLength={10} 
+            <input
+              type="tel"
+              name="phone"
+              placeholder="10-Digit Mobile Number (e.g. 9876543210)"
+              className="input-field"
+              style={{ paddingLeft: '44px' }}
+              value={formData.phone}
+              onChange={handleChange}
+              maxLength={10}
             />
           </div>
 
-          {formData.role === 'STUDENT' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ position: 'relative' }}>
-                <Phone size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  name="guardianPhone"
-                  placeholder="Parent / Guardian 10-Digit Mobile Number"
-                  className="input-field"
-                  style={{ paddingLeft: '44px' }}
-                  value={formData.guardianPhone}
-                  onChange={handleChange}
-                  maxLength={10}
-                  required
-                />
-              </div>
-              <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', paddingLeft: '4px' }}>
-                Used only for your authorized safety profile after verification.
-              </span>
-            </div>
-          )}
-          
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ position: 'relative' }}>
               <Lock size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-              <input 
-                type={showPassword ? 'text' : 'password'} 
-                name="password" 
-                placeholder="Password (minimum 8 characters)" 
-                className="input-field" 
-                style={{ paddingLeft: '44px', paddingRight: '44px' }} 
-                value={formData.password} 
-                onChange={handleChange} 
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                placeholder="Password (minimum 8 characters)"
+                className="input-field"
+                style={{ paddingLeft: '44px', paddingRight: '44px' }}
+                value={formData.password}
+                onChange={handleChange}
                 onFocus={() => {
                   setIsPasswordFocused(true);
                   setIsInputFocused(false);
                 }}
                 onBlur={() => setIsPasswordFocused(false)}
-                required 
-                minLength={8} 
+                required
+                minLength={8}
               />
               <button
                 type="button"
@@ -443,38 +489,86 @@ export default function RegisterPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ position: 'relative' }}>
                 <CreditCard size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-                <input 
-                  type="text" 
-                  name="registrationNumber" 
-                  placeholder="Student Registration Number (7-10 Characters e.g. 21B91A0501, 21CS1045)" 
-                  className="input-field" 
-                  style={{ paddingLeft: '44px', letterSpacing: '0.5px' }} 
-                  value={formData.registrationNumber} 
-                  onChange={handleChange} 
+                <input
+                  type="text"
+                  name="registrationNumber"
+                  placeholder="Student Registration Number (7-10 Characters e.g. 21B91A0501, 21CS1045)"
+                  className="input-field"
+                  style={{ paddingLeft: '44px', letterSpacing: '0.5px' }}
+                  value={formData.registrationNumber}
+                  onChange={handleChange}
                   minLength={7}
-                  maxLength={10} 
+                  maxLength={10}
                   pattern="[A-Za-z0-9]{7,10}"
                   title="Student Registration Number (7 to 10 alphanumeric characters)"
-                  required 
+                  required
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <input 
-                  type="text" 
-                  name="branch" 
-                  placeholder="Branch (e.g. CSE, ECE, IT)" 
-                  className="input-field" 
-                  value={formData.branch} 
-                  onChange={handleChange} 
-                />
-                <input 
-                  type="text" 
-                  name="section" 
-                  placeholder="Section (e.g. A, B, C)" 
-                  className="input-field" 
-                  value={formData.section} 
-                  onChange={handleChange} 
+              {/* Branch and Section */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '12px' }}>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    name="branch"
+                    className="input-field"
+                    style={{
+                      appearance: 'none',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: '#fff',
+                      cursor: 'pointer',
+                    }}
+                    value={formData.branch}
+                    onChange={(e) => handleBranchChange(e.target.value)}
+                    required
+                  >
+                    <optgroup label="Engineering (B.Tech / B.E.)" style={{ background: '#0f172a', color: '#38bdf8' }}>
+                      <option value="CSE" style={{ background: '#1e293b' }}>CSE — Computer Science</option>
+                      <option value="CSE_AIML" style={{ background: '#1e293b' }}>CSE (AI &amp; ML)</option>
+                      <option value="CSE_DS" style={{ background: '#1e293b' }}>CSE (Data Science)</option>
+                      <option value="CSE_CYBER" style={{ background: '#1e293b' }}>CSE (Cyber Security)</option>
+                      <option value="CSE_IOT" style={{ background: '#1e293b' }}>CSE (IoT)</option>
+                      <option value="IT" style={{ background: '#1e293b' }}>IT — Information Technology</option>
+                      <option value="ECE" style={{ background: '#1e293b' }}>ECE — Electronics &amp; Comm.</option>
+                      <option value="EEE" style={{ background: '#1e293b' }}>EEE — Electrical &amp; Electronics</option>
+                      <option value="MECH" style={{ background: '#1e293b' }}>MECH — Mechanical</option>
+                      <option value="CIVIL" style={{ background: '#1e293b' }}>CIVIL — Civil Engineering</option>
+                      <option value="CHEM" style={{ background: '#1e293b' }}>CHEM — Chemical</option>
+                      <option value="BIOTECH" style={{ background: '#1e293b' }}>BIOTECH — Biotechnology</option>
+                      <option value="AGRI" style={{ background: '#1e293b' }}>AGRI — Agricultural</option>
+                      <option value="AERO" style={{ background: '#1e293b' }}>AERO — Aerospace</option>
+                      <option value="AUTO" style={{ background: '#1e293b' }}>AUTO — Automobile</option>
+                    </optgroup>
+                    <optgroup label="Degree Programs" style={{ background: '#0f172a', color: '#a855f7' }}>
+                      <option value="BSC_CS" style={{ background: '#1e293b' }}>B.Sc. Computer Science</option>
+                      <option value="BSC_MATHS" style={{ background: '#1e293b' }}>B.Sc. Mathematics</option>
+                      <option value="BSC_PHYSICS" style={{ background: '#1e293b' }}>B.Sc. Physics</option>
+                      <option value="BSC_CHEM" style={{ background: '#1e293b' }}>B.Sc. Chemistry</option>
+                      <option value="BSC_STATS" style={{ background: '#1e293b' }}>B.Sc. Statistics</option>
+                      <option value="BCOM_GEN" style={{ background: '#1e293b' }}>B.Com. General</option>
+                      <option value="BCOM_CA" style={{ background: '#1e293b' }}>B.Com. Computer Applications</option>
+                      <option value="BBA_GEN" style={{ background: '#1e293b' }}>BBA General</option>
+                      <option value="BBA_BA" style={{ background: '#1e293b' }}>BBA Business Analytics</option>
+                      <option value="BCA_GEN" style={{ background: '#1e293b' }}>BCA Computer Applications</option>
+                      <option value="BA_GEN" style={{ background: '#1e293b' }}>B.A. Arts &amp; Humanities</option>
+                    </optgroup>
+                    <optgroup label="Diploma / Polytechnic" style={{ background: '#0f172a', color: '#34d399' }}>
+                      <option value="DIPLOMA_CSE" style={{ background: '#1e293b' }}>Diploma CSE</option>
+                      <option value="DIPLOMA_ECE" style={{ background: '#1e293b' }}>Diploma ECE</option>
+                      <option value="DIPLOMA_EEE" style={{ background: '#1e293b' }}>Diploma EEE</option>
+                      <option value="DIPLOMA_MECH" style={{ background: '#1e293b' }}>Diploma Mechanical</option>
+                      <option value="DIPLOMA_CIVIL" style={{ background: '#1e293b' }}>Diploma Civil</option>
+                    </optgroup>
+                    <option value="OTHER" style={{ background: '#1e293b' }}>Other Branch...</option>
+                  </select>
+                </div>
+                <input
+                  type="text"
+                  name="section"
+                  placeholder="Section (e.g. A, B, C)"
+                  className="input-field"
+                  value={formData.section}
+                  onChange={handleChange}
+                  required
                 />
               </div>
             </div>
@@ -499,18 +593,18 @@ export default function RegisterPage() {
                   <option value="MANAGEMENT" style={{ background: '#1e1b4b' }}>College Management</option>
                 </select>
               </div>
-              <input 
-                type="text" 
-                name="registrationNumber" 
-                placeholder="Staff ID (7-10 Chars)" 
-                className="input-field" 
-                value={formData.registrationNumber} 
-                onChange={handleChange} 
+              <input
+                type="text"
+                name="registrationNumber"
+                placeholder="Staff ID (7-10 Chars)"
+                className="input-field"
+                value={formData.registrationNumber}
+                onChange={handleChange}
                 minLength={7}
                 maxLength={10}
                 pattern="[A-Za-z0-9]{7,10}"
                 title="Staff ID must be 7 to 10 alphanumeric characters"
-                required 
+                required
               />
             </div>
           )}
@@ -529,79 +623,61 @@ export default function RegisterPage() {
                   cursor: 'pointer',
                 }}
                 value={formData.degree}
-                onChange={handleChange}
+                onChange={(e) => handleProgramChange(e.target.value)}
                 required
               >
-                <option value="B.Tech — Bachelor of Technology" style={{ background: '#1e293b', color: '#fff' }}>B.Tech — Bachelor of Technology</option>
-                <option value="Degree Programs (B.Sc., B.Com., BBA, BA)" style={{ background: '#1e293b', color: '#fff' }}>Degree Programs (B.Sc., B.Com., BBA, BA)</option>
-                <option value="Other Academic Program" style={{ background: '#1e293b', color: '#fff' }}>Other Academic Program</option>
+                <option value="B.Tech" style={{ background: '#1e293b', color: '#fff' }}>B.Tech — Bachelor of Technology</option>
+                <option value="B.E." style={{ background: '#1e293b', color: '#fff' }}>B.E. — Bachelor of Engineering</option>
+                <option value="B.Sc." style={{ background: '#1e293b', color: '#fff' }}>B.Sc. — Bachelor of Science</option>
+                <option value="B.Com." style={{ background: '#1e293b', color: '#fff' }}>B.Com. — Bachelor of Commerce</option>
+                <option value="B.A." style={{ background: '#1e293b', color: '#fff' }}>B.A. — Bachelor of Arts</option>
+                <option value="BBA" style={{ background: '#1e293b', color: '#fff' }}>BBA — Bachelor of Business Admin</option>
+                <option value="BCA" style={{ background: '#1e293b', color: '#fff' }}>BCA — Bachelor of Computer Apps</option>
+                <option value="Diploma" style={{ background: '#1e293b', color: '#fff' }}>Diploma / Polytechnic</option>
+                <option value="Other" style={{ background: '#1e293b', color: '#fff' }}>Other Academic Program</option>
               </select>
             </div>
           )}
 
           {formData.role === 'STUDENT' ? (
-            <div style={{ position: 'relative' }}>
-              <select
-                name="department"
-                className="input-field"
-                style={{
-                  paddingLeft: '16px',
-                  paddingRight: '16px',
-                  appearance: 'none',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  color: formData.department ? '#fff' : 'var(--text-muted)',
-                  cursor: 'pointer',
-                }}
-                value={formData.department}
-                onChange={handleChange}
-                required
-              >
-                <option value="" disabled style={{ background: '#0f172a', color: '#94a3b8' }}>Select Department...</option>
-                {formData.degree.includes('Degree Programs') ? (
-                  <optgroup label="Degree Program Departments" style={{ background: '#0f172a', color: '#a855f7', fontWeight: 600 }}>
-                    <option value="B.Sc. Computer Science" style={{ background: '#1e293b', color: '#fff' }}>B.Sc. Computer Science</option>
-                    <option value="B.Sc. Mathematics" style={{ background: '#1e293b', color: '#fff' }}>B.Sc. Mathematics</option>
-                    <option value="B.Sc. Physics" style={{ background: '#1e293b', color: '#fff' }}>B.Sc. Physics</option>
-                    <option value="B.Sc. Chemistry" style={{ background: '#1e293b', color: '#fff' }}>B.Sc. Chemistry</option>
-                    <option value="B.Com." style={{ background: '#1e293b', color: '#fff' }}>B.Com.</option>
-                    <option value="BBA" style={{ background: '#1e293b', color: '#fff' }}>BBA</option>
-                    <option value="BA" style={{ background: '#1e293b', color: '#fff' }}>BA</option>
-                    <option value="Other Degree Department" style={{ background: '#1e293b', color: '#fff' }}>Other Degree Department</option>
-                  </optgroup>
-                ) : (
-                  <optgroup label="B.Tech / Engineering Departments" style={{ background: '#0f172a', color: '#38bdf8', fontWeight: 600 }}>
-                    <option value="CSE — Computer Science and Engineering" style={{ background: '#1e293b', color: '#fff' }}>CSE — Computer Science and Engineering</option>
-                    <option value="CSE (AI & ML)" style={{ background: '#1e293b', color: '#fff' }}>CSE (AI & ML)</option>
-                    <option value="CSE (Data Science)" style={{ background: '#1e293b', color: '#fff' }}>CSE (Data Science)</option>
-                    <option value="CSE (Cyber Security)" style={{ background: '#1e293b', color: '#fff' }}>CSE (Cyber Security)</option>
-                    <option value="CSE (IoT)" style={{ background: '#1e293b', color: '#fff' }}>CSE (IoT)</option>
-                    <option value="IT — Information Technology" style={{ background: '#1e293b', color: '#fff' }}>IT — Information Technology</option>
-                    <option value="ECE — Electronics and Communication Engineering" style={{ background: '#1e293b', color: '#fff' }}>ECE — Electronics and Communication Engineering</option>
-                    <option value="EEE — Electrical and Electronics Engineering" style={{ background: '#1e293b', color: '#fff' }}>EEE — Electrical and Electronics Engineering</option>
-                    <option value="EIE — Electronics and Instrumentation Engineering" style={{ background: '#1e293b', color: '#fff' }}>EIE — Electronics and Instrumentation Engineering</option>
-                    <option value="Mechanical Engineering" style={{ background: '#1e293b', color: '#fff' }}>Mechanical Engineering</option>
-                    <option value="Civil Engineering" style={{ background: '#1e293b', color: '#fff' }}>Civil Engineering</option>
-                    <option value="Chemical Engineering" style={{ background: '#1e293b', color: '#fff' }}>Chemical Engineering</option>
-                    <option value="Agricultural Engineering" style={{ background: '#1e293b', color: '#fff' }}>Agricultural Engineering</option>
-                    <option value="Biotechnology" style={{ background: '#1e293b', color: '#fff' }}>Biotechnology</option>
-                    <option value="Aerospace Engineering" style={{ background: '#1e293b', color: '#fff' }}>Aerospace Engineering</option>
-                    <option value="Automobile Engineering" style={{ background: '#1e293b', color: '#fff' }}>Automobile Engineering</option>
-                    <option value="Mechatronics" style={{ background: '#1e293b', color: '#fff' }}>Mechatronics</option>
-                    <option value="Artificial Intelligence and Data Science" style={{ background: '#1e293b', color: '#fff' }}>Artificial Intelligence and Data Science</option>
-                    <option value="Other Engineering Department" style={{ background: '#1e293b', color: '#fff' }}>Other Engineering Department</option>
-                  </optgroup>
-                )}
-              </select>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', paddingLeft: '4px' }}>
+                Department (Auto-populated from selected Branch):
+              </label>
+              {formData.branch === 'OTHER' ? (
+                <input
+                  type="text"
+                  name="department"
+                  placeholder="Enter your Department Name"
+                  className="input-field"
+                  value={formData.department}
+                  onChange={(e) => {
+                    setCustomDepartment(e.target.value);
+                    setFormData({ ...formData, department: e.target.value });
+                  }}
+                  required
+                />
+              ) : (
+                <input
+                  type="text"
+                  name="department"
+                  readOnly
+                  className="input-field"
+                  style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#93c5fd', cursor: 'not-allowed' }}
+                  value={formData.department}
+                  required
+                />
+              )}
             </div>
           ) : (
-            <input 
-              type="text" 
-              name="department" 
-              placeholder="Department / Office" 
-              className="input-field" 
-              value={formData.department} 
-              onChange={handleChange} 
-              required 
+            <input
+              type="text"
+              name="department"
+              placeholder="Department / Office"
+              className="input-field"
+              value={formData.department}
+              onChange={handleChange}
+              required
             />
           )}
 
@@ -622,11 +698,10 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
               >
-                <option value="" disabled style={{ background: '#0f172a', color: '#94a3b8' }}>Select Academic Year...</option>
-                <option value="1st Year" style={{ background: '#1e293b', color: '#fff' }}>Year 1 (1st Year)</option>
-                <option value="2nd Year" style={{ background: '#1e293b', color: '#fff' }}>Year 2 (2nd Year)</option>
-                <option value="3rd Year" style={{ background: '#1e293b', color: '#fff' }}>Year 3 (3rd Year)</option>
-                <option value="4th Year" style={{ background: '#1e293b', color: '#fff' }}>Year 4 (4th Year)</option>
+                <option value="Year 1" style={{ background: '#1e293b', color: '#fff' }}>Year 1 (1st Year)</option>
+                <option value="Year 2" style={{ background: '#1e293b', color: '#fff' }}>Year 2 (2nd Year)</option>
+                <option value="Year 3" style={{ background: '#1e293b', color: '#fff' }}>Year 3 (3rd Year)</option>
+                <option value="Year 4" style={{ background: '#1e293b', color: '#fff' }}>Year 4 (4th Year)</option>
               </select>
             </div>
           )}
@@ -664,8 +739,8 @@ export default function RegisterPage() {
           <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
         </div>
 
-        <button 
-          type="button" 
+        <button
+          type="button"
           onClick={handleGoogleLogin}
           disabled={loading || googleLoading}
           className="btn-secondary"

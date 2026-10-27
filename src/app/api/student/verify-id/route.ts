@@ -70,7 +70,20 @@ export async function POST(req: Request) {
 
     let incomingFullName = '';
     let incomingDepartment = '';
+    let incomingBranch = '';
+    let incomingSection = '';
+    let incomingDob = '';
+    let incomingGender = '';
+    let incomingParentPhone = '';
+    let incomingEmergencyPhone = '';
+    let incomingPersonalPhone = '';
+    let incomingAddress = '';
+    let incomingAccommodation = 'Day Scholar';
     let profilePhotoDataUrl = '';
+
+    let uploadedBackFileBuffer: Buffer | null = null;
+    let uploadedBackFileMime = '';
+    let uploadedBackFileName = '';
 
     const contentType = req.headers.get('content-type') || '';
     if (contentType.includes('multipart/form-data')) {
@@ -84,29 +97,60 @@ export async function POST(req: Request) {
 
       incomingFullName = (formData.get('fullName') as string) || '';
       incomingDepartment = (formData.get('department') as string) || '';
+      incomingBranch = (formData.get('branch') as string) || '';
+      incomingSection = (formData.get('section') as string) || '';
+      incomingDob = (formData.get('dob') as string) || '';
+      incomingGender = (formData.get('gender') as string) || '';
+      incomingParentPhone = (formData.get('parentPhone') as string) || '';
+      incomingEmergencyPhone = (formData.get('emergencyPhone') as string) || '';
+      incomingPersonalPhone = (formData.get('personalPhone') as string) || (formData.get('phone') as string) || '';
+      incomingAddress = (formData.get('address') as string) || '';
+      incomingAccommodation = (formData.get('residentialStatus') as string) || (formData.get('accommodationType') as string) || 'Day Scholar';
       profilePhotoDataUrl = (formData.get('profilePhoto') as string) || '';
 
-      const file = formData.get('file') as File | null;
-      if (file && file.size > 0) {
-        // Validate file size and MIME format
-        const fileValidation = validateIdCardFile({
-          size: file.size,
-          type: file.type,
-          name: file.name,
+      // ID Card Front File
+      const fileFront = (formData.get('fileFront') || formData.get('file')) as File | null;
+      if (fileFront && fileFront.size > 0) {
+        const frontValidation = validateIdCardFile({
+          size: fileFront.size,
+          type: fileFront.type,
+          name: fileFront.name,
         });
-        if (!fileValidation.valid) {
-          return NextResponse.json({ error: fileValidation.error }, { status: 400 });
+        if (!frontValidation.valid) {
+          return NextResponse.json({ error: `Front ID Card: ${frontValidation.error}` }, { status: 400 });
         }
 
-        const arrayBuffer = await file.arrayBuffer();
+        const arrayBuffer = await fileFront.arrayBuffer();
         uploadedFileBuffer = Buffer.from(arrayBuffer);
-        uploadedFileMime = file.type;
-        uploadedFileName = file.name || 'id-card.jpg';
+        uploadedFileMime = fileFront.type;
+        uploadedFileName = fileFront.name || 'id-card-front.jpg';
 
-        // Validate binary magic bytes
         const signatureCheck = validateFileSignature(new Uint8Array(uploadedFileBuffer));
         if (!signatureCheck.valid) {
-          return NextResponse.json({ error: signatureCheck.error }, { status: 400 });
+          return NextResponse.json({ error: `Front ID Card: ${signatureCheck.error}` }, { status: 400 });
+        }
+      }
+
+      // ID Card Back File (Optional but validated if provided)
+      const fileBack = formData.get('fileBack') as File | null;
+      if (fileBack && fileBack.size > 0) {
+        const backValidation = validateIdCardFile({
+          size: fileBack.size,
+          type: fileBack.type,
+          name: fileBack.name,
+        });
+        if (!backValidation.valid) {
+          return NextResponse.json({ error: `Back ID Card: ${backValidation.error}` }, { status: 400 });
+        }
+
+        const arrayBuffer = await fileBack.arrayBuffer();
+        uploadedBackFileBuffer = Buffer.from(arrayBuffer);
+        uploadedBackFileMime = fileBack.type;
+        uploadedBackFileName = fileBack.name || 'id-card-back.jpg';
+
+        const signatureCheck = validateFileSignature(new Uint8Array(uploadedBackFileBuffer));
+        if (!signatureCheck.valid) {
+          return NextResponse.json({ error: `Back ID Card: ${signatureCheck.error}` }, { status: 400 });
         }
       }
     } else {
@@ -185,11 +229,13 @@ export async function POST(req: Request) {
       ocrExtractedText: ocrText,
     });
 
-    // 5. Upload file to private storage bucket if uploaded, or enforce user.id isolation
+    // 5. Upload files to private storage bucket if uploaded, or enforce user.id isolation
     let resolvedIdCardUrl = idCardUrl ? String(idCardUrl).trim() : null;
+    let resolvedIdCardBackUrl: string | null = null;
+
     if (uploadedFileBuffer) {
       const cleanFileName = uploadedFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const storagePath = `${user.id}/${Date.now()}-${cleanFileName}`;
+      const storagePath = `${user.id}/${Date.now()}-front-${cleanFileName}`;
 
       const { error: uploadError } = await adminSupabase.storage
         .from('kavach-id-cards')
@@ -199,9 +245,9 @@ export async function POST(req: Request) {
         });
 
       if (uploadError) {
-        console.error('Storage upload error:', uploadError);
+        console.error('Storage upload error (front):', uploadError);
         return NextResponse.json(
-          { error: `ID Card document upload failed: ${uploadError.message}` },
+          { error: `ID Card Front upload failed: ${uploadError.message}` },
           { status: 500 }
         );
       }
@@ -210,6 +256,28 @@ export async function POST(req: Request) {
     } else if (resolvedIdCardUrl && !resolvedIdCardUrl.includes(user.id)) {
       const rawFilename = resolvedIdCardUrl.replace(/^kavach-id-cards\/?/, '');
       resolvedIdCardUrl = `kavach-id-cards/${user.id}/${rawFilename}`;
+    }
+
+    if (uploadedBackFileBuffer) {
+      const cleanFileName = uploadedBackFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `${user.id}/${Date.now()}-back-${cleanFileName}`;
+
+      const { error: uploadError } = await adminSupabase.storage
+        .from('kavach-id-cards')
+        .upload(storagePath, uploadedBackFileBuffer, {
+          contentType: uploadedBackFileMime,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error (back):', uploadError);
+        return NextResponse.json(
+          { error: `ID Card Back upload failed: ${uploadError.message}` },
+          { status: 500 }
+        );
+      }
+
+      resolvedIdCardBackUrl = `kavach-id-cards/${storagePath}`;
     }
 
     // 6. Update student_profiles table
@@ -221,6 +289,19 @@ export async function POST(req: Request) {
       id_card_url: resolvedIdCardUrl,
       verification_status: decision.status,
       verification_notes: decision.reason,
+      ocr_extracted_data: {
+        front_url: resolvedIdCardUrl,
+        back_url: resolvedIdCardBackUrl,
+        dob: incomingDob || null,
+        gender: incomingGender || null,
+        parent_phone: incomingParentPhone || null,
+        emergency_phone: incomingEmergencyPhone || null,
+        address: incomingAddress || null,
+        branch: incomingBranch || null,
+        section: incomingSection || null,
+        accommodation_type: incomingAccommodation,
+        verified_sides: resolvedIdCardBackUrl ? 'FRONT_AND_BACK' : 'FRONT_ONLY',
+      },
       updated_at: new Date().toISOString(),
       ...(decision.status === 'VERIFIED' ? { verified_at: new Date().toISOString() } : {}),
     };
@@ -248,6 +329,15 @@ export async function POST(req: Request) {
     if (incomingDepartment && incomingDepartment.trim()) {
       profileUpdates.department = incomingDepartment.trim();
     }
+    if (incomingPersonalPhone && incomingPersonalPhone.trim()) {
+      profileUpdates.phone = incomingPersonalPhone.trim();
+    }
+    if (incomingDob && incomingDob.trim()) {
+      profileUpdates.dob = incomingDob.trim();
+    }
+    if (incomingGender && incomingGender.trim()) {
+      profileUpdates.gender = incomingGender.trim();
+    }
 
     if (profilePhotoDataUrl && profilePhotoDataUrl.includes('base64,')) {
       try {
@@ -269,6 +359,34 @@ export async function POST(req: Request) {
       .from('profiles')
       .update(profileUpdates)
       .eq('id', user.id);
+
+    // Persist to dedicated student_residences table
+    if (incomingAccommodation) {
+      try {
+        const residenceType = incomingAccommodation.toLowerCase().includes('hostel') ? 'COLLEGE_HOSTEL' : 'DAY_SCHOLAR';
+        const resPayload: Record<string, unknown> = {
+          id: user.id,
+          college_id: (collegeId && collegeId.trim()) ? collegeId.trim() : 'srkr-bhimavaram',
+          residence_type: residenceType,
+          updated_at: new Date().toISOString(),
+        };
+        if (incomingParentPhone && incomingParentPhone.trim()) {
+          resPayload.guardian_contact_phone = incomingParentPhone.trim();
+        }
+        if (incomingAddress && incomingAddress.trim()) {
+          if (residenceType === 'COLLEGE_HOSTEL') {
+            resPayload.room_number = incomingAddress.trim();
+          } else {
+            resPayload.pg_address = incomingAddress.trim();
+          }
+        }
+        await adminSupabase
+          .from('student_residences')
+          .upsert(resPayload, { onConflict: 'id' });
+      } catch (resErr) {
+        console.warn('student_residences upsert in verify-id non-fatal error:', resErr);
+      }
+    }
 
     // 6. Record in immutable audit log
     await adminSupabase.from('audit_logs').insert({

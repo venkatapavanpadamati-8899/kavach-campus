@@ -21,6 +21,30 @@ import { getCollegeById } from '@/lib/colleges';
 import { getPageBackground, setActiveCollegeTenant } from '@/lib/college-branding';
 import { InteractiveSafetyCharacter } from '@/components/animations/InteractiveSafetyCharacter';
 
+function formatAuthError(err: unknown): string {
+  if (!err) return 'An unexpected error occurred during sign in. Please try again.';
+  const message = err instanceof Error ? err.message : String(err);
+
+  if (
+    message.includes('Failed to fetch') ||
+    message.includes('NetworkError') ||
+    message.includes('fetch failed') ||
+    message.includes('ECONNREFUSED')
+  ) {
+    return 'Authentication server could not be reached. Please check your internet connection or verify campus network access.';
+  }
+  if (message.includes('Invalid login credentials')) {
+    return 'Incorrect email or password. Please verify your credentials and try again.';
+  }
+  if (message.includes('Email not confirmed')) {
+    return 'Your email address has not been confirmed yet. Please verify your email or use Mobile OTP.';
+  }
+  if (message.includes('rate limit') || message.includes('too many requests')) {
+    return 'Too many login attempts. Please wait a moment before trying again.';
+  }
+  return message;
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -160,7 +184,7 @@ function LoginForm() {
         setMsg(`6-digit secure login OTP has been sent to +91 ${cleanPhone}.`);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to send mobile OTP. Please try again.');
+      setError(formatAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -215,7 +239,7 @@ function LoginForm() {
 
       router.push(getSafeRedirectUrl(profile?.role || 'STUDENT'));
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Invalid or expired OTP. Please check the code.');
+      setError(formatAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -286,7 +310,7 @@ function LoginForm() {
         setMsg('Check your email for the magic link!');
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setError(formatAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -326,7 +350,7 @@ function LoginForm() {
         throw oauthError;
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred during Google sign in');
+      setError(formatAuthError(err));
       setGoogleLoading(false);
     }
   };

@@ -143,7 +143,7 @@ export async function POST(req: Request) {
       const resolvedAcademicYear = typeof academicYear === 'string'
         ? academicYear.trim()
         : (typeof academic_year === 'string' ? academic_year.trim() : '');
-      const validYears = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+      const validYears = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'Year 1', 'Year 2', 'Year 3', 'Year 4'];
       if (resolvedAcademicYear && !validYears.includes(resolvedAcademicYear)) {
         return NextResponse.json({ error: 'Please select a valid academic year (1st to 4th Year)' }, { status: 400 });
       }
@@ -176,7 +176,10 @@ export async function POST(req: Request) {
         const res = typeof query.maybeSingle === 'function'
           ? await query.maybeSingle()
           : (typeof query.single === 'function' ? await query.single().catch(() => ({ data: null })) : null);
-        if (res?.data) {
+        const hasDuplicate = Array.isArray(res?.data)
+          ? res.data.length > 0
+          : (res?.data != null && typeof res.data === 'object' && Object.keys(res.data).length > 0);
+        if (hasDuplicate) {
           return NextResponse.json(
             { error: 'Student Registration Number is already registered for this institution' },
             { status: 400 }
@@ -235,6 +238,8 @@ export async function POST(req: Request) {
             campus_id: assignedCollegeId,
             student_id: validatedRegNumber,
             department: department || 'General',
+            branch: typeof data.branch === 'string' ? data.branch.trim() : null,
+            section: typeof data.section === 'string' ? data.section.trim() : null,
             personal_email: resolvedPersonalEmail || null,
           }
         });
@@ -274,6 +279,8 @@ export async function POST(req: Request) {
         degree: typeof degree === 'string' ? degree.trim() : null,
         studentId: validatedRegNumber,
         department: department || 'General',
+        branch: typeof data.branch === 'string' ? data.branch.trim() : null,
+        section: typeof data.section === 'string' ? data.section.trim() : null,
         academicYear: finalRole === 'STUDENT' ? (typeof academicYear === 'string' ? academicYear.trim() : (typeof academic_year === 'string' ? academic_year.trim() : '1st Year')) : null,
         isApproved: finalRole === 'STUDENT' && !campusVerificationRequired
       }

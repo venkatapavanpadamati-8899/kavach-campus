@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, UploadCloud, CheckCircle, AlertCircle, XCircle, Clock, Loader2, ArrowRight, Camera, Check, RefreshCw, FileText } from 'lucide-react';
+import { Shield, UploadCloud, CheckCircle, AlertCircle, XCircle, Clock, Loader2, ArrowRight, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { INDIAN_ENGINEERING_COLLEGES } from '@/lib/colleges';
 
@@ -13,30 +13,61 @@ export default function StudentVerificationStatusPage() {
   const [statusMessage, setStatusMessage] = useState<string>('');
 
   const [formData, setFormData] = useState({
+    // 1-7. Personal Details (7 fields)
     fullName: '',
     dob: '',
-    gender: 'Prefer not to say',
     parentPhone: '',
+    personalPhone: '',
     emergencyPhone: '',
-    bloodGroup: 'B+',
+    gender: 'Prefer not to say',
     address: '',
+    bloodGroup: 'B+',
+    // 8-12. College Details (5 fields)
     studentId: '',
+    collegeEmail: '', // OPTIONAL
+    branch: 'CSE',
+    section: 'A',
+    residentialStatus: 'Day Scholar',
+    // Verification & College routing
     collegeId: 'srkr',
     admissionType: 'REGULAR',
     admissionYear: '2024',
     expectedGraduationYear: '2028',
     department: 'Computer Science & Engineering',
-    branch: 'CSE',
-    section: 'A',
-    residentialStatus: 'Day Scholar',
     idCardName: '',
   });
 
+  // 13-15. Verification & Image Details (3 fields)
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [docPreviewUrl, setDocPreviewUrl] = useState<string | null>(null);
+  const [backFile, setBackFile] = useState<File | null>(null);
+  const [backPreviewUrl, setBackPreviewUrl] = useState<string | null>(null);
+  const [customPhotoFile, setCustomPhotoFile] = useState<File | null>(null);
+  const [customPhotoPreview, setCustomPhotoPreview] = useState<string | null>(null);
   const [extractedPhotoUrl, setExtractedPhotoUrl] = useState<string | null>(null);
   const [photoConfirmed, setPhotoConfirmed] = useState<boolean>(true);
   const [formError, setFormError] = useState('');
+
+  // 15-Field Completion Tracker
+  const calculateCompletedCount = () => {
+    let count = 0;
+    if (formData.fullName.trim()) count++; // 1. Name
+    if (formData.dob) count++; // 2. DOB
+    if (formData.parentPhone.trim()) count++; // 3. Parent Phone
+    if (formData.personalPhone.trim()) count++; // 4. Personal Phone
+    if (formData.emergencyPhone.trim()) count++; // 5. Emergency Phone
+    if (formData.gender) count++; // 6. Gender
+    if (formData.address.trim()) count++; // 7. Address
+    if (formData.studentId.trim()) count++; // 8. Roll No / Registration No
+    if (formData.collegeEmail.trim()) count++; // 9. College Email (Optional)
+    if (formData.branch.trim()) count++; // 10. Branch
+    if (formData.section.trim()) count++; // 11. Section
+    if (formData.residentialStatus) count++; // 12. Hosteller or Day Scholar
+    if (selectedFile || docPreviewUrl) count++; // 13. ID Card Front
+    if (backFile || backPreviewUrl) count++; // 14. ID Card Back
+    if (customPhotoFile || customPhotoPreview || extractedPhotoUrl) count++; // 15. Profile Photo
+    return count;
+  };
 
   // Auto-calculate graduation year based on admission type
   const handleAdmissionTypeChange = (type: 'REGULAR' | 'LATERAL_ENTRY', startYear: string) => {
@@ -63,11 +94,30 @@ export default function StudentVerificationStatusPage() {
             setStatus(data.studentProfile.verification_status);
             setStatusMessage(data.studentProfile.verification_notes || '');
           }
+          if (data.studentProfile?.ocr_extracted_data) {
+            const ocr = data.studentProfile.ocr_extracted_data;
+            if (ocr.front_url) setDocPreviewUrl(ocr.front_url);
+            if (ocr.back_url) setBackPreviewUrl(ocr.back_url);
+            setFormData(prev => ({
+              ...prev,
+              dob: ocr.dob || prev.dob,
+              gender: ocr.gender || prev.gender,
+              parentPhone: ocr.parent_phone || prev.parentPhone,
+              emergencyPhone: ocr.emergency_phone || prev.emergencyPhone,
+              personalPhone: ocr.personal_phone || data.profile?.phone || prev.personalPhone,
+              address: ocr.address || prev.address,
+              branch: ocr.branch || prev.branch,
+              section: ocr.section || prev.section,
+              residentialStatus: ocr.accommodation_type || prev.residentialStatus,
+            }));
+          }
           setFormData(prev => ({
             ...prev,
             fullName: data.profile?.full_name || prev.fullName,
             studentId: data.profile?.student_id || prev.studentId,
             department: data.profile?.department || prev.department,
+            collegeEmail: data.profile?.college_email || prev.collegeEmail,
+            personalPhone: data.profile?.phone || prev.personalPhone,
             collegeId: (data.profile?.college_id && data.profile.college_id !== 'PENDING_CAMPUS_VERIFICATION')
               ? data.profile.college_id
               : prev.collegeId,
@@ -92,8 +142,8 @@ export default function StudentVerificationStatusPage() {
       return;
     }
 
-    if (!selectedFile && !formData.idCardName) {
-      setFormError('Please select your College ID card document (JPEG, PNG, WEBP, or PDF, max 5MB)');
+    if (!selectedFile && !docPreviewUrl && !formData.idCardName) {
+      setFormError('Please select your College ID card Front document (JPEG, PNG, WEBP, or PDF, max 5MB)');
       return;
     }
 
@@ -107,28 +157,38 @@ export default function StudentVerificationStatusPage() {
       formPayload.append('branch', formData.branch);
       formPayload.append('section', formData.section);
       formPayload.append('residentialStatus', formData.residentialStatus);
+      formPayload.append('accommodationType', formData.residentialStatus);
       formPayload.append('dob', formData.dob);
       formPayload.append('gender', formData.gender);
-      formPayload.append('parentPhone', formData.parentPhone);
-      formPayload.append('emergencyPhone', formData.emergencyPhone);
+      formPayload.append('personalPhone', formData.personalPhone.trim());
+      formPayload.append('phone', formData.personalPhone.trim());
+      formPayload.append('collegeEmail', formData.collegeEmail.trim());
+      formPayload.append('parentPhone', formData.parentPhone.trim());
+      formPayload.append('emergencyPhone', formData.emergencyPhone.trim());
       formPayload.append('bloodGroup', formData.bloodGroup);
-      formPayload.append('address', formData.address);
+      formPayload.append('address', formData.address.trim());
       formPayload.append('admissionType', formData.admissionType);
       formPayload.append('admissionYear', formData.admissionYear);
       formPayload.append('expectedGraduationYear', formData.expectedGraduationYear);
       formPayload.append('ocrText', `STUDENT ID: ${formData.studentId.trim()} COLLEGE ID CARD B.TECH ${formData.department} ${formData.branch} ${formData.section}`);
       
-      if (extractedPhotoUrl && photoConfirmed) {
-        formPayload.append('profilePhoto', extractedPhotoUrl);
+      const activePhoto = customPhotoPreview || (photoConfirmed ? extractedPhotoUrl : null);
+      if (activePhoto) {
+        formPayload.append('profilePhoto', activePhoto);
       }
       
       if (selectedFile) {
-        formPayload.append('file', selectedFile);
+        formPayload.append('fileFront', selectedFile);
+        formPayload.append('file', selectedFile); // backwards compatibility
       } else {
         const storagePath = userId
           ? `kavach-id-cards/${userId}/${formData.studentId.trim()}-card.jpg`
           : `kavach-id-cards/${formData.studentId.trim()}-card.jpg`;
         formPayload.append('idCardUrl', storagePath);
+      }
+
+      if (backFile) {
+        formPayload.append('fileBack', backFile);
       }
 
       const res = await fetch('/api/student/verify-id', {
@@ -241,16 +301,56 @@ export default function StudentVerificationStatusPage() {
             </div>
           )}
 
+          {/* 15-Detail Profile Verification Progress Indicator */}
+          {(() => {
+            const completedCount = calculateCompletedCount();
+            return (
+              <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '12px', padding: '16px', marginBottom: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#e0e7ff' }}>
+                    Profile Completion Progress ({completedCount}/15 Details Completed)
+                  </span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: completedCount === 15 ? 'var(--accent-green)' : 'var(--accent-purple)' }}>
+                    {Math.round((completedCount / 15) * 100)}%
+                  </span>
+                </div>
+                <div style={{ height: '8px', width: '100%', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${(completedCount / 15) * 100}%`,
+                      background: completedCount === 15 ? 'var(--accent-green)' : 'linear-gradient(90deg, #7c3aed 0%, #3b82f6 100%)',
+                      transition: 'width 0.3s ease'
+                    }}
+                  />
+                </div>
+                <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                  <span style={{ color: formData.fullName.trim() && formData.dob && formData.parentPhone.trim() && formData.personalPhone.trim() && formData.emergencyPhone.trim() && formData.gender && formData.address.trim() ? '#34d399' : 'var(--text-muted)' }}>
+                    ● Personal (7)
+                  </span>
+                  <span>•</span>
+                  <span style={{ color: formData.studentId.trim() && formData.branch.trim() && formData.section.trim() && formData.residentialStatus ? '#34d399' : 'var(--text-muted)' }}>
+                    ● Academic (5)
+                  </span>
+                  <span>•</span>
+                  <span style={{ color: (selectedFile || docPreviewUrl) && (backFile || backPreviewUrl) && (customPhotoPreview || (extractedPhotoUrl && photoConfirmed)) ? '#34d399' : 'var(--text-muted)' }}>
+                    ● Credentials &amp; Photo (3)
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Section A: Personal Details */}
+            {/* Section A: Personal Details (7 fields) */}
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '14px', color: '#c4b5fd' }}>
-                Section A: Personal Details
+                Section A: Personal Details (7 Details)
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                    Full Name *
+                    1. Full Name *
                   </label>
                   <input
                     type="text"
@@ -263,7 +363,7 @@ export default function StudentVerificationStatusPage() {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                    Date of Birth
+                    2. Date of Birth
                   </label>
                   <input
                     type="date"
@@ -274,7 +374,49 @@ export default function StudentVerificationStatusPage() {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                    Gender
+                    3. Student Personal Mobile Number *
+                  </label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="10-digit mobile number"
+                    className="input-field"
+                    value={formData.personalPhone}
+                    onChange={e => setFormData({ ...formData, personalPhone: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    4. Parent / Guardian Contact Number *
+                  </label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="10-digit number"
+                    className="input-field"
+                    value={formData.parentPhone}
+                    onChange={e => setFormData({ ...formData, parentPhone: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    5. Emergency Contact Number *
+                  </label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="10-digit emergency number"
+                    className="input-field"
+                    value={formData.emergencyPhone}
+                    onChange={e => setFormData({ ...formData, emergencyPhone: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    6. Gender
                   </label>
                   <select
                     className="input-field"
@@ -288,56 +430,10 @@ export default function StudentVerificationStatusPage() {
                     <option value="Prefer not to say">Prefer not to say</option>
                   </select>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                    Blood Group
-                  </label>
-                  <select
-                    className="input-field"
-                    style={{ background: '#1e1b4b', color: '#fff' }}
-                    value={formData.bloodGroup}
-                    onChange={e => setFormData({ ...formData, bloodGroup: e.target.value })}
-                  >
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                    Parent / Guardian Contact Number
-                  </label>
-                  <input
-                    type="tel"
-                    maxLength={10}
-                    placeholder="10-digit number"
-                    className="input-field"
-                    value={formData.parentPhone}
-                    onChange={e => setFormData({ ...formData, parentPhone: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                    Emergency Contact Number
-                  </label>
-                  <input
-                    type="tel"
-                    maxLength={10}
-                    placeholder="10-digit emergency number"
-                    className="input-field"
-                    value={formData.emergencyPhone}
-                    onChange={e => setFormData({ ...formData, emergencyPhone: e.target.value })}
-                  />
-                </div>
               </div>
               <div style={{ marginTop: '12px' }}>
                 <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                  Residential Address
+                  7. Residential Address *
                 </label>
                 <input
                   type="text"
@@ -345,14 +441,15 @@ export default function StudentVerificationStatusPage() {
                   className="input-field"
                   value={formData.address}
                   onChange={e => setFormData({ ...formData, address: e.target.value })}
+                  required
                 />
               </div>
             </div>
 
-            {/* Section B: College & Academic Details */}
+            {/* Section B: College & Academic Details (5 fields) */}
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '14px', color: '#93c5fd' }}>
-                Section B: College &amp; Academic Details
+                Section B: College &amp; Academic Details (5 Details)
               </h3>
               
               <div style={{ marginBottom: '14px' }}>
@@ -375,7 +472,7 @@ export default function StudentVerificationStatusPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                    Student Registration ID / Roll Number (7–10 Chars) *
+                    8. Student Registration ID / Roll Number (7–10 Chars) *
                   </label>
                   <input
                     type="text"
@@ -394,22 +491,23 @@ export default function StudentVerificationStatusPage() {
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                    Residential Status *
+                    9. College Email (OPTIONAL)
                   </label>
-                  <select
+                  <input
+                    type="email"
+                    placeholder="student@college.edu.in (Optional)"
                     className="input-field"
-                    style={{ background: '#1e1b4b', color: '#fff' }}
-                    value={formData.residentialStatus}
-                    onChange={e => setFormData({ ...formData, residentialStatus: e.target.value })}
-                  >
-                    <option value="Day Scholar">Day Scholar</option>
-                    <option value="Hosteller">Hosteller</option>
-                  </select>
+                    value={formData.collegeEmail}
+                    onChange={e => setFormData({ ...formData, collegeEmail: e.target.value })}
+                  />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                    Leave blank if your college does not provide student email.
+                  </span>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                    Branch / Programme
+                    10. Branch / Programme *
                   </label>
                   <input
                     type="text"
@@ -417,12 +515,13 @@ export default function StudentVerificationStatusPage() {
                     className="input-field"
                     value={formData.branch}
                     onChange={e => setFormData({ ...formData, branch: e.target.value })}
+                    required
                   />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                    Section
+                    11. Section *
                   </label>
                   <input
                     type="text"
@@ -430,242 +529,284 @@ export default function StudentVerificationStatusPage() {
                     className="input-field"
                     value={formData.section}
                     onChange={e => setFormData({ ...formData, section: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  12. Accommodation Type *
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, residentialStatus: 'Day Scholar' })}
+                    className={formData.residentialStatus === 'Day Scholar' ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: '10px 14px', textAlign: 'left', borderRadius: '8px' }}
+                  >
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Day Scholar</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Daily Commuter / Living with Family</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, residentialStatus: 'Hosteller' })}
+                    className={formData.residentialStatus === 'Hosteller' ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: '10px 14px', textAlign: 'left', borderRadius: '8px' }}
+                  >
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Hosteller</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Campus or Private Hostel Resident</div>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
+                  Admission Type &amp; Academic Duration *
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleAdmissionTypeChange('REGULAR', formData.admissionYear)}
+                    className={formData.admissionType === 'REGULAR' ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', textAlign: 'left', borderRadius: '8px' }}
+                  >
+                    <div style={{ fontWeight: 600 }}>Regular B.Tech</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>4 Academic Years</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAdmissionTypeChange('LATERAL_ENTRY', formData.admissionYear)}
+                    className={formData.admissionType === 'LATERAL_ENTRY' ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: '10px 14px', fontSize: '0.85rem', textAlign: 'left', borderRadius: '8px' }}
+                  >
+                    <div style={{ fontWeight: 600 }}>Lateral Entry B.Tech</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>3 Academic Years</div>
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Admission Year *
+                  </label>
+                  <select
+                    className="input-field"
+                    style={{ background: '#1e1b4b', color: '#fff' }}
+                    value={formData.admissionYear}
+                    onChange={e => handleAdmissionTypeChange(formData.admissionType as 'REGULAR' | 'LATERAL_ENTRY', e.target.value)}
+                  >
+                    <option value="2021">2021</option>
+                    <option value="2022">2022</option>
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Expected Graduation Year (Auto-Calculated)
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={formData.expectedGraduationYear}
+                    disabled
+                    style={{ opacity: 0.8 }}
                   />
                 </div>
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
-                Admission Type &amp; Academic Duration *
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <button
-                  type="button"
-                  onClick={() => handleAdmissionTypeChange('REGULAR', formData.admissionYear)}
-                  className={formData.admissionType === 'REGULAR' ? 'btn-primary' : 'btn-secondary'}
-                  style={{ padding: '12px', fontSize: '0.9rem', textAlign: 'left' }}
-                >
-                  <div style={{ fontWeight: 600 }}>Regular B.Tech</div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>4 Academic Years</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAdmissionTypeChange('LATERAL_ENTRY', formData.admissionYear)}
-                  className={formData.admissionType === 'LATERAL_ENTRY' ? 'btn-primary' : 'btn-secondary'}
-                  style={{ padding: '12px', fontSize: '0.9rem', textAlign: 'left' }}
-                >
-                  <div style={{ fontWeight: 600 }}>Lateral Entry B.Tech</div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>3 Academic Years</div>
-                </button>
-              </div>
-            </div>
+            {/* Section C: Verification Images & Profile Photograph (3 fields) */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '14px', color: '#a78bfa' }}>
+                Section C: ID Card Images &amp; Profile Photograph (3 Details)
+              </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
-                  Admission Year *
-                </label>
-                <select
-                  className="input-field"
-                  style={{ background: '#1e1b4b', color: '#fff' }}
-                  value={formData.admissionYear}
-                  onChange={e => handleAdmissionTypeChange(formData.admissionType as 'REGULAR' | 'LATERAL_ENTRY', e.target.value)}
-                >
-                  <option value="2021">2021</option>
-                  <option value="2022">2022</option>
-                  <option value="2023">2023</option>
-                  <option value="2024">2024</option>
-                  <option value="2025">2025</option>
-                  <option value="2026">2026</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
-                  Expected Graduation Year (Auto-Calculated)
-                </label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={formData.expectedGraduationYear}
-                  disabled
-                  style={{ opacity: 0.8 }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
-                Upload ID Card (Image or PDF, Max 5MB) *
-              </label>
-              <div style={{ border: '2px dashed rgba(255, 255, 255, 0.15)', borderRadius: '12px', padding: '24px', textAlign: 'center', background: 'rgba(0, 0, 0, 0.2)' }}>
-                <UploadCloud size={32} color="var(--accent-purple)" style={{ margin: '0 auto 8px' }} />
-                <div style={{ fontSize: '0.9rem', marginBottom: '4px' }}>Click to select your College ID Card</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Supported: JPEG, PNG, WEBP, PDF (Max 5MB)</div>
-                <input
-                  type="file"
-                  id="id-card-file-input"
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
-                  onChange={e => {
-                    setFormError('');
-                    if (e.target.files && e.target.files[0]) {
-                      const file = e.target.files[0];
-                      const MAX_SIZE = 5 * 1024 * 1024;
-                      if (file.size > MAX_SIZE) {
-                        setFormError(`Selected file is too large (${(file.size / (1024 * 1024)).toFixed(2)}MB). Maximum allowed size is 5MB.`);
-                        setSelectedFile(null);
-                        setFormData({ ...formData, idCardName: '' });
-                        setDocPreviewUrl(null);
-                        setExtractedPhotoUrl(null);
-                        return;
-                      }
-                      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-                      if (!allowedTypes.includes(file.type)) {
-                        setFormError(`Invalid file type (${file.type}). Allowed formats: JPEG, PNG, WEBP, PDF.`);
-                        setSelectedFile(null);
-                        setFormData({ ...formData, idCardName: '' });
-                        setDocPreviewUrl(null);
-                        setExtractedPhotoUrl(null);
-                        return;
-                      }
-                      setSelectedFile(file);
-                      setFormData({ ...formData, idCardName: file.name });
-
-                      if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          const result = event.target?.result as string;
-                          setDocPreviewUrl(result);
-                          const img = new Image();
-                          img.onload = () => {
-                            try {
-                              const canvas = document.createElement('canvas');
-                              canvas.width = 180;
-                              canvas.height = 220;
-                              const ctx = canvas.getContext('2d');
-                              if (ctx) {
-                                // Crop standard student portrait from top-right quadrant of horizontal ID or top-center
-                                const isLandscape = img.width >= img.height;
-                                const cropX = isLandscape ? img.width * 0.62 : img.width * 0.2;
-                                const cropY = img.height * 0.15;
-                                const cropW = isLandscape ? img.width * 0.34 : img.width * 0.6;
-                                const cropH = img.height * 0.48;
-                                ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, 180, 220);
-                                setExtractedPhotoUrl(canvas.toDataURL('image/jpeg', 0.85));
-                              }
-                            } catch (err) {
-                              console.warn('Canvas crop fallback:', err);
-                            }
-                          };
-                          img.src = result;
-                        };
-                        reader.readAsDataURL(file);
-                      } else {
-                        setDocPreviewUrl(null);
-                        setExtractedPhotoUrl(null);
-                      }
-                    }
-                  }}
-                  style={{ marginTop: '12px', fontSize: '0.85rem' }}
-                />
-
-                {selectedFile && (
-                  <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--accent-green)', fontSize: '0.85rem', fontWeight: 500 }}>
-                    <Check size={16} /> Ready to upload: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
-                  </div>
-                )}
-              </div>
-
-              {/* ID Card Document & Cropped Portrait Preview */}
-              {selectedFile && (
-                <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: extractedPhotoUrl ? '1fr 1fr' : '1fr', gap: '16px' }}>
-                  {/* Full Document Preview */}
-                  <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <FileText size={14} color="var(--accent-blue)" /> Document Preview
-                    </div>
-                    {docPreviewUrl ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={docPreviewUrl}
-                        alt="ID Card Document Preview"
-                        style={{ width: '100%', maxHeight: '160px', objectFit: 'contain', borderRadius: '6px', background: '#0a0a0f' }}
-                      />
-                    ) : (
-                      <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                        📄 PDF Document attached for OCR parsing
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                {/* 13. ID Card Front Image */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    13. ID Card Front Image *
+                  </label>
+                  <div style={{ border: '2px dashed rgba(255, 255, 255, 0.15)', borderRadius: '10px', padding: '16px', textAlign: 'center', background: 'rgba(0, 0, 0, 0.2)' }}>
+                    <UploadCloud size={24} color="var(--accent-purple)" style={{ margin: '0 auto 6px' }} />
+                    <div style={{ fontSize: '0.82rem', marginBottom: '4px' }}>Upload Front Side of ID Card</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>JPEG, PNG, WEBP, PDF (Max 5MB)</div>
+                    <input
+                      type="file"
+                      id="id-card-front-input"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      onChange={e => {
+                        setFormError('');
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          if (file.size > 5 * 1024 * 1024) {
+                            setFormError(`Front ID Card too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Max 5MB.`);
+                            return;
+                          }
+                          setSelectedFile(file);
+                          setFormData(prev => ({ ...prev, idCardName: file.name }));
+                          if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                              const res = ev.target?.result as string;
+                              setDocPreviewUrl(res);
+                              const img = new Image();
+                              img.onload = () => {
+                                try {
+                                  const canvas = document.createElement('canvas');
+                                  canvas.width = 180;
+                                  canvas.height = 220;
+                                  const ctx = canvas.getContext('2d');
+                                  if (ctx) {
+                                    const isLandscape = img.width >= img.height;
+                                    const cropX = isLandscape ? img.width * 0.62 : img.width * 0.2;
+                                    const cropY = img.height * 0.15;
+                                    const cropW = isLandscape ? img.width * 0.34 : img.width * 0.6;
+                                    const cropH = img.height * 0.48;
+                                    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, 180, 220);
+                                    setExtractedPhotoUrl(canvas.toDataURL('image/jpeg', 0.85));
+                                  }
+                                } catch (err) {
+                                  console.warn('Portrait extraction error:', err);
+                                }
+                              };
+                              img.src = res;
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }
+                      }}
+                      style={{ marginTop: '8px', fontSize: '0.78rem' }}
+                    />
+                    {docPreviewUrl && (
+                      <div style={{ marginTop: '10px' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={docPreviewUrl}
+                          alt="Front Preview"
+                          style={{ width: '100%', maxHeight: '110px', objectFit: 'contain', borderRadius: '6px', background: '#0a0a0f' }}
+                        />
+                        <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '4px' }}>✓ Front ID Ready</div>
                       </div>
                     )}
                   </div>
+                </div>
 
-                  {/* Extracted Portrait Photo Preview */}
-                  {extractedPhotoUrl && (
-                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '12px', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#c4b5fd', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Camera size={14} color="var(--accent-purple)" /> Extracted Student Portrait
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const input = document.getElementById('id-card-file-input') as HTMLInputElement | null;
-                            if (input) input.click();
-                          }}
-                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        >
-                          <RefreshCw size={11} /> Replace
-                        </button>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                {/* 14. ID Card Back Image */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    14. ID Card Back Image *
+                  </label>
+                  <div style={{ border: '2px dashed rgba(255, 255, 255, 0.15)', borderRadius: '10px', padding: '16px', textAlign: 'center', background: 'rgba(0, 0, 0, 0.2)' }}>
+                    <UploadCloud size={24} color="var(--accent-blue)" style={{ margin: '0 auto 6px' }} />
+                    <div style={{ fontSize: '0.82rem', marginBottom: '4px' }}>Upload Back Side of ID Card</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>JPEG, PNG, WEBP, PDF (Max 5MB)</div>
+                    <input
+                      type="file"
+                      id="id-card-back-input"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      onChange={e => {
+                        setFormError('');
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          if (file.size > 5 * 1024 * 1024) {
+                            setFormError(`Back ID Card too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Max 5MB.`);
+                            return;
+                          }
+                          setBackFile(file);
+                          if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                              setBackPreviewUrl(ev.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }
+                      }}
+                      style={{ marginTop: '8px', fontSize: '0.78rem' }}
+                    />
+                    {backPreviewUrl && (
+                      <div style={{ marginTop: '10px' }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={extractedPhotoUrl}
-                          alt="Extracted Student Portrait"
-                          style={{ width: '70px', height: '85px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(139, 92, 246, 0.5)' }}
+                          src={backPreviewUrl}
+                          alt="Back Preview"
+                          style={{ width: '100%', maxHeight: '110px', objectFit: 'contain', borderRadius: '6px', background: '#0a0a0f' }}
                         />
-                        <div style={{ flex: 1 }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#e0e7ff', cursor: 'pointer' }}>
-                            <input
-                              type="checkbox"
-                              checked={photoConfirmed}
-                              onChange={e => setPhotoConfirmed(e.target.checked)}
-                              style={{ accentColor: 'var(--accent-purple)' }}
-                            />
-                            Confirm photo as student profile picture
-                          </label>
-                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                            Auto-detected from ID card layout.
-                          </div>
-                          <div style={{ marginTop: '6px' }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--accent-blue)', cursor: 'pointer', textDecoration: 'underline' }}>
-                              Upload standalone portrait photo (manual fallback)
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                style={{ display: 'none' }}
-                                onChange={(e) => {
-                                  if (e.target.files && e.target.files[0]) {
-                                    const customPhoto = e.target.files[0];
-                                    const reader = new FileReader();
-                                    reader.onload = (ev) => {
-                                      if (ev.target?.result) {
-                                        setExtractedPhotoUrl(ev.target.result as string);
-                                        setPhotoConfirmed(true);
-                                      }
-                                    };
-                                    reader.readAsDataURL(customPhoto);
-                                  }
-                                }}
-                              />
-                            </label>
-                          </div>
-                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '4px' }}>✓ Back ID Ready</div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* 15. Profile Photograph Preview & Confirmation */}
+              <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', padding: '14px', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+                <div style={{ fontSize: '0.85rem', color: '#c4b5fd', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                    <Camera size={16} color="var(--accent-purple)" /> 15. Profile Photograph
+                  </span>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--accent-blue)', cursor: 'pointer', textDecoration: 'underline' }}>
+                    Upload Custom Portrait
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      style={{ display: 'none' }}
+                      onChange={e => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setCustomPhotoFile(file);
+                          const reader = new FileReader();
+                          reader.onload = ev => {
+                            setCustomPhotoPreview(ev.target?.result as string);
+                            setPhotoConfirmed(true);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '70px', height: '85px', borderRadius: '6px', overflow: 'hidden', background: '#111827', border: '1px solid rgba(255, 255, 255, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {customPhotoPreview ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={customPhotoPreview} alt="Custom Portrait" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : extractedPhotoUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={extractedPhotoUrl} alt="Extracted Portrait" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', padding: '4px' }}>No Photo Detected</span>
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#e0e7ff', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={photoConfirmed}
+                        onChange={e => setPhotoConfirmed(e.target.checked)}
+                        style={{ accentColor: 'var(--accent-purple)' }}
+                      />
+                      Confirm photo as student profile picture
+                    </label>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      {customPhotoPreview
+                        ? 'Using uploaded custom portrait photo.'
+                        : extractedPhotoUrl
+                        ? 'Auto-cropped from Front ID Card.'
+                        : 'Upload Front ID Card or custom photo to set profile picture.'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
               {/* Pre-Submission Validation Analysis Card */}
               <div style={{ marginTop: '16px', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px 16px' }}>
@@ -691,7 +832,6 @@ export default function StudentVerificationStatusPage() {
                   </div>
                 </div>
               </div>
-            </div>
 
             <button
               type="submit"

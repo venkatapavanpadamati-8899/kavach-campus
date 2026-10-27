@@ -1,7 +1,7 @@
 "use client";
 import React, { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { getPageAnimationConfig } from './pageAnimations';
 
 interface PageMotionWrapperProps {
@@ -18,8 +18,12 @@ export function PageMotionWrapper({
   style = {},
 }: PageMotionWrapperProps) {
   const pathname = usePathname();
+  const shouldReduceMotion = useReducedMotion();
   const route = overrideRoute || pathname || '/';
   const config = useMemo(() => getPageAnimationConfig(route), [route]);
+
+  // If user prefers reduced motion or if route is urgent emergency (e.g. /student/sos), eliminate animations
+  const disableMotion = shouldReduceMotion || config.motionIntensity === 'urgent';
 
   return (
     <div
@@ -40,18 +44,22 @@ export function PageMotionWrapper({
           pointerEvents: 'none',
           background: config.backgroundGlow,
           zIndex: 0,
-          transition: 'background 0.6s ease',
+          transition: disableMotion ? 'none' : 'background 0.6s ease',
         }}
       />
 
       {/* Animated Content Layer */}
       <motion.div
-        initial={{ opacity: 0, y: config.motionIntensity === 'urgent' ? 0 : 12 }}
+        initial={disableMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: config.motionIntensity === 'urgent' ? 0.2 : 0.45,
-          ease: 'easeOut',
-        }}
+        transition={
+          disableMotion
+            ? { duration: 0 }
+            : {
+                duration: 0.4,
+                ease: 'easeOut',
+              }
+        }
         style={{
           position: 'relative',
           zIndex: 1,

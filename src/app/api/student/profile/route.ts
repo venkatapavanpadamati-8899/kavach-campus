@@ -22,7 +22,7 @@ export async function GET() {
 
     const { data: studentProfile, error: spError } = await supabase
       .from('student_profiles')
-      .select('id, course, verification_status, admission_type, admission_year, expected_graduation_year, id_card_url, blood_group, medical_conditions, hostel_room, updated_at')
+      .select('id, course, verification_status, admission_type, admission_year, expected_graduation_year, id_card_url, blood_group, medical_conditions, hostel_room, ocr_extracted_data, updated_at')
       .eq('id', user.id)
       .single();
 

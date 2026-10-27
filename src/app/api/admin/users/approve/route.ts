@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     // Check caller role
     const { data: callerProfile } = await supabase
       .from('profiles')
-      .select('role, is_approved, college_id')
+      .select('role, is_approved, college_id, can_manage_staff')
       .eq('id', user.id)
       .single();
 
@@ -25,7 +25,9 @@ export async function POST(req: Request) {
 
     const callerRole = callerProfile.role;
     const isSuperAdmin = callerRole === 'SUPER_ADMIN';
-    const isAdmin = callerRole === 'ADMIN' || isSuperAdmin;
+    const isManagementAdmin = ['MANAGEMENT', 'MANAGEMENT_ADMIN', 'PRINCIPAL'].includes(callerRole) || callerProfile.can_manage_staff === true;
+    const isMonitoringOnly = isSuperAdmin || callerProfile.can_manage_staff === false;
+    const isAdmin = callerRole === 'ADMIN' || isSuperAdmin || isManagementAdmin;
 
     if (!isAdmin) {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
@@ -59,9 +61,21 @@ export async function POST(req: Request) {
       'ADMIN',
       'MENTOR',
       'WARDEN',
+      'MANAGEMENT',
     ];
     if (requestedRole != null && !allowedRoles.includes(requestedRole)) {
       return NextResponse.json({ error: 'Requested role is invalid' }, { status: 400 });
+    }
+
+    // Staff access governance: Management Admin is responsible for granting staff access.
+    // Normal Admin and Super Admin are monitoring-only roles by default.
+    const staffRoles = ['STAFF', 'COUNSELLOR', 'WOMENS_CELL', 'HOD', 'SECURITY', 'PRINCIPAL', 'MENTOR', 'WARDEN'];
+    const isStaffRole = requestedRole != null && staffRoles.includes(requestedRole);
+    if (isStaffRole && !isManagementAdmin && isMonitoringOnly) {
+      return NextResponse.json(
+        { error: 'Normal Admin and Super Admin are monitoring-only roles by default. Management Admin authorization required to grant staff access.' },
+        { status: 403 }
+      );
     }
 
     // Only SUPER_ADMIN can approve an ADMIN account
@@ -101,10 +115,10 @@ export async function POST(req: Request) {
     }
 
     const callerCollegeId = callerProfile.college_id
-      ? getCollegeById(callerProfile.college_id)?.id
+      ? (getCollegeById(callerProfile.college_id)?.id || callerProfile.college_id)
       : null;
     const targetCollegeId = targetProfile.college_id
-      ? getCollegeById(targetProfile.college_id)?.id
+      ? (getCollegeById(targetProfile.college_id)?.id || targetProfile.college_id)
       : null;
 
     if (!isSuperAdmin && (!callerCollegeId || callerCollegeId !== targetCollegeId)) {
