@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     // Check caller role
     const { data: callerProfile } = await supabase
       .from('profiles')
-      .select('role, is_approved, college_id, can_manage_staff')
+      .select('role, is_approved, college_id')
       .eq('id', user.id)
       .single();
 
@@ -25,8 +25,9 @@ export async function POST(req: Request) {
 
     const callerRole = callerProfile.role;
     const isSuperAdmin = callerRole === 'SUPER_ADMIN';
-    const isManagementAdmin = ['MANAGEMENT', 'MANAGEMENT_ADMIN', 'PRINCIPAL'].includes(callerRole) || callerProfile.can_manage_staff === true;
-    const isMonitoringOnly = isSuperAdmin || callerProfile.can_manage_staff === false;
+    const profileExtras = callerProfile as unknown as Record<string, unknown>;
+    const isManagementAdmin = ['MANAGEMENT', 'MANAGEMENT_ADMIN', 'PRINCIPAL'].includes(callerRole) || Boolean(profileExtras?.can_manage_staff);
+    const isMonitoringOnly = isSuperAdmin || profileExtras?.can_manage_staff === false;
     const isAdmin = callerRole === 'ADMIN' || isSuperAdmin || isManagementAdmin;
 
     if (!isAdmin) {
