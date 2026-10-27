@@ -60,10 +60,6 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
   const [branding, setBranding] = useState<CollegeBranding>(getCollegeBranding());
   const [avatarPhoto, setAvatarPhoto] = useState<string | null>(null);
 
-  if (pathname.includes('/login')) {
-    return <>{children}</>;
-  }
-  
   useEffect(() => {
     let cancelled = false;
     if (typeof window !== 'undefined') {
@@ -113,6 +109,10 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
   };
 
   const bgConfig = getPageBackground(tenant?.id, getPageKey() as any);
+
+  if (pathname.includes('/login')) {
+    return <>{children}</>;
+  }
 
   return (
     <div
