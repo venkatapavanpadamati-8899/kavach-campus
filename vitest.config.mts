@@ -17,11 +17,7 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'nextjs_backup', '.next'],
-    env: {
-      SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key-that-is-long-enough-32-chars',
-      NEXT_PUBLIC_SUPABASE_URL: 'https://mock-supabase-test-project.supabase.co',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key-that-is-long-enough-32-chars',
-    },
+
   },
   resolve: {
     alias: {
