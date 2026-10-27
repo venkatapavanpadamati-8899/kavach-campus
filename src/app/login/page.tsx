@@ -16,7 +16,7 @@ import {
   EyeOff, 
   RotateCcw
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { getCollegeById } from '@/lib/colleges';
 import { getPageBackground, setActiveCollegeTenant } from '@/lib/college-branding';
 import { InteractiveSafetyCharacter } from '@/components/animations/InteractiveSafetyCharacter';
@@ -26,12 +26,11 @@ function formatAuthError(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
 
   if (
-    message.includes('Failed to fetch') ||
-    message.includes('NetworkError') ||
-    message.includes('fetch failed') ||
-    message.includes('ECONNREFUSED')
+    message.includes('NEXT_PUBLIC_SUPABASE_URL') ||
+    message.includes('not configured') ||
+    message.includes('configuration required')
   ) {
-    return 'Authentication server could not be reached. Please check your internet connection or verify campus network access.';
+    return 'Authentication service is temporarily unavailable. Institutional administrator configuration required.';
   }
   if (message.includes('Invalid login credentials')) {
     return 'Incorrect email or password. Please verify your credentials and try again.';
@@ -41,6 +40,17 @@ function formatAuthError(err: unknown): string {
   }
   if (message.includes('rate limit') || message.includes('too many requests')) {
     return 'Too many login attempts. Please wait a moment before trying again.';
+  }
+  if (
+    message.includes('Failed to fetch') ||
+    message.includes('NetworkError') ||
+    message.includes('fetch failed') ||
+    message.includes('ECONNREFUSED')
+  ) {
+    if (!isSupabaseConfigured()) {
+      return 'Authentication service is temporarily unavailable. Institutional administrator configuration required.';
+    }
+    return 'Unable to reach the authentication service. Please check your network connection or try again shortly.';
   }
   return message;
 }
@@ -75,6 +85,11 @@ function LoginForm() {
 
   // Handle URL search params on mount
   useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setError('Authentication service is temporarily unavailable. Institutional administrator configuration required.');
+      return;
+    }
+
     const paramError = searchParams.get('error');
     const paramVerified = searchParams.get('verified');
     const paramNotice = searchParams.get('notice');
@@ -857,24 +872,27 @@ function LoginForm() {
           </a>
         </div>
 
-        {/* Discreet Institutional Authority & Super Admin Portal Link */}
-        <div style={{ marginTop: '16px', textAlign: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '12px' }}>
+        {/* Discreet Centered Campus Administrator Entry Point */}
+        <div style={{ marginTop: '20px', textAlign: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '16px' }}>
           <a
-            href="/super-admin/login"
-            title="Institutional Authority & Platform Administration Portal"
+            href="/admin/login"
+            id="link-campus-admin"
+            title="Authorized Campus & Institutional Administration"
             style={{
-              fontSize: '0.74rem',
-              color: 'rgba(255, 255, 255, 0.35)',
+              fontSize: '0.8rem',
+              color: 'rgba(255, 255, 255, 0.45)',
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '5px',
-              transition: 'color 0.2s',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'color 0.2s ease',
+              fontWeight: 500,
             }}
             onMouseOver={(e) => (e.currentTarget.style.color = '#93c5fd')}
-            onMouseOut={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.35)')}
+            onMouseOut={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.45)')}
           >
-            <Shield size={12} /> Institutional Authority &amp; Super Admin Portal
+            <Shield size={13} /> Campus Administrator Portal
           </a>
         </div>
       </motion.div>

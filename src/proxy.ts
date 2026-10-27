@@ -10,8 +10,8 @@ export default async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Dedicated Super Admin login page is public
-  if (pathname === '/super-admin/login') {
+  // Dedicated Administrator and Super Admin login pages are public
+  if (pathname === '/super-admin/login' || pathname === '/admin/login') {
     return supabaseResponse;
   }
 
@@ -60,6 +60,13 @@ export default async function proxy(request: NextRequest) {
         superAdminLogin.searchParams.set('redirect', pathname);
       }
       return NextResponse.redirect(superAdminLogin);
+    }
+    if (pathname.startsWith('/admin')) {
+      const adminLogin = new URL('/admin/login', request.url);
+      if (pathname !== '/admin' && pathname !== '/admin/login') {
+        adminLogin.searchParams.set('redirect', pathname);
+      }
+      return NextResponse.redirect(adminLogin);
     }
     const loginUrl = new URL('/login', request.url);
     if (pathname !== '/' && pathname !== '/login') {

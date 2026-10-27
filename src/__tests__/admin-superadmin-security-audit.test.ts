@@ -25,7 +25,7 @@ describe('Admin & Super Admin Security Audit Suite', () => {
   });
 
   describe('1. Static Code Analysis: No Hardcoded Credentials or Bypass Buttons', () => {
-    it('verifies that login/page.tsx contains no hardcoded passwords, emails, or 1-click bypass buttons', () => {
+    it('verifies that login/page.tsx contains no hardcoded passwords, emails, 1-click bypass buttons, or public Super Admin button', () => {
       const loginCode = fs.readFileSync(path.join(process.cwd(), 'src/app/login/page.tsx'), 'utf8');
       expect(loginCode).not.toContain('Pavan@123');
       expect(loginCode).not.toContain('handleDirectLogin');
@@ -33,6 +33,8 @@ describe('Admin & Super Admin Security Audit Suite', () => {
       expect(loginCode).not.toContain('btn-direct-superadmin-login-main');
       expect(loginCode).not.toContain('venkatapavanpadamati@gmail.com');
       expect(loginCode).not.toContain('venkatapavanpadamati1@gmail.com');
+      expect(loginCode).not.toContain('Super Admin Portal');
+      expect(loginCode).toContain('Campus Administrator Portal');
     });
 
     it('verifies that super-admin/login/page.tsx contains no hardcoded passwords, emails, or 1-click bypass buttons', () => {
@@ -43,9 +45,26 @@ describe('Admin & Super Admin Security Audit Suite', () => {
       expect(superAdminCode).not.toContain('venkatapavanpadamati1@gmail.com');
       expect(superAdminCode).not.toContain('Direct Root Access');
     });
+
+    it('verifies that admin/login/page.tsx exists and enforces server-side role check', () => {
+      const adminCode = fs.readFileSync(path.join(process.cwd(), 'src/app/admin/login/page.tsx'), 'utf8');
+      expect(adminCode).toContain('Campus Administrator');
+      expect(adminCode).toContain('signInWithPassword');
+      expect(adminCode).toContain('is_approved');
+    });
   });
 
   describe('2. Edge Proxy Server-Side RBAC Enforcement', () => {
+    it('allows public access to /admin/login and /super-admin/login without authentication', async () => {
+      const reqAdmin = new NextRequest('https://kavach-campus.vercel.app/admin/login');
+      const resAdmin = await proxy(reqAdmin);
+      expect(resAdmin.status).toBe(200);
+
+      const reqSuper = new NextRequest('https://kavach-campus.vercel.app/super-admin/login');
+      const resSuper = await proxy(reqSuper);
+      expect(resSuper.status).toBe(200);
+    });
+
     it('redirects unauthenticated visitor from /super-admin to /super-admin/login', async () => {
       mockGetUser.mockResolvedValueOnce({ data: { user: null } });
 
@@ -56,14 +75,14 @@ describe('Admin & Super Admin Security Audit Suite', () => {
       expect(response.headers.get('location')).toContain('/super-admin/login');
     });
 
-    it('redirects unauthenticated visitor from /admin to /login', async () => {
+    it('redirects unauthenticated visitor from /admin to /admin/login', async () => {
       mockGetUser.mockResolvedValueOnce({ data: { user: null } });
 
       const req = new NextRequest('https://kavach-campus.vercel.app/admin');
       const response = await proxy(req);
 
       expect(response.status).toBe(307);
-      expect(response.headers.get('location')).toContain('/login');
+      expect(response.headers.get('location')).toContain('/admin/login');
     });
 
     it('blocks normal campus ADMIN from accessing /super-admin and redirects to /super-admin/login?error=unauthorized', async () => {

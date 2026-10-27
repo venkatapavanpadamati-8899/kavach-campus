@@ -59,6 +59,10 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
   const [tenant, setTenant] = useState<CollegeTenant | null>(null);
   const [branding, setBranding] = useState<CollegeBranding>(getCollegeBranding());
   const [avatarPhoto, setAvatarPhoto] = useState<string | null>(null);
+
+  if (pathname.includes('/login')) {
+    return <>{children}</>;
+  }
   
   useEffect(() => {
     let cancelled = false;
