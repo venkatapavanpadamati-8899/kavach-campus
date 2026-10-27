@@ -2,14 +2,12 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Shield, Mail, CreditCard, Building2, Loader2, ArrowRight } from 'lucide-react';
+import { Shield, Mail, CreditCard, Loader2, ArrowRight } from 'lucide-react';
 import { validateStudentRegistrationNumber } from '@/lib/verification/id-card';
-import { INDIAN_ENGINEERING_COLLEGES } from '@/lib/colleges';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [collegeId, setCollegeId] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,10 +29,9 @@ export default function ForgotPasswordPage() {
       if (registrationNumber.trim()) {
         const regCheck = validateStudentRegistrationNumber({
           registrationNumber: registrationNumber.trim(),
-          collegeId: collegeId || undefined,
         });
         if (!regCheck.valid) {
-          setError(regCheck.error || 'Student Registration Number must be 8, 9, or 10 alphanumeric characters');
+          setError(regCheck.error || 'Student Registration Number must be 7 to 10 alphanumeric characters');
           setLoading(false);
           return;
         }
@@ -45,7 +42,6 @@ export default function ForgotPasswordPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: emailTrimmed,
-          collegeId: collegeId.trim(),
           registrationNumber: registrationNumber.trim(),
         }),
       });
@@ -173,29 +169,6 @@ export default function ForgotPasswordPage() {
               onChange={(e) => setEmail(e.target.value)} 
               required 
             />
-          </div>
-
-          <div style={{ position: 'relative' }}>
-            <Building2 size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-            <select
-              name="collegeId"
-              className="input-field"
-              style={{ paddingLeft: '44px', color: collegeId ? 'var(--text-primary)' : 'var(--text-muted)' }}
-              value={collegeId}
-              onChange={(e) => setCollegeId(e.target.value)}
-            >
-              <option value="">Select College / Institution</option>
-              {INDIAN_ENGINEERING_COLLEGES.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-              <option value="dnr-bhimavaram">DNR College of Engineering &amp; Technology</option>
-              <option value="auce-visakhapatnam">Andhra University College of Engineering (AUCE)</option>
-              <option value="vrsec-vijayawada">Velagapudi Ramakrishna Siddhartha Engineering College (VRSEC)</option>
-              <option value="jntuk-kakinada">JNTU College of Engineering Kakinada (JNTUK)</option>
-              <option value="OTHER">Other Institution / General</option>
-            </select>
           </div>
 
           <div style={{ position: 'relative' }}>

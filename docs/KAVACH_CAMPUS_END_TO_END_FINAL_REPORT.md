@@ -213,3 +213,18 @@ All providers have strict fallback architectures and never expose credentials:
 3. **Step 3 (Mobile Device PWA Testing):**
    - Open the live Vercel Preview URL: [https://kavach-campus-rmnruamrg-venkatapavanpadamati-8899s-projects.vercel.app](https://kavach-campus-rmnruamrg-venkatapavanpadamati-8899s-projects.vercel.app) in Google Chrome on an Android mobile device.
    - Verify camera capture on incident reporting, microphone on voice report, and GPS tracking during Safe Walk and SOS.
+
+---
+
+## Registration and Mobile-OTP update — 2026-10-27
+
+| Change | Status | Evidence |
+| --- | --- | --- |
+| Public registration has no default college name | PASS | Existing generic pre-auth branding retained. |
+| Student parent/guardian phone field | PASS (local) | Registration requires a valid 10-digit value in the UI; the server validates a supplied value and retains it through OTP verification as an authorized student-profile emergency contact where the schema supports it. |
+| Older schema protection | PASS (local) | OTP provisioning retries the minimal student profile when an older schema lacks the emergency-contact column, so verification setup is not lost. |
+| Mobile OTP send feedback | PASS (local) | The OTP field appears only when Supabase accepts the SMS OTP request. Provider failure now reports an error rather than claiming a challenge was initialized. |
+| Static development OTP login bypass | REMOVED | A failed provider verification can no longer route a user into the student dashboard with a hard-coded OTP. |
+| Full local test suite | PASS | `npm test`: 44 files, 568 tests passed. |
+| TypeScript and ESLint | PASS | `npx tsc --noEmit` and `npm run lint` completed without reported errors. |
+| Git whitespace check | FAIL (pre-existing working-tree formatting) | `git diff --check` reports trailing whitespace in existing files, including areas outside this focused update. No bulk formatting was applied to preserve user changes. |

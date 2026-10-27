@@ -3,6 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import styles from './page.module.css';
+import { InteractiveSafetyCharacter } from '@/components/animations/InteractiveSafetyCharacter';
 import { 
   Shield, 
   Phone, 
@@ -111,7 +112,6 @@ export default function LandingPage() {
             <span className={styles.brandText}>
               Kavach<span className={styles.brandHighlight}>Campus</span>
             </span>
-            <span style={{ display: 'none' }}>KAVACH CAMPUS Multi-College Safety Platform</span>
           </div>
         </Link>
 
@@ -236,6 +236,11 @@ export default function LandingPage() {
                   strokeWidth="2" 
                 />
               </svg>
+
+              {/* Interactive 3D Campus Safety Mascot Avatar */}
+              <div style={{ position: 'relative', zIndex: 6, marginBottom: '-20px' }}>
+                <InteractiveSafetyCharacter />
+              </div>
 
               {/* Central Glowing Shield with University Silhouette */}
               <div className={styles.hologramShield}>

@@ -4,7 +4,8 @@
       "C:\\Program Files\\nodejs\\node.exe",
       "D:\\Kavach Campus\\node_modules\\@playwright\\test\\cli.js",
       "test",
-      "tests/e2e/auth-flows.spec.ts"
+      "tests/e2e/auth-flows.spec.ts",
+      "tests/e2e/public-pages.spec.ts"
     ],
     "configFile": "D:\\Kavach Campus\\playwright.config.ts",
     "rootDir": "D:/Kavach Campus/tests",
@@ -126,12 +127,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5767,
+                      "duration": 3752,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-26T15:51:45.213Z",
+                      "startTime": "2026-10-27T05:59:10.475Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -160,12 +161,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2369,
+                      "duration": 2069,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-26T15:51:51.952Z",
+                      "startTime": "2026-10-27T05:59:15.136Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -194,12 +195,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5308,
+                      "duration": 4622,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-26T15:51:54.377Z",
+                      "startTime": "2026-10-27T05:59:17.262Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -228,12 +229,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3242,
+                      "duration": 3758,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-26T15:51:59.730Z",
+                      "startTime": "2026-10-27T05:59:21.931Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -262,12 +263,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1188,
+                      "duration": 1448,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-26T15:52:03.027Z",
+                      "startTime": "2026-10-27T05:59:25.790Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -296,12 +297,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2689,
+                      "duration": 3082,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-26T15:52:04.265Z",
+                      "startTime": "2026-10-27T05:59:27.299Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -330,12 +331,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2170,
+                      "duration": 2317,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-26T15:52:06.990Z",
+                      "startTime": "2026-10-27T05:59:30.476Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -364,12 +365,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1640,
+                      "duration": 2295,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-26T15:52:09.215Z",
+                      "startTime": "2026-10-27T05:59:32.866Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -398,12 +399,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1940,
+                      "duration": 2547,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-10-26T15:52:10.892Z",
+                      "startTime": "2026-10-27T05:59:35.220Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -419,13 +420,506 @@
           ]
         }
       ]
+    },
+    {
+      "title": "e2e\\public-pages.spec.ts",
+      "file": "e2e/public-pages.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Public Pages End-to-End Rendering & Navigation",
+          "file": "e2e/public-pages.spec.ts",
+          "line": 18,
+          "column": 6,
+          "specs": [
+            {
+              "title": "renders / successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1603,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:37.835Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-590692c34ef4497327f3",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /about successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1205,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:39.493Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-2abcd0d21b58a005aced",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /features successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 836,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:40.777Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-9720f385f9f560df7956",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /contact successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 791,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:41.656Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-ab479cb21a57cbf24599",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /privacy successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 953,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:42.504Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-3f2a5bd403ccfcd27e91",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /login successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1141,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:43.500Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-c6122fffd42285c9db95",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /register successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 980,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:44.691Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-e5fb4b788918c5bc9031",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /forgot-password successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1382,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:45.711Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-707b2aa77fef8d9403af",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /reset-password successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1062,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:47.147Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-563187e79640ac73c60b",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /verify-otp successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 807,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:48.255Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-a7c95a30255dc05406e3",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /super-admin/login successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 882,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:49.099Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-0021d1c04ff6c9f3fc97",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "renders /unauthorized successfully without fatal console errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1007,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:50.024Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-e777598b4241aca7e22c",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 20,
+              "column": 9
+            },
+            {
+              "title": "Homepage navigation links and call-to-actions are functional",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1721,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:51.082Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-6e58e6bf574d3f3d1abf",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 52,
+              "column": 7
+            },
+            {
+              "title": "Contact page form validates required fields",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1245,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-27T05:59:52.846Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b91e5a170456ec5bed4e-8804eaa2173bfbf6d17a",
+              "file": "e2e/public-pages.spec.ts",
+              "line": 75,
+              "column": 7
+            }
+          ]
+        }
+      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-26T15:51:44.268Z",
-    "duration": 29055.899999999998,
-    "expected": 9,
+    "startTime": "2026-10-27T05:59:09.534Z",
+    "duration": 45079.522000000004,
+    "expected": 23,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

@@ -30,6 +30,7 @@ describe('Enhanced Registration & Forgot Password Tests', () => {
         '18021A050',   // 9 alphanumeric
         'ABC12345',    // 8 alphanumeric
         'ABCDEFGHIJ',  // 10 letters
+        '21CS104',     // 7 alphanumeric
       ];
 
       validCases.forEach(id => {
@@ -49,19 +50,19 @@ describe('Enhanced Registration & Forgot Password Tests', () => {
       expect(res.normalizedNumber).toBe('21CS1045');
     });
 
-    it('rejects identifiers with fewer than 8 or more than 10 characters', () => {
-      const shortCases = ['123', '12345', '1234567'];
+    it('rejects identifiers with fewer than 7 or more than 10 characters', () => {
+      const shortCases = ['123', '12345', '123456'];
       shortCases.forEach(shortId => {
         const res = validateStudentRegistrationNumber({ registrationNumber: shortId });
         expect(res.valid).toBe(false);
-        expect(res.error).toMatch(/8, 9, or 10 characters/i);
+        expect(res.error).toMatch(/7, 8, 9, or 10 characters/i);
       });
 
       const longCases = ['12345678901', '21012010450', 'ABCDEFGHIJKLMNOP'];
       longCases.forEach(longId => {
         const res = validateStudentRegistrationNumber({ registrationNumber: longId });
         expect(res.valid).toBe(false);
-        expect(res.error).toMatch(/8, 9, or 10 characters/i);
+        expect(res.error).toMatch(/7, 8, 9, or 10 characters/i);
       });
     });
 

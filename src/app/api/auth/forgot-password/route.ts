@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       const regValidation = validateStudentRegistrationNumber({ registrationNumber: rawRegNum });
       if (!regValidation.valid) {
         return NextResponse.json(
-          { error: regValidation.error || 'Student Registration Number must be 8, 9, or 10 alphanumeric characters' },
+          { error: regValidation.error || 'Student Registration Number must be 7 to 10 alphanumeric characters' },
           { status: 400 }
         );
       }

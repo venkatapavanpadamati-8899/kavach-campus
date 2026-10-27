@@ -68,6 +68,10 @@ export async function POST(req: Request) {
     let uploadedFileMime = '';
     let uploadedFileName = '';
 
+    let incomingFullName = '';
+    let incomingDepartment = '';
+    let profilePhotoDataUrl = '';
+
     const contentType = req.headers.get('content-type') || '';
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
@@ -77,6 +81,10 @@ export async function POST(req: Request) {
       expectedGraduationYear = Number(formData.get('expectedGraduationYear'));
       collegeId = (formData.get('collegeId') as string) || '';
       ocrText = (formData.get('ocrText') as string) || '';
+
+      incomingFullName = (formData.get('fullName') as string) || '';
+      incomingDepartment = (formData.get('department') as string) || '';
+      profilePhotoDataUrl = (formData.get('profilePhoto') as string) || '';
 
       const file = formData.get('file') as File | null;
       if (file && file.size > 0) {
@@ -112,7 +120,7 @@ export async function POST(req: Request) {
       ocrText = body.ocrText || '';
     }
 
-    // 1. Validate 10-Digit Student ID format strictly
+    // 1. Validate Student ID format (7-10 alphanumeric characters)
     const idValidation = validateStudentId(studentId);
     if (!idValidation.valid) {
       return NextResponse.json({ error: idValidation.error }, { status: 400 });
@@ -233,6 +241,28 @@ export async function POST(req: Request) {
     };
     if (collegeId && collegeId.trim()) {
       profileUpdates.college_id = collegeId.trim();
+    }
+    if (incomingFullName && incomingFullName.trim()) {
+      profileUpdates.full_name = incomingFullName.trim();
+    }
+    if (incomingDepartment && incomingDepartment.trim()) {
+      profileUpdates.department = incomingDepartment.trim();
+    }
+
+    if (profilePhotoDataUrl && profilePhotoDataUrl.includes('base64,')) {
+      try {
+        const base64Data = profilePhotoDataUrl.split('base64,')[1];
+        const avatarBuffer = Buffer.from(base64Data, 'base64');
+        const avatarPath = `${user.id}/avatar.jpg`;
+        await adminSupabase.storage
+          .from('kavach-id-cards')
+          .upload(avatarPath, avatarBuffer, {
+            contentType: 'image/jpeg',
+            upsert: true,
+          });
+      } catch (err) {
+        console.warn('Extracted portrait photo upload ignored:', err);
+      }
     }
 
     await adminSupabase

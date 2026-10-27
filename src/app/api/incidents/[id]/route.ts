@@ -33,11 +33,16 @@ export async function GET(
     // Authorization must fail closed if the caller's role cannot be verified.
     const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, role')
+      .select('id, role, college_id, is_approved')
       .eq('id', user.id)
       .single();
     if (profileError || !userProfile) {
       return NextResponse.json({ error: 'Unable to verify account permissions' }, { status: 403 });
+    }
+
+    // Cross-institution isolation: Non-super-admins cannot view incidents from other institutions
+    if (userProfile?.role !== 'SUPER_ADMIN' && userProfile?.college_id && incident.college_id && userProfile.college_id !== incident.college_id) {
+      return NextResponse.json({ error: 'Forbidden: You cannot access incidents from another institution' }, { status: 403 });
     }
 
     // If student, ensure they only access their own incident
@@ -57,8 +62,8 @@ export async function GET(
       }
     }
 
-    // Student Location Privacy: Mask exact GPS unless caller is the student owner, assigned responder, or security/admin
-    const canViewLocation = isIncidentStudent || isAssignedResponder || isSecurityOrAdmin;
+    // Student Location Privacy: Precise coordinates are visible strictly to the student owner, assigned responder, or approved security/super admin
+    const canViewLocation = isIncidentStudent || isAssignedResponder || (userProfile?.role === 'SUPER_ADMIN') || (userProfile?.role === 'SECURITY' && userProfile?.is_approved);
     const isAnonymousMasked = Boolean(incident.is_anonymous && userProfile?.role !== 'SUPER_ADMIN' && !isIncidentStudent);
     const sanitizedIncident = {
       ...incident,

@@ -13,12 +13,22 @@ export default function StudentVerificationStatusPage() {
   const [statusMessage, setStatusMessage] = useState<string>('');
 
   const [formData, setFormData] = useState({
+    fullName: '',
+    dob: '',
+    gender: 'Prefer not to say',
+    parentPhone: '',
+    emergencyPhone: '',
+    bloodGroup: 'B+',
+    address: '',
     studentId: '',
     collegeId: 'srkr',
     admissionType: 'REGULAR',
     admissionYear: '2024',
     expectedGraduationYear: '2028',
     department: 'Computer Science & Engineering',
+    branch: 'CSE',
+    section: 'A',
+    residentialStatus: 'Day Scholar',
     idCardName: '',
   });
 
@@ -53,12 +63,15 @@ export default function StudentVerificationStatusPage() {
             setStatus(data.studentProfile.verification_status);
             setStatusMessage(data.studentProfile.verification_notes || '');
           }
-          if (data.profile?.student_id) {
-            setFormData(prev => ({ ...prev, studentId: data.profile.student_id }));
-          }
-          if (data.profile?.college_id && data.profile.college_id !== 'PENDING_CAMPUS_VERIFICATION') {
-            setFormData(prev => ({ ...prev, collegeId: data.profile.college_id }));
-          }
+          setFormData(prev => ({
+            ...prev,
+            fullName: data.profile?.full_name || prev.fullName,
+            studentId: data.profile?.student_id || prev.studentId,
+            department: data.profile?.department || prev.department,
+            collegeId: (data.profile?.college_id && data.profile.college_id !== 'PENDING_CAMPUS_VERIFICATION')
+              ? data.profile.college_id
+              : prev.collegeId,
+          }));
         }
       } catch (err) {
         console.error('Failed to load status:', err);
@@ -73,9 +86,9 @@ export default function StudentVerificationStatusPage() {
     e.preventDefault();
     setFormError('');
 
-    // Strict 10-digit check
-    if (!/^[0-9]{10}$/.test(formData.studentId.trim())) {
-      setFormError('Student ID must be exactly 10 numeric digits (e.g. 2101201045)');
+    // Strict 7-10 alphanumeric characters check
+    if (!/^[A-Za-z0-9]{7,10}$/.test(formData.studentId.trim())) {
+      setFormError('Student ID must be 7 to 10 alphanumeric characters (e.g. 2101201045, 21CS1045)');
       return;
     }
 
@@ -89,10 +102,25 @@ export default function StudentVerificationStatusPage() {
       const formPayload = new FormData();
       formPayload.append('studentId', formData.studentId.trim());
       formPayload.append('collegeId', formData.collegeId);
+      formPayload.append('fullName', formData.fullName.trim());
+      formPayload.append('department', formData.department);
+      formPayload.append('branch', formData.branch);
+      formPayload.append('section', formData.section);
+      formPayload.append('residentialStatus', formData.residentialStatus);
+      formPayload.append('dob', formData.dob);
+      formPayload.append('gender', formData.gender);
+      formPayload.append('parentPhone', formData.parentPhone);
+      formPayload.append('emergencyPhone', formData.emergencyPhone);
+      formPayload.append('bloodGroup', formData.bloodGroup);
+      formPayload.append('address', formData.address);
       formPayload.append('admissionType', formData.admissionType);
       formPayload.append('admissionYear', formData.admissionYear);
       formPayload.append('expectedGraduationYear', formData.expectedGraduationYear);
-      formPayload.append('ocrText', `STUDENT ID: ${formData.studentId.trim()} COLLEGE ID CARD B.TECH ${formData.department}`);
+      formPayload.append('ocrText', `STUDENT ID: ${formData.studentId.trim()} COLLEGE ID CARD B.TECH ${formData.department} ${formData.branch} ${formData.section}`);
+      
+      if (extractedPhotoUrl && photoConfirmed) {
+        formPayload.append('profilePhoto', extractedPhotoUrl);
+      }
       
       if (selectedFile) {
         formPayload.append('file', selectedFile);
@@ -214,42 +242,197 @@ export default function StudentVerificationStatusPage() {
           )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
-                Affiliated Engineering College *
-              </label>
-              <select
-                className="input-field"
-                style={{ background: '#1e1b4b', color: '#fff' }}
-                value={formData.collegeId}
-                onChange={e => setFormData({ ...formData, collegeId: e.target.value })}
-                required
-              >
-                {INDIAN_ENGINEERING_COLLEGES.map(c => (
-                  <option key={c.id} value={c.id}>{c.name} ({c.shortName})</option>
-                ))}
-              </select>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                Select your engineering college campus as shown on your student ID card.
-              </span>
+            {/* Section A: Personal Details */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '14px', color: '#c4b5fd' }}>
+                Section A: Personal Details
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="Legal Full Name"
+                    value={formData.fullName}
+                    onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={formData.dob}
+                    onChange={e => setFormData({ ...formData, dob: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Gender
+                  </label>
+                  <select
+                    className="input-field"
+                    style={{ background: '#1e1b4b', color: '#fff' }}
+                    value={formData.gender}
+                    onChange={e => setFormData({ ...formData, gender: e.target.value })}
+                  >
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Non-Binary">Non-Binary</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Blood Group
+                  </label>
+                  <select
+                    className="input-field"
+                    style={{ background: '#1e1b4b', color: '#fff' }}
+                    value={formData.bloodGroup}
+                    onChange={e => setFormData({ ...formData, bloodGroup: e.target.value })}
+                  >
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Parent / Guardian Contact Number
+                  </label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="10-digit number"
+                    className="input-field"
+                    value={formData.parentPhone}
+                    onChange={e => setFormData({ ...formData, parentPhone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Emergency Contact Number
+                  </label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="10-digit emergency number"
+                    className="input-field"
+                    value={formData.emergencyPhone}
+                    onChange={e => setFormData({ ...formData, emergencyPhone: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div style={{ marginTop: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Residential Address
+                </label>
+                <input
+                  type="text"
+                  placeholder="Hostel Room / Home Residential Address"
+                  className="input-field"
+                  value={formData.address}
+                  onChange={e => setFormData({ ...formData, address: e.target.value })}
+                />
+              </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>
-                10-Digit College Student ID / Roll Number *
-              </label>
-              <input
-                type="text"
-                maxLength={10}
-                placeholder="e.g. 2101201045"
-                className="input-field"
-                value={formData.studentId}
-                onChange={e => setFormData({ ...formData, studentId: e.target.value })}
-                required
-              />
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                Must be exactly 10 digits as printed on your ID card.
-              </span>
+            {/* Section B: College & Academic Details */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '14px', color: '#93c5fd' }}>
+                Section B: College &amp; Academic Details
+              </h3>
+              
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Affiliated Engineering College *
+                </label>
+                <select
+                  className="input-field"
+                  style={{ background: '#1e1b4b', color: '#fff' }}
+                  value={formData.collegeId}
+                  onChange={e => setFormData({ ...formData, collegeId: e.target.value })}
+                  required
+                >
+                  {INDIAN_ENGINEERING_COLLEGES.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.shortName})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Student Registration ID / Roll Number (7–10 Chars) *
+                  </label>
+                  <input
+                    type="text"
+                    minLength={7}
+                    maxLength={10}
+                    placeholder="e.g. 21B91A0501"
+                    className="input-field"
+                    value={formData.studentId}
+                    onChange={e => setFormData({ ...formData, studentId: e.target.value })}
+                    required
+                  />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                    7 to 10 alphanumeric characters as printed on your ID card.
+                  </span>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Residential Status *
+                  </label>
+                  <select
+                    className="input-field"
+                    style={{ background: '#1e1b4b', color: '#fff' }}
+                    value={formData.residentialStatus}
+                    onChange={e => setFormData({ ...formData, residentialStatus: e.target.value })}
+                  >
+                    <option value="Day Scholar">Day Scholar</option>
+                    <option value="Hosteller">Hosteller</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Branch / Programme
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Computer Science (CSE)"
+                    className="input-field"
+                    value={formData.branch}
+                    onChange={e => setFormData({ ...formData, branch: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                    Section
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Section A"
+                    className="input-field"
+                    value={formData.section}
+                    onChange={e => setFormData({ ...formData, section: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
 
             <div>

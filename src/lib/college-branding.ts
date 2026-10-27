@@ -23,6 +23,14 @@ export interface PageBackgroundConfig {
   caption: string;
 }
 
+export interface AnimationThemeConfig {
+  styleName: string;
+  themeStyle: 'technical_grid' | 'cyber_aurora' | 'marine_wave' | 'engineering_gear' | 'modern_glass';
+  particleColor: string;
+  shieldAccent: string;
+  glowEffect: string;
+}
+
 export interface CollegeBranding {
   id: string;
   name: string;
@@ -34,6 +42,7 @@ export interface CollegeBranding {
   secondaryColor: string;
   accentGradient: string;
   pageBackgrounds: Record<PageKey, PageBackgroundConfig>;
+  animationTheme?: AnimationThemeConfig;
 }
 
 // High-fidelity, optimized campus visual assets with dark readability gradients
@@ -474,4 +483,61 @@ export function setActiveCollegeTenant(college: CollegeTenant) {
       // Ignore storage errors
     }
   }
+}
+
+/**
+ * Returns the unique 3D and UI animation theme configuration for an institution.
+ */
+export function getCollegeAnimationTheme(collegeIdOrSlug?: string | null): AnimationThemeConfig {
+  const branding = getCollegeBranding(collegeIdOrSlug);
+  if (branding.animationTheme) {
+    return branding.animationTheme;
+  }
+
+  const id = (collegeIdOrSlug || '').toLowerCase();
+  if (id.includes('srkr')) {
+    return {
+      styleName: 'SRKR Technical Radar Grid',
+      themeStyle: 'technical_grid',
+      particleColor: '#f59e0b',
+      shieldAccent: '#b91c1c',
+      glowEffect: '0 0 25px rgba(245, 158, 11, 0.45)',
+    };
+  }
+  if (id.includes('vishnu') || id.includes('vit')) {
+    return {
+      styleName: 'Vishnu Cyber Aurora Pulse',
+      themeStyle: 'cyber_aurora',
+      particleColor: '#10b981',
+      shieldAccent: '#059669',
+      glowEffect: '0 0 30px rgba(16, 185, 129, 0.5)',
+    };
+  }
+  if (id.includes('dnr')) {
+    return {
+      styleName: 'DNR Marine Wave Safety',
+      themeStyle: 'marine_wave',
+      particleColor: '#06b6d4',
+      shieldAccent: '#0284c7',
+      glowEffect: '0 0 25px rgba(6, 182, 212, 0.4)',
+    };
+  }
+  if (id.includes('jntu')) {
+    return {
+      styleName: 'JNTUK Engineering Gear Vortex',
+      themeStyle: 'engineering_gear',
+      particleColor: '#f97316',
+      shieldAccent: '#c2410c',
+      glowEffect: '0 0 25px rgba(249, 115, 22, 0.45)',
+    };
+  }
+
+  // Universal Default / Unassigned
+  return {
+    styleName: 'Kavach Modern Glass Shield',
+    themeStyle: 'modern_glass',
+    particleColor: '#60a5fa',
+    shieldAccent: '#3b82f6',
+    glowEffect: '0 0 25px rgba(59, 130, 246, 0.35)',
+  };
 }

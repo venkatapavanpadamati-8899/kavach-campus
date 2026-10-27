@@ -75,9 +75,9 @@ test.describe('Kavach Campus — Viewport Responsiveness & Critical Features', (
       });
     }
 
-    test('Registration link navigation routes to login.html correctly', async ({ page }) => {
+    test('Registration link navigation routes to login correctly', async ({ page }) => {
       await page.goto('/register', { waitUntil: 'domcontentloaded' });
-      const loginLink = page.locator('a[href="/login.html"]').first();
+      const loginLink = page.locator('#link-to-login, a[href="/login"], a[href="/login.html"]').first();
       await expect(loginLink).toBeVisible();
       await loginLink.click();
       await page.waitForURL(/\/login/);
@@ -103,7 +103,7 @@ test.describe('Kavach Campus — Viewport Responsiveness & Critical Features', (
         const googleBtn = page.getByText(/Continue with Google/i);
         await expect(googleBtn).toBeVisible();
 
-        const registerLink = page.locator('a[href="/register.html"], a[href="/register"]').first();
+        const registerLink = page.locator('#link-to-register, a[href="/register"], a[href="/register.html"]').first();
         await expect(registerLink).toBeVisible();
 
         const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
@@ -111,9 +111,9 @@ test.describe('Kavach Campus — Viewport Responsiveness & Critical Features', (
       });
     }
 
-    test('Sign-in link navigation routes to register.html correctly', async ({ page }) => {
+    test('Sign-in link navigation routes to register correctly', async ({ page }) => {
       await page.goto('/login', { waitUntil: 'domcontentloaded' });
-      const registerLink = page.locator('a[href="/register.html"]').first();
+      const registerLink = page.locator('#link-to-register, a[href="/register"], a[href="/register.html"]').first();
       await expect(registerLink).toBeVisible();
       await registerLink.click();
       await page.waitForURL(/\/register/);

@@ -186,14 +186,26 @@ export async function POST(req: Request) {
     // Provision initial student_profiles record if new user is a student
     if (regData.role === 'STUDENT') {
       try {
-        await supabase.from('student_profiles').upsert(
-          {
-            id: userId,
-            verification_status: 'PENDING_UPLOAD',
-            admission_type: 'REGULAR',
-          },
+        const baseStudentProfile = {
+          id: userId,
+          verification_status: 'PENDING_UPLOAD',
+          admission_type: 'REGULAR',
+        };
+        const guardianPhone = typeof regData.guardianPhone === 'string'
+          ? regData.guardianPhone
+          : (typeof regData.guardian_phone === 'string' ? regData.guardian_phone : null);
+        const studentProfilePayload = guardianPhone
+          ? { ...baseStudentProfile, emergency_contact_phone: guardianPhone }
+          : baseStudentProfile;
+        const { error: studentProfileError } = await supabase.from('student_profiles').upsert(
+          studentProfilePayload,
           { onConflict: 'id' }
         );
+        // Preserve the student verification record on older staging schemas
+        // that do not have the emergency contact field yet.
+        if (studentProfileError && guardianPhone) {
+          await supabase.from('student_profiles').upsert(baseStudentProfile, { onConflict: 'id' });
+        }
       } catch (spErr) {
         console.error('Failed to provision student_profiles on registration:', spErr);
       }

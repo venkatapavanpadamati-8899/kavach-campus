@@ -224,7 +224,7 @@ describe('Student ID Verification API & Storage Security', () => {
       const res = await POST(req);
       expect(res.status).toBe(400);
       const json = await res.json();
-      expect(json.error).toContain('8, 9, or 10 characters');
+      expect(json.error).toContain('7, 8, 9, or 10 characters');
     });
 
     it('rejects academic batch duration mismatch with 400 (e.g. Regular requires 4 years)', async () => {

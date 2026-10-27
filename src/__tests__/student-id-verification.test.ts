@@ -12,8 +12,8 @@ describe('Student ID Card Verification & Academic Batch Validation', () => {
   // 1. 10-Digit Student ID Format Validation
   // ==========================================
   describe('Student ID Format Validation (8-10 Alphanumeric Characters)', () => {
-    it('accepts valid 8, 9, or 10-character alphanumeric student IDs', () => {
-      const validIds = ['2101201045', '21B91A0501', '21CS1045', '987654321', '0012345678', 'ABC12345'];
+    it('accepts valid 7, 8, 9, or 10-character alphanumeric student IDs', () => {
+      const validIds = ['2101201045', '21B91A0501', '21CS1045', '987654321', '0012345678', 'ABC12345', '21CS104'];
       validIds.forEach(id => {
         const result = validateStudentId(id);
         expect(result.valid).toBe(true);
@@ -21,14 +21,14 @@ describe('Student ID Card Verification & Academic Batch Validation', () => {
       });
     });
 
-    it('rejects student IDs with incorrect length (< 8 or > 10 characters)', () => {
-      const shortId = validateStudentId('12345'); // 5 chars (< 8)
+    it('rejects student IDs with incorrect length (< 7 or > 10 characters)', () => {
+      const shortId = validateStudentId('12345'); // 5 chars (< 7)
       expect(shortId.valid).toBe(false);
-      expect(shortId.error).toContain('must be 8, 9, or 10 characters');
+      expect(shortId.error).toContain('7, 8, 9, or 10 characters');
 
       const longId = validateStudentId('12345678901'); // 11 characters (> 10)
       expect(longId.valid).toBe(false);
-      expect(longId.error).toContain('must be 8, 9, or 10 characters');
+      expect(longId.error).toContain('7, 8, 9, or 10 characters');
     });
 
     it('rejects student IDs containing spaces or special symbols', () => {

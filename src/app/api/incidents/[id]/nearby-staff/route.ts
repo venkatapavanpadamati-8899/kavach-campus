@@ -23,7 +23,7 @@ export async function GET(
     // 2. Verify caller role (Only authorized staff/responders/admins)
     const { data: callerProfile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, college_id')
       .eq('id', user.id)
       .single();
 
@@ -44,7 +44,7 @@ export async function GET(
     // 3. Fetch incident details
     const { data: incident, error: incError } = await supabase
       .from('incidents')
-      .select('id, case_id, category, severity, status, latitude, longitude, campus_zone_id, assigned_to')
+      .select('id, case_id, category, severity, status, latitude, longitude, campus_zone_id, assigned_to, college_id')
       .eq('id', incidentId)
       .single();
 
@@ -64,16 +64,29 @@ export async function GET(
       );
     }
 
+    if (callerProfile.role !== 'SUPER_ADMIN' && callerProfile.college_id && incident.college_id && callerProfile.college_id !== incident.college_id) {
+      return NextResponse.json(
+        { error: 'Forbidden: You cannot access incidents from another institution' },
+        { status: 403 }
+      );
+    }
+
     const incidentSeverity = (incident.severity || 'MEDIUM') as SeverityLevel;
     const allowedRolesForSeverity = SEVERITY_TARGET_ROLES[incidentSeverity] || ['STAFF', 'SECURITY', 'ADMIN'];
 
-    // 4. Fetch eligible active, approved staff members
-    const { data: staffProfiles, error: staffError } = await supabase
+    // 4. Fetch eligible active, approved staff members strictly within same institution
+    let staffQuery = supabase
       .from('profiles')
-      .select('id, full_name, role, department, is_active, is_approved')
+      .select('id, full_name, role, department, is_active, is_approved, college_id')
       .in('role', authorizedRoles)
       .eq('is_active', true)
       .eq('is_approved', true);
+
+    if (incident.college_id) {
+      staffQuery = staffQuery.eq('college_id', incident.college_id);
+    }
+
+    const { data: staffProfiles, error: staffError } = await staffQuery;
 
     if (staffError) {
       console.error('Error querying staff profiles:', staffError);

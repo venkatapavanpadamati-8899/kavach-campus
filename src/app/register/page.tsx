@@ -2,29 +2,31 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Shield, Mail, Lock, User, Briefcase, Loader2, ArrowRight, Phone, CreditCard, Building2, GraduationCap } from 'lucide-react';
+import { Shield, Mail, Lock, User, Briefcase, Loader2, ArrowRight, Phone, CreditCard, GraduationCap, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { validateStudentRegistrationNumber } from '@/lib/verification/id-card';
-
-import { INDIAN_ENGINEERING_COLLEGES } from '@/lib/colleges';
+import { InteractiveSafetyCharacter } from '@/components/animations/InteractiveSafetyCharacter';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
-    collegeId: INDIAN_ENGINEERING_COLLEGES[0]?.id || '',
     email: '',
-    personalEmail: '',
     phone: '',
+    guardianPhone: '',
     password: '',
-    confirmPassword: '',
     role: 'STUDENT',
     registrationNumber: '',
     degree: 'B.Tech — Bachelor of Technology',
     department: '',
+    branch: '',
+    section: '',
     academicYear: '1st Year'
   });
   const [consent, setConsent] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -69,8 +71,8 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match. Please ensure both password fields match.');
+      if (!formData.password || formData.password.length < 8) {
+        setError('Password must be at least 8 characters long.');
         setLoading(false);
         return;
       }
@@ -93,7 +95,7 @@ export default function RegisterPage() {
           registrationNumber: regNumTrimmed,
         });
         if (!regCheck.valid) {
-          setError(regCheck.error || 'Student Registration Number must be 8, 9, or 10 alphanumeric characters');
+          setError(regCheck.error || 'Student Registration Number must be 7 to 10 alphanumeric characters');
           setLoading(false);
           return;
         }
@@ -107,27 +109,36 @@ export default function RegisterPage() {
           setLoading(false);
           return;
         }
-      } else if (!regNumTrimmed) {
-        setError('Employee ID is required for staff registration');
-        setLoading(false);
-        return;
+        if (!/^[6-9]\d{9}$/.test(formData.guardianPhone.replace(/\D/g, ''))) {
+          setError('Please enter a valid 10-digit parent or guardian mobile number.');
+          setLoading(false);
+          return;
+        }
+      } else {
+        if (!regNumTrimmed || regNumTrimmed.length < 7 || regNumTrimmed.length > 10 || !/^[A-Za-z0-9]{7,10}$/.test(regNumTrimmed)) {
+          setError('Staff Employee ID must be 7 to 10 alphanumeric characters');
+          setLoading(false);
+          return;
+        }
       }
 
       const payload = {
         name: formData.name.trim(),
         email: emailTrimmed.toLowerCase(),
-        personalEmail: formData.personalEmail.trim() || undefined,
-        personal_email: formData.personalEmail.trim() || undefined,
         phone: formData.phone.trim() || undefined,
+        guardianPhone: formData.role === 'STUDENT'
+          ? formData.guardianPhone.replace(/\D/g, '')
+          : undefined,
         password: formData.password,
         role: formData.role,
         degree: formData.role === 'STUDENT' ? formData.degree : undefined,
         department: formData.department.trim(),
+        branch: formData.branch?.trim() || undefined,
+        section: formData.section?.trim() || undefined,
         academicYear: formData.role === 'STUDENT' ? formData.academicYear : undefined,
         academic_year: formData.role === 'STUDENT' ? formData.academicYear : undefined,
         registrationNumber: regNumTrimmed,
         studentId: regNumTrimmed,
-        collegeId: formData.collegeId.trim() || regNumTrimmed,
       };
 
       const res = await fetch('/api/auth/register', {
@@ -242,25 +253,16 @@ export default function RegisterPage() {
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.37)'
         }}
       >
-        {/* Universal Kavach Shield & Main Heading */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div 
-            style={{ 
-              width: '64px', 
-              height: '64px', 
-              margin: '0 auto 14px auto',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
-              border: '1px solid rgba(124, 58, 237, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 25px rgba(124, 58, 237, 0.3)'
-            }}
-          >
-            <Shield size={34} color="var(--accent-purple)" />
-          </div>
+        {/* Interactive 3D Safety Shield Character */}
+        <InteractiveSafetyCharacter
+          isPasswordFocused={isPasswordFocused}
+          isInputFocused={isInputFocused}
+          isError={!!error}
+          isLoading={loading}
+          isSuccess={success}
+        />
 
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 6px 0', letterSpacing: '-0.02em', color: '#fff' }}>
             Create Your Safety Account
           </h1>
@@ -336,37 +338,6 @@ export default function RegisterPage() {
             <input type="text" name="name" placeholder="Full Name" className="input-field" style={{ paddingLeft: '44px' }} value={formData.name} onChange={handleChange} required />
           </div>
 
-          {/* College / Institution Selector */}
-          <div style={{ position: 'relative' }}>
-            <Building2 size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-            <select
-              name="collegeId"
-              className="input-field"
-              style={{
-                paddingLeft: '44px',
-                appearance: 'none',
-                background: 'rgba(255, 255, 255, 0.08)',
-                color: formData.collegeId ? '#fff' : 'var(--text-muted)',
-                cursor: 'pointer',
-              }}
-              value={formData.collegeId}
-              onChange={handleChange}
-              required
-            >
-              <option value="" disabled style={{ background: '#0f172a', color: '#94a3b8' }}>Select College / Institution...</option>
-              {INDIAN_ENGINEERING_COLLEGES.map((c) => (
-                <option key={c.id} value={c.id} style={{ background: '#1e293b', color: '#fff' }}>
-                  {c.name}
-                </option>
-              ))}
-              <option value="dnr-bhimavaram" style={{ background: '#1e293b', color: '#fff' }}>DNR College of Engineering and Technology</option>
-              <option value="aucoe-visakhapatnam" style={{ background: '#1e293b', color: '#fff' }}>Andhra University College of Engineering</option>
-              <option value="vrsec-vijayawada" style={{ background: '#1e293b', color: '#fff' }}>VR Siddhartha Engineering College</option>
-              <option value="jntuk-kakinada" style={{ background: '#1e293b', color: '#fff' }}>JNTUK College of Engineering Kakinada</option>
-              <option value="OTHER" style={{ background: '#1e293b', color: '#fff' }}>Other / Affiliate Institution</option>
-            </select>
-          </div>
-          
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ position: 'relative' }}>
               <Mail size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
@@ -382,26 +353,9 @@ export default function RegisterPage() {
               />
             </div>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', paddingLeft: '4px' }}>
-              Institutional domain auto-authenticates your campus tenant. Personal emails require ID card verification.
+              Single email field: Institutional or personal email. Campus identity is verified via Student ID card after sign-in.
             </span>
           </div>
-
-          {/* Optional Alternative Personal Email */}
-          {formData.role === 'STUDENT' && (
-            <div style={{ position: 'relative' }}>
-              <Mail size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-              <input 
-                type="text"
-                inputMode="email"
-                name="personalEmail" 
-                placeholder="Alternate Personal Email (Optional)" 
-                className="input-field" 
-                style={{ paddingLeft: '44px' }} 
-                value={formData.personalEmail} 
-                onChange={handleChange} 
-              />
-            </div>
-          )}
 
           <div style={{ position: 'relative' }}>
             <Phone size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
@@ -416,34 +370,113 @@ export default function RegisterPage() {
               maxLength={10} 
             />
           </div>
-          
-          <div style={{ position: 'relative' }}>
-            <Lock size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-            <input type="password" name="password" placeholder="Password (minimum 8 characters)" className="input-field" style={{ paddingLeft: '44px' }} value={formData.password} onChange={handleChange} required minLength={8} />
-          </div>
 
-          <div style={{ position: 'relative' }}>
-            <Lock size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-            <input type="password" name="confirmPassword" placeholder="Confirm Password" className="input-field" style={{ paddingLeft: '44px' }} value={formData.confirmPassword} onChange={handleChange} minLength={8} />
+          {formData.role === 'STUDENT' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ position: 'relative' }}>
+                <Phone size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  name="guardianPhone"
+                  placeholder="Parent / Guardian 10-Digit Mobile Number"
+                  className="input-field"
+                  style={{ paddingLeft: '44px' }}
+                  value={formData.guardianPhone}
+                  onChange={handleChange}
+                  maxLength={10}
+                  required
+                />
+              </div>
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', paddingLeft: '4px' }}>
+                Used only for your authorized safety profile after verification.
+              </span>
+            </div>
+          )}
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ position: 'relative' }}>
+              <Lock size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
+              <input 
+                type={showPassword ? 'text' : 'password'} 
+                name="password" 
+                placeholder="Password (minimum 8 characters)" 
+                className="input-field" 
+                style={{ paddingLeft: '44px', paddingRight: '44px' }} 
+                value={formData.password} 
+                onChange={handleChange} 
+                onFocus={() => {
+                  setIsPasswordFocused(true);
+                  setIsInputFocused(false);
+                }}
+                onBlur={() => setIsPasswordFocused(false)}
+                required 
+                minLength={8} 
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '14px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', paddingLeft: '4px' }}>
+              Minimum 8 characters (letters, numbers, and symbols).
+            </span>
           </div>
 
           {formData.role === 'STUDENT' ? (
-            <div style={{ position: 'relative' }}>
-              <CreditCard size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
-                name="registrationNumber" 
-                placeholder="Student Registration Number (8-10 Characters e.g. 2101201045, 21CS1045)" 
-                className="input-field" 
-                style={{ paddingLeft: '44px', letterSpacing: '0.5px' }} 
-                value={formData.registrationNumber} 
-                onChange={handleChange} 
-                minLength={8}
-                maxLength={10} 
-                pattern="[A-Za-z0-9]{8,10}"
-                title="Student Registration Number (8, 9, or 10 characters)"
-                required 
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ position: 'relative' }}>
+                <CreditCard size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
+                <input 
+                  type="text" 
+                  name="registrationNumber" 
+                  placeholder="Student Registration Number (7-10 Characters e.g. 21B91A0501, 21CS1045)" 
+                  className="input-field" 
+                  style={{ paddingLeft: '44px', letterSpacing: '0.5px' }} 
+                  value={formData.registrationNumber} 
+                  onChange={handleChange} 
+                  minLength={7}
+                  maxLength={10} 
+                  pattern="[A-Za-z0-9]{7,10}"
+                  title="Student Registration Number (7 to 10 alphanumeric characters)"
+                  required 
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <input 
+                  type="text" 
+                  name="branch" 
+                  placeholder="Branch (e.g. CSE, ECE, IT)" 
+                  className="input-field" 
+                  value={formData.branch} 
+                  onChange={handleChange} 
+                />
+                <input 
+                  type="text" 
+                  name="section" 
+                  placeholder="Section (e.g. A, B, C)" 
+                  className="input-field" 
+                  value={formData.section} 
+                  onChange={handleChange} 
+                />
+              </div>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -469,10 +502,14 @@ export default function RegisterPage() {
               <input 
                 type="text" 
                 name="registrationNumber" 
-                placeholder="Employee ID" 
+                placeholder="Staff ID (7-10 Chars)" 
                 className="input-field" 
                 value={formData.registrationNumber} 
                 onChange={handleChange} 
+                minLength={7}
+                maxLength={10}
+                pattern="[A-Za-z0-9]{7,10}"
+                title="Staff ID must be 7 to 10 alphanumeric characters"
                 required 
               />
             </div>

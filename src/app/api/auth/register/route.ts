@@ -29,6 +29,8 @@ export async function POST(req: Request) {
       personalEmail,
       personal_email,
       phone,
+      guardianPhone,
+      guardian_phone,
       password,
       role,
       collegeId,
@@ -62,6 +64,11 @@ export async function POST(req: Request) {
     if (normalizedPhone && (normalizedPhone.length !== 10 || !/^[6-9]\d{9}$/.test(normalizedPhone))) {
       return NextResponse.json({ error: 'Please enter a valid 10-digit mobile number' }, { status: 400 });
     }
+
+    const rawGuardianPhone = typeof guardianPhone === 'string'
+      ? guardianPhone.trim()
+      : (typeof guardian_phone === 'string' ? guardian_phone.trim() : '');
+    const normalizedGuardianPhone = rawGuardianPhone.replace(/\D/g, '');
 
     // Server-side validation
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
@@ -102,6 +109,13 @@ export async function POST(req: Request) {
     const allowedStaffRoles = ['STAFF', 'MENTOR', 'COUNSELLOR', 'COUNSELOR', 'SECURITY', 'WOMENS_CELL', 'WARDEN'];
     const finalRole = (role && allowedStaffRoles.includes(role)) ? role : 'STUDENT';
 
+    if (finalRole === 'STUDENT' && rawGuardianPhone && !/^[6-9]\d{9}$/.test(normalizedGuardianPhone)) {
+      return NextResponse.json(
+        { error: 'Please enter a valid 10-digit parent or guardian mobile number.' },
+        { status: 400 }
+      );
+    }
+
     // Validate Student Registration Number for student registration
     const rawRegNumber = typeof registrationNumber === 'string'
       ? registrationNumber
@@ -120,7 +134,7 @@ export async function POST(req: Request) {
 
       if (!regCheck.valid) {
         return NextResponse.json(
-          { error: regCheck.error || 'Student Registration Number must be 8, 9, or 10 alphanumeric characters' },
+          { error: regCheck.error || 'Student Registration Number must be 7 to 10 alphanumeric characters' },
           { status: 400 }
         );
       }
@@ -134,7 +148,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Please select a valid academic year (1st to 4th Year)' }, { status: 400 });
       }
     } else {
-      validatedRegNumber = typeof collegeId === 'string' ? collegeId.trim() || null : null;
+      validatedRegNumber = typeof collegeId === 'string' ? collegeId.trim() || null : (typeof registrationNumber === 'string' ? registrationNumber.trim() || null : null);
     }
 
     const supabase = createAdminClient();
@@ -217,6 +231,7 @@ export async function POST(req: Request) {
             full_name: name.trim(),
             role: finalRole,
             phone: normalizedPhone,
+            guardian_phone: finalRole === 'STUDENT' ? normalizedGuardianPhone : null,
             campus_id: assignedCollegeId,
             student_id: validatedRegNumber,
             department: department || 'General',
@@ -251,6 +266,8 @@ export async function POST(req: Request) {
         personalEmail: resolvedPersonalEmail || null,
         personal_email: resolvedPersonalEmail || null,
         phone: normalizedPhone,
+        guardianPhone: finalRole === 'STUDENT' ? normalizedGuardianPhone : null,
+        guardian_phone: finalRole === 'STUDENT' ? normalizedGuardianPhone : null,
         role: finalRole,
         campusId: assignedCollegeId,
         collegeId: (typeof collegeId === 'string' && collegeId.trim()) || assignedCollegeId,

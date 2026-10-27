@@ -46,7 +46,7 @@ test.describe('Kavach Campus — Comprehensive E2E Page Verification', () => {
       { path: '/register', titleSnippet: 'Kavach', headingText: 'Register' },
       { path: '/verify-otp', titleSnippet: 'Kavach', headingText: 'Verification' },
       { path: '/forgot-password', titleSnippet: 'Kavach', headingText: 'Reset Password' },
-      { path: '/reset-password', titleSnippet: 'Kavach', headingText: 'Create New Password' },
+      { path: '/reset-password', titleSnippet: 'Kavach', headingText: 'Set New Password' },
       { path: '/super-admin/login', titleSnippet: 'Kavach', headingText: 'Super Admin' },
     ];
 

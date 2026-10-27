@@ -93,9 +93,10 @@ export function isCoordinateFresh(timestamp?: string, maxAgeMinutes = 15): boole
 export const SEVERITY_TARGET_ROLES: Record<SeverityLevel, string[]> = {
   LOW: ['MENTOR', 'COUNSELLOR', 'STAFF'],
   MEDIUM: ['MENTOR', 'COUNSELLOR', 'WOMENS_CELL', 'HOD'],
-  HIGH: ['SECURITY', 'WOMENS_CELL', 'HOD', 'ADMIN'],
-  CRITICAL: ['SECURITY', 'ADMIN', 'SUPER_ADMIN'],
+  HIGH: ['PRINCIPAL', 'HOD', 'SECURITY', 'WOMENS_CELL', 'ADMIN'],
+  CRITICAL: ['PRINCIPAL', 'HOD', 'SECURITY', 'ADMIN', 'SUPER_ADMIN'],
 };
+
 
 /**
  * Selects the optimal responder for an incident using verified location, consent, and severity rules.

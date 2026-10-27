@@ -49,15 +49,15 @@ export function validateStudentRegistrationNumber(params: {
 
   const trimmed = registrationNumber.trim();
 
-  if (trimmed.length < 8 || trimmed.length > 10) {
+  if (trimmed.length < 7 || trimmed.length > 10) {
     return {
       valid: false,
-      error: `Student Registration Number must be 8, 9, or 10 characters (provided ${trimmed.length} characters)`,
+      error: `Student Registration Number must be 7, 8, 9, or 10 characters (provided ${trimmed.length} characters)`,
     };
   }
 
   // Strictly alphanumeric: letters and numbers only, no spaces or special characters
-  if (!/^[A-Za-z0-9]{8,10}$/.test(trimmed)) {
+  if (!/^[A-Za-z0-9]{7,10}$/.test(trimmed)) {
     return {
       valid: false,
       error: 'Student Registration Number must contain only letters and numbers (no spaces or special characters)',

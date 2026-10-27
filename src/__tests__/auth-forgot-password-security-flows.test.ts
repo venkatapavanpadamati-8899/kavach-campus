@@ -44,7 +44,7 @@ describe('Auth Security Flows — Registration, Forgot Password, Reset Password'
         const res = await forgotPasswordHandler(req);
         const data = await res.json();
         expect(res.status).toBe(400);
-        expect(data.error).toMatch(/8, 9, or 10 characters|letters and numbers/i);
+        expect(data.error).toMatch(/7, 8, 9, or 10 characters|letters and numbers/i);
       }
     });
 

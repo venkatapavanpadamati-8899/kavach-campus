@@ -61,7 +61,8 @@ test.describe('Public Pages End-to-End Rendering & Navigation', () => {
 
     // Verify multi-college platform branding
     const pageText = await page.textContent('body');
-    expect(pageText).toContain('KAVACH CAMPUS');
+    expect(pageText?.toLowerCase()).toContain('kavach');
+    expect(pageText?.toLowerCase()).toContain('campus');
     expect(pageText).toContain('Multi-College');
 
     // Verify institutional support on About page

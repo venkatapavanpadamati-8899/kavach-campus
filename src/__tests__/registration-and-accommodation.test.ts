@@ -204,14 +204,14 @@ describe('Kavach Campus — Registration, ID Card Verification & Accommodation A
       expect(json.error).toMatch(/Student Registration Number/i);
     });
 
-    it('rejects student registration when registration number is fewer than 8 characters', async () => {
+    it('rejects student registration when registration number is fewer than 7 characters', async () => {
       const payload = {
         name: 'Suresh Varma',
         email: '2101201045@srkr.edu.in',
         phone: '9876543210',
         password: 'SecurePassword123!',
         role: 'STUDENT',
-        registrationNumber: '12345', // 5 characters (< 8)
+        registrationNumber: '12345', // 5 characters (< 7)
         department: 'CSE',
       };
 
@@ -225,7 +225,7 @@ describe('Kavach Campus — Registration, ID Card Verification & Accommodation A
       const json = await res.json();
 
       expect(res.status).toBe(400);
-      expect(json.error).toMatch(/8, 9, or 10 characters/i);
+      expect(json.error).toMatch(/7, 8, 9, or 10 characters/i);
     });
 
     it('rejects student registration when registration number is more than 10 digits', async () => {
@@ -249,7 +249,7 @@ describe('Kavach Campus — Registration, ID Card Verification & Accommodation A
       const json = await res.json();
 
       expect(res.status).toBe(400);
-      expect(json.error).toMatch(/8, 9, or 10 characters/i);
+      expect(json.error).toMatch(/7, 8, 9, or 10 characters/i);
     });
 
     it('rejects student registration when registration number contains spaces or special characters', async () => {
@@ -577,10 +577,11 @@ describe('Kavach Campus — Registration, ID Card Verification & Accommodation A
   // 3. ID CARD VERIFICATION & FRONTEND VALIDATION HELPERS
   // =========================================================================
   describe('ID Card Submission Logic & Pre-checks', () => {
-    it('validates 8, 9, or 10-character alphanumeric student registration number', () => {
+    it('validates 7, 8, 9, or 10-character alphanumeric student registration number', () => {
       expect(validateStudentId('2101201045').valid).toBe(true);
       expect(validateStudentId('21B91A0501').valid).toBe(true);
       expect(validateStudentId('21CS1045').valid).toBe(true);
+      expect(validateStudentId('21CS104').valid).toBe(true);
       expect(validateStudentId('987654321').valid).toBe(true);
       expect(validateStudentId('12345').valid).toBe(false);
       expect(validateStudentId('21012010450').valid).toBe(false);
