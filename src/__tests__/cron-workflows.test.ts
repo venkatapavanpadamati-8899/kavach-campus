@@ -188,16 +188,21 @@ describe('Cron Workflows & Automated Escalation APIs', () => {
     });
 
     it('fails closed when the service-role database key is not configured', async () => {
+      const originalKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-      const req = new Request('http://localhost:3000/api/cron/safe-walk-timeout', {
-        method: 'POST',
-        headers: { authorization: `Bearer ${CRON_SECRET}` },
-      });
+      try {
+        const req = new Request('http://localhost:3000/api/cron/safe-walk-timeout', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${CRON_SECRET}` },
+        });
 
-      const res = await runSafeWalkTimeoutCron(req);
-      expect(res.status).toBe(503);
-      expect(createAdminClient).not.toHaveBeenCalled();
+        const res = await runSafeWalkTimeoutCron(req);
+        expect(res.status).toBe(503);
+        expect(createAdminClient).not.toHaveBeenCalled();
+      } finally {
+        process.env.SUPABASE_SERVICE_ROLE_KEY = originalKey || 'test-service-role-key-12345678901234567890';
+      }
     });
 
     it('returns 200 with notice when no overdue walks are found', async () => {
@@ -402,16 +407,21 @@ describe('Cron Workflows & Automated Escalation APIs', () => {
     });
 
     it('fails closed when the service-role database key is not configured', async () => {
+      const originalKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-      const req = new Request('http://localhost:3000/api/cron/escalate', {
-        method: 'POST',
-        headers: { authorization: `Bearer ${CRON_SECRET}` },
-      });
+      try {
+        const req = new Request('http://localhost:3000/api/cron/escalate', {
+          method: 'POST',
+          headers: { authorization: `Bearer ${CRON_SECRET}` },
+        });
 
-      const res = await runEscalateCron(req);
-      expect(res.status).toBe(503);
-      expect(createAdminClient).not.toHaveBeenCalled();
+        const res = await runEscalateCron(req);
+        expect(res.status).toBe(503);
+        expect(createAdminClient).not.toHaveBeenCalled();
+      } finally {
+        process.env.SUPABASE_SERVICE_ROLE_KEY = originalKey || 'test-service-role-key-12345678901234567890';
+      }
     });
 
     it('escalates overdue assigned incidents and writes audit log with null actor_id', async () => {

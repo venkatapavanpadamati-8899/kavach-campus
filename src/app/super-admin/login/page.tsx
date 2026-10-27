@@ -2,7 +2,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ShieldAlert, Mail, Lock, Loader2, ArrowRight, Zap, Shield } from 'lucide-react';
+import { ShieldAlert, Mail, Lock, Loader2, ArrowRight, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 function SuperAdminLoginForm() {
@@ -95,12 +95,6 @@ function SuperAdminLoginForm() {
     await performSuperAdminAuth(email, password);
   };
 
-  const handleDirectSuperAdminLogin = async () => {
-    setEmail('venkatapavanpadamati1@gmail.com');
-    setPassword('Pavan@123');
-    await performSuperAdminAuth('venkatapavanpadamati1@gmail.com', 'Pavan@123');
-  };
-
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: '20px' }}>
       <div className="ambient-light" style={{ background: 'radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, rgba(0,0,0,0) 70%)' }}></div>
@@ -128,55 +122,6 @@ function SuperAdminLoginForm() {
           </div>
           <h1 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>Super Admin Portal</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>High-Security Root Command &amp; Oversight</p>
-        </div>
-
-        {/* 1-Click Direct Super Admin Login Button */}
-        <div style={{
-          marginBottom: '24px',
-          padding: '16px',
-          borderRadius: '12px',
-          background: 'rgba(239, 68, 68, 0.08)',
-          border: '1px solid rgba(239, 68, 68, 0.25)',
-        }}>
-          <div style={{ fontSize: '0.78rem', color: '#fca5a5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Zap size={14} color="#ef4444" /> Direct Root Access
-          </div>
-          <button
-            type="button"
-            id="btn-direct-superadmin-login"
-            onClick={handleDirectSuperAdminLogin}
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '11px 16px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
-              color: '#ffffff',
-              border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontWeight: 600,
-              fontSize: '0.88rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.3)',
-              transition: 'opacity 0.2s',
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Zap size={16} />}
-            <span>Direct Super Admin Login</span>
-          </button>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'center' }}>
-            Instant sign-in for <code>venkatapavanpadamati1@gmail.com</code>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', gap: '12px' }}>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>OR ENTER MANUALLY</span>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
         </div>
 
         {error && (

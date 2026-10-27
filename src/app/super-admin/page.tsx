@@ -1,11 +1,13 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ShieldAlert, Users, Database, Cpu, Activity, CheckCircle, AlertTriangle, ArrowRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 
 export default function SuperAdminDashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     totalUsers: '0',
     totalAdmins: '0',
@@ -15,9 +17,27 @@ export default function SuperAdminDashboard() {
   });
 
   useEffect(() => {
+    let cancelled = false;
     async function loadSuperStats() {
       try {
         const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          if (!cancelled) router.push('/super-admin/login');
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, is_approved')
+          .eq('id', user.id)
+          .single();
+
+        if (!profile || profile.role !== 'SUPER_ADMIN' || !profile.is_approved) {
+          if (!cancelled) router.push('/super-admin/login?error=unauthorized');
+          return;
+        }
+
         const [{ count: userCount }, { count: adminCount }, { count: pendingCount }, { count: incidentCount }] =
           await Promise.all([
             supabase.from('profiles').select('*', { count: 'exact', head: true }),
@@ -26,19 +46,22 @@ export default function SuperAdminDashboard() {
             supabase.from('incidents').select('*', { count: 'exact', head: true }),
           ]);
 
-        setStats({
-          totalUsers: (userCount ?? 0).toLocaleString(),
-          totalAdmins: (adminCount ?? 0).toString(),
-          pendingStaff: (pendingCount ?? 0).toString(),
-          totalIncidents: (incidentCount ?? 0).toString(),
-          loading: false,
-        });
+        if (!cancelled) {
+          setStats({
+            totalUsers: (userCount ?? 0).toLocaleString(),
+            totalAdmins: (adminCount ?? 0).toString(),
+            pendingStaff: (pendingCount ?? 0).toString(),
+            totalIncidents: (incidentCount ?? 0).toString(),
+            loading: false,
+          });
+        }
       } catch {
-        setStats(prev => ({ ...prev, loading: false }));
+        if (!cancelled) setStats(prev => ({ ...prev, loading: false }));
       }
     }
     loadSuperStats();
-  }, []);
+    return () => { cancelled = true; };
+  }, [router]);
 
   const cards = [
     { label: 'Total Registered Accounts', value: stats.loading ? '...' : stats.totalUsers, icon: Users, color: 'var(--accent-blue)' },

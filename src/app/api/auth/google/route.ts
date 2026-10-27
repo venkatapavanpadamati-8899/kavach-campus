@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to authenticate with Google' }, { status: 401 });
     }
 
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SERVICE_ROLE_KEY || '';
     const isServiceRoleConfigured =
       !!serviceRoleKey &&
       serviceRoleKey.length > 30 &&

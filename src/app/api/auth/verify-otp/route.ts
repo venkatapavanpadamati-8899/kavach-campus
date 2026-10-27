@@ -6,7 +6,7 @@ import { verifyDemoSmsOtp } from '@/lib/demo-sms';
 
 export async function POST(req: Request) {
   try {
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SERVICE_ROLE_KEY || '';
     const isServiceRoleConfigured =
       !!serviceRoleKey &&
       serviceRoleKey.length > 30 &&

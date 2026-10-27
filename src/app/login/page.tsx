@@ -14,9 +14,7 @@ import {
   AlertCircle, 
   Eye, 
   EyeOff, 
-  RotateCcw,
-  Zap,
-  ShieldCheck
+  RotateCcw
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { getCollegeById } from '@/lib/colleges';
@@ -311,57 +309,6 @@ function LoginForm() {
         if (magicError) throw magicError;
         setMsg('Check your email for the magic link!');
       }
-    } catch (err: unknown) {
-      setError(formatAuthError(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Direct 1-Click Login for Administrative Portals
-  const handleDirectLogin = async (targetRole: 'ADMIN' | 'SUPER_ADMIN') => {
-    const targetEmail = targetRole === 'SUPER_ADMIN' 
-      ? 'venkatapavanpadamati1@gmail.com' 
-      : 'venkatapavanpadamati@gmail.com';
-    const targetPass = 'Pavan@123';
-
-    setEmail(targetEmail);
-    setPassword(targetPass);
-    setLoading(true);
-    setError('');
-    setMsg('');
-
-    try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: targetEmail,
-        password: targetPass,
-      });
-
-      if (signInError) throw signInError;
-      if (!data.user) throw new Error('Authentication succeeded but user session could not be established.');
-
-      setIsSuccess(true);
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, is_approved, college_id')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError || !profile) {
-        router.push(targetRole === 'SUPER_ADMIN' ? '/super-admin' : '/admin');
-        return;
-      }
-
-      if (!profile.is_approved) {
-        await supabase.auth.signOut();
-        throw new Error('Administrative account is currently inactive.');
-      }
-
-      const authenticatedCollege = profile.college_id ? getCollegeById(profile.college_id) : null;
-      if (authenticatedCollege) setActiveCollegeTenant(authenticatedCollege);
-
-      router.push(getSafeRedirectUrl(profile.role));
     } catch (err: unknown) {
       setError(formatAuthError(err));
     } finally {
@@ -902,88 +849,6 @@ function LoginForm() {
           )}
           {googleLoading ? 'Connecting to Google...' : 'Continue with Google Workspace'}
         </button>
-
-        {/* Direct One-Click Administrative Login */}
-        <div style={{
-          marginTop: '22px',
-          padding: '14px 16px',
-          borderRadius: '12px',
-          background: 'rgba(59, 130, 246, 0.06)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}>
-          <div style={{
-            fontSize: '0.78rem',
-            color: '#93c5fd',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Zap size={14} color="#3b82f6" /> Direct 1-Click Access
-            </span>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>Institutional Portals</span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <button
-              type="button"
-              id="btn-direct-admin-login"
-              onClick={() => handleDirectLogin('ADMIN')}
-              disabled={loading}
-              title="Direct Campus Admin Login (venkatapavanpadamati@gmail.com)"
-              style={{
-                padding: '9px 12px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.35) 100%)',
-                color: '#bfdbfe',
-                border: '1px solid rgba(59, 130, 246, 0.4)',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-                fontSize: '0.82rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <ShieldCheck size={14} color="#60a5fa" />
-              <span>Campus Admin</span>
-            </button>
-
-            <button
-              type="button"
-              id="btn-direct-superadmin-login-main"
-              onClick={() => handleDirectLogin('SUPER_ADMIN')}
-              disabled={loading}
-              title="Direct Super Admin Login (venkatapavanpadamati1@gmail.com)"
-              style={{
-                padding: '9px 12px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.35) 100%)',
-                color: '#fca5a5',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-                fontSize: '0.82rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <Zap size={14} color="#f87171" />
-              <span>Super Admin</span>
-            </button>
-          </div>
-        </div>
 
         <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
           Don&apos;t have an account?{' '}

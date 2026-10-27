@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AlertTriangle, CheckCircle, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import { INDIAN_ENGINEERING_COLLEGES } from '@/lib/colleges';
 
@@ -20,6 +21,7 @@ interface ReviewInput {
 }
 
 export default function PendingCampusPage() {
+  const router = useRouter();
   const [accounts, setAccounts] = useState<PendingCampusAccount[]>([]);
   const [reviewInputs, setReviewInputs] = useState<Record<string, ReviewInput>>({});
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,10 @@ export default function PendingCampusPage() {
     setError('');
     try {
       const response = await fetch('/api/super-admin/pending-campus', { cache: 'no-store' });
+      if (response.status === 401 || response.status === 403) {
+        router.push('/super-admin/login?error=unauthorized');
+        return;
+      }
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.error || 'Unable to load pending accounts.');
@@ -44,7 +50,7 @@ export default function PendingCampusPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     void loadAccounts();

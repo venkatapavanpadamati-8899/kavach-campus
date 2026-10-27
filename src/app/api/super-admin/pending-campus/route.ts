@@ -25,7 +25,7 @@ async function getApprovedSuperAdmin(): Promise<{ user: { id: string } } | { res
     return { response: NextResponse.json({ error: 'Super Admin privileges required' }, { status: 403 }) };
   }
 
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SERVICE_ROLE_KEY || '';
   if (
     serviceRoleKey.length <= 30 ||
     serviceRoleKey.includes('YOUR_SERVICE_ROLE_KEY') ||
