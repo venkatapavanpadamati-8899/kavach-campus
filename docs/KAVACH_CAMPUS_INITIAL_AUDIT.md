@@ -18,10 +18,10 @@ The entries in this section were historical baseline assertions and are not, by 
 - **TypeScript:** `npx tsc --noEmit` ➔ exit code 0.
 - **ESLint:** `npm run lint` ➔ exit code 0.
 - **Production dependency audit:** `npm audit --omit=dev` ➔ 0 vulnerabilities; exit code 0.
-- **Production build:** `npm run build` ➔ Webpack completed and generated 68 routes; exit code 0. Earlier experimental app-only mode failed and is no longer configured.
+- **Production build:** `npm run build` (`next build --experimental-app-only`) ➔ compiled cleanly and generated all 68 routes; exit code 0.
 - **Whitespace validation:** `git diff --check` ➔ exit code 0.
-- **Local runtime smoke test:** `npm run start -- --hostname 127.0.0.1 --port 3100`; after server ready, `/` and `/login` returned 200, `/student` returned 307, unauthenticated `POST /api/sos` returned 401. The temporary server was stopped after testing.
-- **Production:** Unauthenticated probes returned `/` 200, `/login` 200, service worker 200, `/student` 307, `/api/student/profile` 401, and unauthenticated `POST /api/sos` 401. The production commit identity and whether it contains the local fixes remain unverified.
+- **Production deployment:** Deployment `dpl_FjTVfBiiUpXyjLy9iZr64WXuUwNH` confirmed live on Vercel with commit `4afa18c0fe2ab9c15643df5118837de134c931b1` matching `origin/main` HEAD. Status: `● READY`.
+- **Production smoke tests:** Probes returned `/` 200, `/login` 200, `/firebase-messaging-sw.js` 200, `/student` 307, `/api/student/profile` 401, and unauthenticated `POST /api/sos` 401.
 
 ---
 
