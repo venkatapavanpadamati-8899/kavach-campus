@@ -211,13 +211,16 @@ export async function sendSmsNotification(payload: SmsPayload): Promise<Delivery
     return res;
   }
 
-  const accountSid = process.env.TWILIO_ACCOUNT_SID!;
-  const authToken = process.env.TWILIO_AUTH_TOKEN!;
-  const fromPhone = process.env.TWILIO_PHONE_NUMBER!;
+  const accountSid = process.env.TWILIO_ACCOUNT_SID!.trim();
+  const authToken = process.env.TWILIO_AUTH_TOKEN!.trim();
+  const rawFrom = process.env.TWILIO_PHONE_NUMBER!.trim();
+  const fromPhone = rawFrom.startsWith('+') ? rawFrom : `+${rawFrom}`;
+  const rawTo = payload.toPhone.trim();
+  const toPhone = rawTo.startsWith('+') ? rawTo : (rawTo.length === 10 ? `+91${rawTo}` : `+${rawTo}`);
   const endpoint = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
   const authHeader = 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64');
   const bodyParams = new URLSearchParams({
-    To: payload.toPhone,
+    To: toPhone,
     From: fromPhone,
     Body: payload.body,
   });
