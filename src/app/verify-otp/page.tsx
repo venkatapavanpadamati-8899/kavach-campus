@@ -167,7 +167,22 @@ function VerifyOTPForm() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: '20px' }}>
+    <div style={{
+      minHeight: '100vh',
+      width: '100%',
+      minWidth: '100%',
+      boxSizing: 'border-box',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      padding: '20px',
+      backgroundImage: "linear-gradient(180deg, rgba(10, 15, 30, 0.65) 0%, rgba(15, 23, 42, 0.78) 100%), url('/images/auth_campus_bg.jpg')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'scroll'
+    }}>
       <div className="ambient-light"></div>
       <div className="ambient-light-alt"></div>
 

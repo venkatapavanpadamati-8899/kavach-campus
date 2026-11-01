@@ -26,17 +26,38 @@
   --font-display: Outfit, var(--font-sans);
 }
 
-html, body {
+html {
   min-height: 100vh;
   width: 100%;
+  min-width: 100%;
   margin: 0;
   padding: 0;
-  background-color: var(--bg-primary);
+  background-color: #080d1a;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  width: 100%;
+  min-width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #080d1a;
   color: var(--text-primary);
   font-family: var(--font-sans);
   overflow-x: hidden;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+.viewport-full-bg {
+  width: 100%;
+  min-width: 100%;
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-sizing: border-box;
 }
 
 h1, h2, h3, h4, h5, h6 {

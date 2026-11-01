@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     // STEP 1: SEND DEMO OTP
     if (step === 'send') {
       // 1. Check whether an account exists with this mobile number
-      const { data: profile, error: profileError } = await supabase
+      let { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, full_name, college_email, phone, role, is_approved')
         .eq('phone', cleanPhone)
@@ -74,6 +74,23 @@ export async function POST(req: Request) {
 
       if (profileError) {
         console.error('Mobile lookup error:', profileError);
+        // If PGRST116 (multiple accounts share the same phone number), fallback to the newest profile
+        if (
+          profileError.code === 'PGRST116' ||
+          profileError.message?.includes('PGRST116') ||
+          profileError.message?.includes('requires 1 row')
+        ) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, college_email, phone, role, is_approved')
+            .eq('phone', cleanPhone)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          if (profiles && profiles.length > 0) {
+            profile = profiles[0];
+            profileError = null;
+          }
+        }
       }
 
       if (!profile) {
@@ -140,11 +157,32 @@ export async function POST(req: Request) {
       const cleanOtp = otp.trim();
 
       // 1. Authoritative profile lookup
-      const { data: profile, error: profileError } = await supabase
+      let { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, full_name, college_email, phone, role, is_approved, college_id')
         .eq('phone', cleanPhone)
         .maybeSingle();
+
+      if (profileError) {
+        console.error('Mobile lookup error:', profileError);
+        // If PGRST116 (multiple accounts share the same phone number), fallback to the newest profile
+        if (
+          profileError.code === 'PGRST116' ||
+          profileError.message?.includes('PGRST116') ||
+          profileError.message?.includes('requires 1 row')
+        ) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, college_email, phone, role, is_approved, college_id')
+            .eq('phone', cleanPhone)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          if (profiles && profiles.length > 0) {
+            profile = profiles[0];
+            profileError = null;
+          }
+        }
+      }
 
       if (profileError || !profile) {
         return NextResponse.json({ error: `No registered account found with mobile number +91 ${cleanPhone}.` }, { status: 404 });

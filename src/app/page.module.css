@@ -2,11 +2,14 @@
 
 .container {
   min-height: 100vh;
+  width: 100%;
+  min-width: 100%;
   background-color: #080d1a;
   color: #f8fafc;
   font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 /* Header & Navigation Bar */
@@ -112,11 +115,15 @@
 /* Hero Section */
 .hero {
   position: relative;
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
   background-image: 
     linear-gradient(180deg, rgba(8, 13, 26, 0.78) 0%, rgba(8, 13, 26, 0.42) 48%, rgba(8, 13, 26, 0.96) 100%),
     url('/images/campus_hero_bg.jpg');
   background-size: cover;
-  background-position: center 30%;
+  background-position: center;
+  background-repeat: no-repeat;
   padding: 64px 48px 110px;
   overflow: hidden;
 }

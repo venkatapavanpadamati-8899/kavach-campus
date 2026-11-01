@@ -69,6 +69,9 @@ export default function ForgotPasswordPage() {
       <div 
         style={{ 
           minHeight: '100vh', 
+          width: '100%',
+          minWidth: '100%',
+          boxSizing: 'border-box',
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center', 
@@ -76,7 +79,8 @@ export default function ForgotPasswordPage() {
           backgroundImage: "linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.65) 100%), url('/images/auth_campus_bg.jpg')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'scroll',
           padding: '20px'
         }}
       >
@@ -118,6 +122,9 @@ export default function ForgotPasswordPage() {
     <div 
       style={{ 
         minHeight: '100vh', 
+        width: '100%',
+        minWidth: '100%',
+        boxSizing: 'border-box',
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center', 
@@ -126,7 +133,8 @@ export default function ForgotPasswordPage() {
         backgroundImage: "linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.65) 100%), url('/images/auth_campus_bg.jpg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'scroll',
       }}
     >
       <div className="ambient-light"></div>

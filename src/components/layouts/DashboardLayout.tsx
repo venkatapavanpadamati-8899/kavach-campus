@@ -120,10 +120,14 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
       style={{ 
         display: 'flex', 
         minHeight: '100vh', 
+        width: '100%',
+        minWidth: '100%',
+        boxSizing: 'border-box',
         color: 'var(--text-primary)',
         backgroundImage: `${bgConfig.overlay}, url('${bgConfig.imageUrl}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         backgroundAttachment: 'fixed',
         transition: 'background-image 0.5s ease'
       }}

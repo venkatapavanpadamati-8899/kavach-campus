@@ -411,6 +411,9 @@ function LoginForm() {
     <div
       style={{
         minHeight: '100vh',
+        width: '100%',
+        minWidth: '100%',
+        boxSizing: 'border-box',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -419,7 +422,8 @@ function LoginForm() {
         backgroundImage: `${bgConfig.overlay}, url('/images/auth_campus_bg.jpg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'scroll',
         transition: 'background-image 0.5s ease',
       }}
     >
