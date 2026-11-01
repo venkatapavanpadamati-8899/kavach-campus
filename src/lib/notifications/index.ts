@@ -119,7 +119,7 @@ export function isSmtpConfigured(): boolean {
  * Returns the resolved sender address for outgoing SMTP emails.
  * Standard configuration: SMTP_FROM
  * Backwards compatibility: SMTP_FROM_EMAIL
- * Fallback: SMTP_USER
+ * Fallback: SMTP_USER (strictly only if it is a valid email; SendGrid uses 'apikey' which is not an email)
  */
 export function getSmtpFromAddress(): string | undefined {
   const from = process.env.SMTP_FROM?.trim() || process.env.SMTP_FROM_EMAIL?.trim();
@@ -127,6 +127,10 @@ export function getSmtpFromAddress(): string | undefined {
     return from;
   }
   const user = process.env.SMTP_USER?.trim();
+  // SendGrid standard SMTP uses 'apikey' as the username, which is an API key and never a valid sender email.
+  if (user && user.toLowerCase() === 'apikey') {
+    return undefined;
+  }
   return user && user.length > 0 ? user : undefined;
 }
 

@@ -81,6 +81,10 @@ describe('Notification Provider Adapters (src/lib/notifications)', () => {
       delete process.env.SMTP_USER;
       expect(getSmtpFromAddress()).toBeUndefined();
 
+      // Never fall back to SMTP_USER if it is not an email (e.g. SendGrid username is 'apikey')
+      process.env.SMTP_USER = 'apikey';
+      expect(getSmtpFromAddress()).toBeUndefined();
+
       process.env.SMTP_USER = 'mailer@campus.edu';
       expect(getSmtpFromAddress()).toBe('mailer@campus.edu');
 

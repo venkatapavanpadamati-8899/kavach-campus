@@ -41,13 +41,16 @@ async function main() {
   const from = process.env.SMTP_FROM?.trim() || process.env.SMTP_FROM_EMAIL?.trim();
   const enableRealDelivery = process.env.ENABLE_REAL_EMAIL_DELIVERY === 'true' || process.env.ENABLE_REAL_NOTIFICATIONS === 'true';
 
+  const resolvedUserFallback = user && user.includes('@') ? user : undefined;
+  const resolvedSender = from || resolvedUserFallback;
+
   console.log('1. Configuration Audit:');
   console.log(`   - SMTP_HOST:                  ${host ? host : '[NOT SET]'}`);
   console.log(`   - SMTP_PORT:                  ${portStr} (${isNaN(port) ? 'INVALID' : 'Valid'})`);
   console.log(`   - SMTP_SECURE:                ${process.env.SMTP_SECURE || (port === 465 ? 'true (inferred)' : 'false (inferred)')}`);
   console.log(`   - SMTP_USER:                  ${user ? maskEmail(user) : '[NOT SET]'}`);
   console.log(`   - SMTP_PASS:                  ${pass ? `[CONFIGURED (${pass.length} chars)]` : '[NOT SET]'}`);
-  console.log(`   - SMTP_FROM / SMTP_FROM_EMAIL:${from ? from : (user ? `${maskEmail(user)} (fallback to SMTP_USER)` : '[NOT SET]')}`);
+  console.log(`   - SMTP_FROM / SMTP_FROM_EMAIL:${from ? from : (resolvedUserFallback ? `${maskEmail(resolvedUserFallback)} (fallback to SMTP_USER)` : '[NOT SET — SendGrid username is apikey, not an email address]')}`);
   console.log(`   - ENABLE_REAL_EMAIL_DELIVERY: ${enableRealDelivery ? 'true (ENABLED)' : 'false (DISABLED)'}`);
 
   const missing: string[] = [];
@@ -55,6 +58,7 @@ async function main() {
   if (!user) missing.push('SMTP_USER');
   if (!pass) missing.push('SMTP_PASS');
   if (isNaN(port) || port < 1 || port > 65535) missing.push('SMTP_PORT (valid integer 1-65535)');
+  if (!resolvedSender) missing.push('SMTP_FROM (must be a valid, verified sender email address; apikey cannot be used as sender)');
 
   if (missing.length > 0) {
     console.log('\n[RESULT] Configuration: FAIL');
@@ -107,7 +111,11 @@ async function main() {
     }
 
     console.log(`\n3. Sending Single Verification Test Email to ${maskEmail(testRecipient)}...`);
-    const sender = from || user;
+    const sender = resolvedSender;
+    if (!sender) {
+      console.error('\n[FAIL] Cannot send email without a valid sender email. Please configure SMTP_FROM.');
+      process.exit(1);
+    }
     try {
       const info = await transporter.sendMail({
         from: sender,
@@ -123,6 +131,16 @@ async function main() {
       const msg = sendErr instanceof Error ? sendErr.message : String(sendErr);
       console.error('   [FAIL] Failed to send test email:');
       console.error(`   ${msg}`);
+      if (msg.includes('550') || msg.includes('Sender Identity')) {
+        console.error('\n   ------------------------------------------------------------');
+        console.error('   [SENDGRID ROOT CAUSE DETECTED]:');
+        console.error(`   The sender address "${sender}" is not verified in SendGrid.`);
+        console.error('   Action Required:');
+        console.error('   1. Open SendGrid Dashboard -> Settings -> Sender Authentication');
+        console.error('   2. Verify your sender email address via Single Sender Verification');
+        console.error('   3. Update SMTP_FROM in .env.local and Vercel Environment Variables');
+        console.error('   ------------------------------------------------------------');
+      }
       process.exit(1);
     }
   } else {
