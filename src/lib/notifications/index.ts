@@ -144,7 +144,16 @@ export function isRealDeliveryEnabled(): boolean {
  * activating live SMS or Push emergency notifications.
  */
 export function isRealEmailDeliveryEnabled(): boolean {
-  return process.env.ENABLE_REAL_EMAIL_DELIVERY === 'true' || process.env.ENABLE_REAL_NOTIFICATIONS === 'true';
+  if (process.env.ENABLE_REAL_EMAIL_DELIVERY === 'false') {
+    return false;
+  }
+  if (process.env.ENABLE_REAL_EMAIL_DELIVERY === 'true' || process.env.ENABLE_REAL_NOTIFICATIONS === 'true') {
+    return true;
+  }
+  // In production runtime (e.g. Vercel deployments), if valid SMTP credentials
+  // (SMTP_HOST, SMTP_USER, SMTP_PASS) are explicitly provided, treat email delivery
+  // as enabled by default so registration OTPs are delivered without requiring a redundant flag.
+  return process.env.NODE_ENV === 'production' && isSmtpConfigured();
 }
 
 /**
@@ -428,7 +437,9 @@ export async function sendEmailNotification(payload: EmailPayload): Promise<Deli
       idempotencyKey: payload.idempotencyKey,
     });
     return result;
-  } catch {
+  } catch (err: unknown) {
+    const rawError = err instanceof Error ? err.message : String(err);
+    const sanitizedError = rawError.replace(/[a-zA-Z0-9_-]{20,}/g, '[REDACTED]');
     const result: DeliveryResult = {
       success: false,
       status: 'UNKNOWN',
@@ -442,7 +453,7 @@ export async function sendEmailNotification(payload: EmailPayload): Promise<Deli
       status: result.status,
       recipientMasked: maskEmail(payload.toEmail),
       idempotencyKey: payload.idempotencyKey,
-      error: result.error,
+      error: sanitizedError,
     });
     return result;
   }
