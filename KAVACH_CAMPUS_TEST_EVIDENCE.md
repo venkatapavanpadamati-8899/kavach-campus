@@ -3,10 +3,12 @@
 **Audit Date:** November 01, 2026  
 **Repository Directory:** `D:\Kavach Campus`  
 **Vitest Version:** 5.0.3  
-**Next.js Version:** 16.4.3 (Turbopack)  
+**Next.js Version:** 16.4.3 (Webpack production build)
 **TypeScript Version:** 6.0.3  
 **ESLint Version:** 10.13.0  
-**Overall Quality Gate Status:** **100% PASS (ALL 6 QUALITY COMMANDS SUCCEEDED WITH EXIT CODE 0)**  
+**Latest Local Quality Gate Status:** **PASS** for tests, TypeScript, lint, production build, production audit, and diff check. Production deployment, live database behavior, physical GPS, and visible push remain unverified.
+
+> **Latest follow-up evidence (2026-11-01):** This section supersedes the older counts and Turbopack build output below. Tests were executed with JSON reporting to count skips explicitly. No secrets or exact device coordinates are recorded here.
 
 ---
 
@@ -14,16 +16,23 @@
 
 | Command | Exit Code | Duration | Output Summary |
 | :--- | :---: | :---: | :--- |
-| `npm test` (`npx vitest run`) | **`0`** | ~25s | **48 / 48 test files passed, 638 / 638 tests passed** (0 failures). |
-| `npx tsc --noEmit` | **`0`** | 35.8s | **0 type errors** across entire codebase. |
-| `npm run lint` | **`0`** | 18.0s | **0 errors, 0 warnings** (ESLint 10 Flat Config). |
-| `npm run build` | **`0`** | 31.5s | **67 static and dynamic routes compiled** with Turbopack. |
-| `npm audit --omit=dev` | **`0`** | 2.1s | `found 0 vulnerabilities` across all production dependencies. |
-| `git diff --check` | **`0`** | 0.8s | **0 whitespace errors**, no merge conflicts or trailing carriage returns. |
+| `npm test -- --reporter=json --outputFile=<temporary file>` | **`0`** | Latest run | **51 / 51 suites; 672 passed, 0 failed, 0 skipped.** JSON output was deleted after counting. |
+| `npx tsc --noEmit` | **`0`** | Latest run | Clean exit; no type errors reported. |
+| `npm run lint` | **`0`** | Latest run | Clean exit; no ESLint errors or warnings reported. |
+| `npm run build` (`next build --webpack`) | **`0`** | Latest run | Compiled and generated **68 routes**. The previous experimental app-only mode failed on a missing static manifest; Webpack is now the configured build mode. |
+| `npm audit --omit=dev` | **`0`** | Latest run | `found 0 vulnerabilities` across production dependencies. |
+| `git diff --check` | **`0`** | Latest run | Clean exit; no whitespace errors. |
+| `npm run start -- --hostname 127.0.0.1 --port 3100` + safe `curl.exe` probes | **`0`** | Latest run | After server readiness: `/` 200, `/login` 200, `/student` 307, unauthenticated `POST /api/sos` 401. Server stopped after the probes. |
+
+These are local checks only; they do not prove the Vercel deployment contains the current source.
+
+At this follow-up, local HEAD was `f9d7353a0d15fa6541a5115bdd1cdcc544e1ce2b` on `main`. The worktree contained uncommitted package, report, evidence, and AI evaluation test changes; deployment commit identity was not established.
 
 ---
 
-## 2. Complete Automated Test Suite Inventory (48 Test Files — 638 Tests)
+## 2. Historical Automated Test Suite Inventory (Earlier Run: 48 Test Files — 638 Tests)
+
+The list below belongs to the earlier run and is retained as historical evidence. The latest run discovered 51 suites and reported 672 passed, 0 failed, and 0 skipped; do not use the historical per-file counts as the latest inventory.
 
 ```
 ✓ src/__tests__/admin-analytics.test.ts (5 tests)
@@ -80,7 +89,9 @@ Total: 48 test files passed (100%), 638 tests passed (100%), 0 failures.
 
 ---
 
-## 3. Production Turbopack Build Output (67 Routes)
+## 3. Historical Production Turbopack Build Output (67 Routes)
+
+The following build output is historical and does not describe the latest configured build. The current `npm run build` uses Webpack and generated 68 routes with exit code 0.
 
 ```
 Route (app)
@@ -182,3 +193,23 @@ Direct probes executed against the live production deployment `https://kavach-ca
 * `GET https://kavach-campus.vercel.app/api/incidents` ➔ **HTTP 401 Unauthorized** (Unauthenticated access securely blocked)
 * `GET https://kavach-campus.vercel.app/api/system/health` ➔ **HTTP 401 Unauthorized** (Admin token required)
 * `POST https://kavach-campus.vercel.app/api/auth/register` (with injected `role: 'SUPER_ADMIN'`) ➔ **HTTP 403 Forbidden** (Self-role escalation blocked)
+
+### Latest production probes (2026-11-01)
+
+Safe, unauthenticated requests only:
+
+* `GET /` ➔ **200**
+* `GET /login` ➔ **200**
+* `GET /firebase-messaging-sw.js` ➔ **200**
+* `GET /student` ➔ **307**
+* `GET /api/student/profile` ➔ **401**
+* Unauthenticated `POST /api/sos` with `{}` ➔ **401**
+
+These probes do not establish deployment commit identity, authenticated behavior, or whether the local SOS fix is deployed.
+
+### Manual and external verification still required
+
+* **Physical-device GPS and database persistence:** MANUAL REQUIRED. No Android device was operated and no current `incident_locations` rows were queried.
+* **Push notification:** MANUAL REQUIRED. FCM acceptance, delivery to a device, and visible display are three separate outcomes; none were tested in this follow-up.
+* **Database RLS, tenant isolation, provider consoles, SMS/email delivery, and deployment commit identity:** NOT TESTED in this follow-up.
+* **Release verdict:** NOT READY until a controlled deployment is confirmed and the required physical-device, database, and push checks are completed.

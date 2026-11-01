@@ -1,6 +1,6 @@
 # KAVACH CAMPUS — INITIAL WORKSPACE & BASELINE AUDIT
 
-**Audit Date:** 2026-11-01T18:50:00+05:30  
+**Audit Date:** 2026-11-01T19:30:28+05:30
 **Project:** Kavach Campus (Smart College Student Safety and Emergency Response Platform)  
 **Repository:** [https://github.com/venkatapavanpadamati-8899/kavach-campus](https://github.com/venkatapavanpadamati-8899/kavach-campus)  
 **Production URL:** [https://kavach-campus.vercel.app](https://kavach-campus.vercel.app)  
@@ -8,18 +8,20 @@
 
 ---
 
-## 1. Executive Summary & Verified Current State
+## 1. Initial Baseline and Current Follow-Up
 
-This baseline audit inspects the full local workspace, Git configuration, application architecture, test infrastructure, and live external endpoints.
+The entries in this section were historical baseline assertions and are not, by themselves, current evidence. The latest Phase 3 follow-up independently rechecked the local controlled GPS/SOS code and local quality gates. It did not re-audit every application module, query live database rows, inspect provider consoles, or verify a physical device.
 
 ### Baseline Metrics
-- **Package Manager & Framework:** npm, Next.js 16.4.3 (App Router with Turbopack), React 19, TypeScript 5.
-- **Dependencies Audit:** `npm audit --omit=dev` ➔ **0 vulnerabilities** (Clean).
-- **TypeScript Static Check:** `npx tsc --noEmit` ➔ **0 errors** (Clean).
-- **ESLint Code Quality:** `npm run lint` ➔ **0 warnings, 0 errors** (Clean).
-- **Automated Test Coverage:** `50 test suites passed (50/50)`, `661 unit/integration tests passed (661/661)` with 0 failures and 0 skipped.
-- **Production Next.js Build:** Turbopack compiled and generated **68/68 static and dynamic routes** cleanly with exit code 0.
-- **Live Vercel Production:** Running active deployment serving [https://kavach-campus.vercel.app](https://kavach-campus.vercel.app).
+- **Package Manager & Framework:** npm, Next.js 16.4.3, React 19, TypeScript 6. The configured production build uses Webpack.
+- **Latest automated test run:** `npm test -- --reporter=json --outputFile=<temp file>` ➔ 51 suites; 672 passed, 0 failed, 0 skipped; exit code 0.
+- **TypeScript:** `npx tsc --noEmit` ➔ exit code 0.
+- **ESLint:** `npm run lint` ➔ exit code 0.
+- **Production dependency audit:** `npm audit --omit=dev` ➔ 0 vulnerabilities; exit code 0.
+- **Production build:** `npm run build` ➔ Webpack completed and generated 68 routes; exit code 0. Earlier experimental app-only mode failed and is no longer configured.
+- **Whitespace validation:** `git diff --check` ➔ exit code 0.
+- **Local runtime smoke test:** `npm run start -- --hostname 127.0.0.1 --port 3100`; after server ready, `/` and `/login` returned 200, `/student` returned 307, unauthenticated `POST /api/sos` returned 401. The temporary server was stopped after testing.
+- **Production:** Unauthenticated probes returned `/` 200, `/login` 200, service worker 200, `/student` 307, `/api/student/profile` 401, and unauthenticated `POST /api/sos` 401. The production commit identity and whether it contains the local fixes remain unverified.
 
 ---
 
@@ -32,10 +34,10 @@ This baseline audit inspects the full local workspace, Git configuration, applic
 - **Tenant Scope:** Campus multi-tenancy enforced with verified college tenants (e.g. SRKR, Vishnu, etc.).
 
 ### B. Artificial Intelligence Engine
-- **Provider:** Google Gemini API via official `@google/genai` SDK (`gemini-flash-lite-latest` and `gemini-3.5-flash-lite`).
-- **Capabilities:** Analyzes complaint text in English, Telugu, Hindi, and mixed languages.
-- **Safety Overrides:** Deterministic safety rules override AI if life-safety keywords (weapons, blood, knife, fight, harass, suicide, etc.) are present in any language.
-- **Output Schema:** `{ category, severity: L1-L4, urgency: LOW-CRITICAL, confidence, summary }`.
+- **Source configuration:** Google Gemini via `@google/genai`, with model names and schema handling in source.
+- **Automated test scope:** `ai-evaluation-and-routing.test.ts` mocks the provider and supplies predetermined responses for its AI scenarios; it tests schema/fallback behavior, not real model classifications or accuracy.
+- **Live provider behavior, credential validity, and production AI routing:** NOT TESTED in the latest follow-up.
+- **Output schema in source:** `{ category, severity: L1-L4, urgency: LOW-CRITICAL, confidence, summary }`.
 
 ### C. Smart Responder & Mentor Routing Engine
 - **Role Hierarchy:** Low severity ➔ Mentors/Counsellors; High/Critical ➔ Security/HOD/Principal/Admin.
@@ -46,7 +48,7 @@ This baseline audit inspects the full local workspace, Git configuration, applic
 ### D. GPS & Live Coordinates
 - **Validation:** Strict range bounds ($-90 \le \text{lat} \le 90$, $-180 \le \text{lng} \le 180$).
 - **Database Tables:** `incidents`, `incident_locations`, `staff_locations`.
-- **Controlled Test Mode:** Dedicated Zero-Alarm test mode on `/student/sos` records real satellite GPS into `incident_locations` while suppressing sirens and guard alerts.
+- **Controlled Test Mode:** Local code has a dedicated test branch. Automated tests verify session-derived student ownership, `STUDENT` role enforcement, cooldown, and no direct notification dispatch. The browser's geolocation result does not prove a satellite lock. Physical-device GPS and live database persistence remain unverified.
 - **Maps Redirection:** Generates direct Google Maps links (`https://www.google.com/maps/search/?api=1&query=lat,lng`) for responder dispatch.
 
 ### E. Profile Management
@@ -62,14 +64,15 @@ This baseline audit inspects the full local workspace, Git configuration, applic
 | :--- | :--- | :--- | :--- |
 | **Global Error Prerendering** | Next.js 16 build crash during prerendering `/_global-error` when no root error boundary existed. | **FIXED** | Implemented custom `src/app/global-error.tsx` client component. |
 | **AI Evaluation Test Coverage** | Standalone AI evaluation suite covering all 12 edge cases & mentor routing was missing. | **FIXED** | Authored `src/__tests__/ai-evaluation-and-routing.test.ts` (18 tests passing). |
-| **AI Output Sanitization** | Non-standard string categories or severities could cause runtime typing mismatch. | **FIXED** | Hardened `src/lib/ai.ts` with input truncation and schema validation. |
+| **AI Output Sanitization** | Non-standard string categories or severities could cause runtime typing mismatch. | **HISTORICAL CLAIM** | Current AI behavior was not independently re-audited in this follow-up. |
+| **SOS countdown / controlled GPS safety** | Page previously auto-activated SOS and could resume a countdown after GPS test failure. | **FIXED LOCALLY** | Current page requires explicit SOS action. Controlled test server-checks the student role and fails on persistence errors. Covered by the focused controlled-GPS route suite. |
+| **Production and physical validation** | Local changes are not proven deployed; device and provider evidence unavailable. | **OPEN** | No deployment, physical GPS test, live database row query, visible push, or provider delivery was performed. |
 | **Twilio Trial Limitations** | Carrier SMS delivery blocked for unverified external numbers (`Error 572002`). | **DOCUMENTED / CONTROLLED** | Handled by zero-cost simulation fallback (`ENABLE_DEMO_SMS=true`). |
 
 ---
 
 ## 4. Exact Next Steps
 
-1. Commit and push the AI test suite and `global-error.tsx` fixes to GitHub.
-2. Deploy the latest commit to Vercel production.
-3. Execute production smoke tests against live endpoints.
-4. Generate the final comprehensive verification report (`docs/KAVACH_CAMPUS_FINAL_VERIFICATION_REPORT.md`).
+1. Review the current worktree changes and authorize a controlled deployment; do not assume production is running this code.
+2. Resolve remaining pilot blockers: verify deployment identity, physical GPS persistence, test-account push visibility, and live RLS/provider evidence.
+3. Keep the final release status `NOT READY` until those required checks are completed.

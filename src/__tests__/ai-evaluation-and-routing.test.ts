@@ -78,24 +78,41 @@ describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite',
       expect(result.urgency).toBe('HIGH');
     });
 
-    it('Scenario 4: analyzes a critical immediate-danger report', async () => {
+    it('Scenario 4: analyzes a threat involving a weapon', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({
+          category: 'SECURITY',
+          severity: 'L4',
+          urgency: 'CRITICAL',
+          confidence: 0.99,
+          summary: 'Individual brandishing a knife near cafeteria.',
+        }),
+      });
+
+      const result = await analyzeIncident('Someone is brandishing a knife and threatening students near cafeteria.');
+      expect(result.category).toBe('SECURITY');
+      expect(result.severity).toBe('L4');
+      expect(result.urgency).toBe('CRITICAL');
+    });
+
+    it('Scenario 5: analyzes an immediate-danger report', async () => {
       mockGenerateContent.mockResolvedValueOnce({
         text: JSON.stringify({
           category: 'EMERGENCY',
           severity: 'L4',
           urgency: 'CRITICAL',
           confidence: 0.99,
-          summary: 'Armed intruder spotted near north gate.',
+          summary: 'Active violent assault in progress behind mechanical block.',
         }),
       });
 
-      const result = await analyzeIncident('Armed intruder spotted with weapon attempting to enter north gate.');
+      const result = await analyzeIncident('Active violent assault happening right now behind mechanical block! Send help!');
       expect(result.category).toBe('EMERGENCY');
       expect(result.severity).toBe('L4');
       expect(result.urgency).toBe('CRITICAL');
     });
 
-    it('Scenario 5: analyzes a medical emergency description', async () => {
+    it('Scenario 6: analyzes a medical emergency description', async () => {
       mockGenerateContent.mockResolvedValueOnce({
         text: JSON.stringify({
           category: 'MEDICAL',
@@ -112,7 +129,7 @@ describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite',
       expect(result.urgency).toBe('CRITICAL');
     });
 
-    it('Scenario 6: analyzes a fire or environmental hazard report', async () => {
+    it('Scenario 7: analyzes a fire or hazardous-material incident', async () => {
       mockGenerateContent.mockResolvedValueOnce({
         text: JSON.stringify({
           category: 'EMERGENCY',
@@ -128,7 +145,7 @@ describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite',
       expect(result.severity).toBe('L4');
     });
 
-    it('Scenario 7: handles ambiguous reports safely with moderate baseline and human review required', async () => {
+    it('Scenario 8: handles ambiguous description safely with moderate baseline and human review required', async () => {
       mockGenerateContent.mockResolvedValueOnce({
         text: JSON.stringify({
           category: 'GENERAL',
@@ -144,7 +161,7 @@ describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite',
       expect(result.confidence).toBeLessThan(0.5);
     });
 
-    it('Scenario 8: handles empty and whitespace-only input safely without calling external API', async () => {
+    it('Scenario 9: handles empty and whitespace-only description safely without calling external API', async () => {
       const emptyResult = await analyzeIncident('');
       expect(emptyResult.category).toBe('GENERAL');
       expect(emptyResult.severity).toBe('L1');
@@ -157,7 +174,7 @@ describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite',
       expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
-    it('Scenario 9: truncates unusually long descriptions exceeding 4000 characters safely', async () => {
+    it('Scenario 10: truncates very long descriptions exceeding 4000 characters safely', async () => {
       mockGenerateContent.mockResolvedValueOnce({
         text: JSON.stringify({
           category: 'GENERAL',
@@ -173,11 +190,10 @@ describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite',
       expect(result.category).toBe('GENERAL');
       expect(mockGenerateContent).toHaveBeenCalledTimes(1);
       const calledPrompt = mockGenerateContent.mock.calls[0][0].contents;
-      // Prompt should not contain all 8000 characters
       expect(calledPrompt.length).toBeLessThan(7000);
     });
 
-    it('Scenario 10: safely neutralizes adversarial prompt injection attempts', async () => {
+    it('Scenario 11: safely neutralizes prompt injection attempt', async () => {
       mockGenerateContent.mockResolvedValueOnce({
         text: JSON.stringify({
           category: 'SECURITY',
@@ -194,8 +210,7 @@ describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite',
       expect(result.category).toBe('SECURITY');
     });
 
-    it('Scenario 11: analyzes multilingual reports in Telugu and Hindi', async () => {
-      // Telugu Emergency
+    it('Scenario 12: analyzes Telugu incident description', async () => {
       mockGenerateContent.mockResolvedValueOnce({
         text: JSON.stringify({
           category: 'HARASSMENT',
@@ -209,8 +224,9 @@ describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite',
       const teluguResult = await analyzeIncident('మా హాస్టల్ దగ్గర కొందరు కత్తితో బెదిరిస్తున్నారు');
       expect(teluguResult.severity).toBe('L3');
       expect(teluguResult.category).toBe('HARASSMENT');
+    });
 
-      // Hindi Medical / Emergency
+    it('Scenario 13: analyzes Hindi incident description', async () => {
       mockGenerateContent.mockResolvedValueOnce({
         text: JSON.stringify({
           category: 'EMERGENCY',
@@ -226,12 +242,75 @@ describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite',
       expect(hindiResult.urgency).toBe('CRITICAL');
     });
 
-    it('Scenario 12: falls back gracefully to rule-based UNCLASSIFIED on AI provider error/timeout', async () => {
+    it('Scenario 14: handles unsupported language safely without crashing', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({
+          category: 'GENERAL',
+          severity: 'L2',
+          urgency: 'MEDIUM',
+          confidence: 0.6,
+          summary: 'Foreign language emergency assistance request.',
+        }),
+      });
+
+      const foreignResult = await analyzeIncident('Помогите пожалуйста возле главного входа');
+      expect(foreignResult.category).toBe('GENERAL');
+      expect(foreignResult.severity).toBe('L2');
+    });
+
+    it('Scenario 15: handles AI provider timeout with safe fallback', async () => {
       mockGenerateContent.mockRejectedValueOnce(new Error('Gemini API 504 Gateway Timeout'));
-      // Fallback model also fails
       mockGenerateContent.mockRejectedValueOnce(new Error('Fallback model network failure'));
 
       const result = await analyzeIncident('Urgent assistance required near auditorium.');
+      expect(result.category).toBe('UNCLASSIFIED');
+      expect(result.severity).toBe('L2');
+      expect(result.urgency).toBe('HIGH');
+      expect(result.confidence).toBe(0);
+      expect(result.summary).toContain('AI analysis unavailable');
+    });
+
+    it('Scenario 16: handles invalid AI response safely with normalized defaults', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({
+          category: 'NON_EXISTENT_CATEGORY_XYZ',
+          severity: 'INVALID_L99',
+          urgency: 'EXTREME_NOT_VALID',
+          confidence: 'not-a-number',
+          summary: null,
+        }),
+      });
+
+      const result = await analyzeIncident('Report with strange response fields.');
+      // Should default category to GENERAL, severity to L2, urgency to MEDIUM, confidence to 0.5
+      expect(result.category).toBe('GENERAL');
+      expect(result.severity).toBe('L2');
+      expect(result.urgency).toBe('MEDIUM');
+      expect(result.confidence).toBe(0.5);
+    });
+
+    it('Scenario 17: handles malformed JSON from AI provider safely', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        text: 'This is not JSON at all: { category: "EMERGENCY", broken...',
+      });
+      // Fallback model also returns bad json
+      mockGenerateContent.mockResolvedValueOnce({
+        text: 'Still not valid JSON',
+      });
+
+      const result = await analyzeIncident('Report where AI model glitched and returned raw text.');
+      expect(result.category).toBe('UNCLASSIFIED');
+      expect(result.severity).toBe('L2');
+      expect(result.urgency).toBe('HIGH');
+      expect(result.confidence).toBe(0);
+      expect(result.summary).toContain('AI analysis unavailable');
+    });
+
+    it('Scenario 18: handles AI provider authentication failure (403/401) safely', async () => {
+      mockGenerateContent.mockRejectedValueOnce(new Error('GoogleGenAI Error: 403 Forbidden - API key expired or invalid'));
+      mockGenerateContent.mockRejectedValueOnce(new Error('GoogleGenAI Error: 403 Forbidden - Fallback rejected'));
+
+      const result = await analyzeIncident('Report filed during API key rotation.');
       expect(result.category).toBe('UNCLASSIFIED');
       expect(result.severity).toBe('L2');
       expect(result.urgency).toBe('HIGH');
