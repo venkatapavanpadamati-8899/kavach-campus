@@ -26,6 +26,7 @@ import {
 import Link from 'next/link';
 import { getCollegeById, CollegeTenant } from '@/lib/colleges';
 import { getUnassignedCollegeTenant } from '@/lib/college-branding';
+import { registerPushServiceWorker } from '@/lib/notifications/fcm-client';
 
 interface BloodDonor {
   id: string;
@@ -57,6 +58,7 @@ export default function StudentDashboard() {
   const [suggestionSubmitted, setSuggestionSubmitted] = useState(false);
 
   useEffect(() => {
+    registerPushServiceWorker().catch(() => {});
     // Fetch profile and ID verification status
     fetch('/api/student/verify-id')
       .then(res => res.json())

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getActiveCollegeTenant } from '@/lib/college-branding';
+import { registerPushServiceWorker } from '@/lib/notifications/fcm-client';
 
 export default function SOSPage() {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function SOSPage() {
 
   useEffect(() => {
     setActiveTenant(getActiveCollegeTenant());
+    registerPushServiceWorker().catch(() => {});
   }, []);
 
   const createIncident = async (lat: number | null, lng: number | null, acc: number | null, manualLoc?: string) => {
