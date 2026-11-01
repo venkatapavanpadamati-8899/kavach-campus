@@ -17,7 +17,6 @@ import { registerPushServiceWorker } from '@/lib/notifications/fcm-client';
 
 export default function SOSPage() {
   const router = useRouter();
-  const [countdown, setCountdown] = useState(3);
   const [active, setActive] = useState(false);
   const [location, setLocation] = useState<GeolocationPosition | null>(null);
 
@@ -31,7 +30,8 @@ export default function SOSPage() {
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [_isSubmitting, setIsSubmitting] = useState(false);
   const [isTestingGps, setIsTestingGps] = useState(false);
-  const [testResult, setTestResult] = useState<{ caseId?: string; incidentId?: string; latitude?: number | null; longitude?: number | null; accuracy?: number | null; message?: string } | null>(null);
+  const [hasStartedControlledGpsTest, setHasStartedControlledGpsTest] = useState(false);
+  const [testResult, setTestResult] = useState<{ caseId?: string; incidentId?: string; accuracy?: number | null; message?: string } | null>(null);
 
   // Active college tenant for emergency helplines and campus building fallback
   const [activeTenant, setActiveTenant] = useState(getActiveCollegeTenant());
@@ -41,7 +41,7 @@ export default function SOSPage() {
 
   // Guard against duplicate incident creation
   const hasCreatedIncidentRef = useRef(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const controlledGpsTestStartedRef = useRef(false);
 
   useEffect(() => {
     setActiveTenant(getActiveCollegeTenant());
@@ -83,7 +83,7 @@ export default function SOSPage() {
       });
 
       const data = await res.json();
-      if (data.success) {
+      if (data.success && (!isTestRun || data.isTest === true)) {
         setIncidentId(data.incidentId);
         setCaseId(data.caseId);
         if (data.assignedStaffId) {
@@ -93,8 +93,6 @@ export default function SOSPage() {
           setTestResult({
             caseId: data.caseId,
             incidentId: data.incidentId,
-            latitude: data.latitude ?? validLat,
-            longitude: data.longitude ?? validLng,
             accuracy: data.accuracy ?? validAcc,
             message: data.message
           });
@@ -102,19 +100,29 @@ export default function SOSPage() {
           startLiveTracking(data.incidentId);
         }
       } else {
-        console.warn('[SOS Dispatch] API returned non-success response:', data.error);
+        if (isTestRun) {
+          setLocationStatus('Controlled Test Could Not Be Saved');
+          setLocationError('The location test could not be saved. Please try again later.');
+        } else {
+          console.warn('[SOS Dispatch] API returned non-success response:', data.error);
+        }
       }
     } catch {
-      console.warn('[SOS Dispatch] Network request failed. Emergency recorded locally.');
+      if (isTestRun) {
+        setLocationStatus('Controlled Test Could Not Be Saved');
+        setLocationError('The location test could not be saved because the server could not be reached.');
+      } else {
+        console.warn('[SOS Dispatch] Network request failed. Emergency recorded locally.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const runControlledGpsTest = async () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+    if (controlledGpsTestStartedRef.current || isTestingGps || testResult) return;
+    controlledGpsTestStartedRef.current = true;
+    setHasStartedControlledGpsTest(true);
     setIsTestingGps(true);
     setLocationStatus('Acquiring real GPS for Controlled Verification...');
 
@@ -135,8 +143,8 @@ export default function SOSPage() {
         setLocation(pos);
         setLocationError(null);
         setLocationStatus(`Controlled Test GPS Locked (±${Math.round(pos.coords.accuracy)}m)`);
-        createIncident(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, undefined, true);
-        setIsTestingGps(false);
+        void createIncident(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, undefined, true)
+          .finally(() => setIsTestingGps(false));
       },
       (err: GeolocationPositionError) => {
         let friendlyMessage = 'GPS signal unavailable. Please ensure location permissions are enabled.';
@@ -153,6 +161,7 @@ export default function SOSPage() {
   };
 
   const activateSOS = async () => {
+    if (controlledGpsTestStartedRef.current) return;
     setActive(true);
 
     // Check secure context requirements for browser geolocation
@@ -259,9 +268,6 @@ export default function SOSPage() {
   };
 
   const cancelSOS = async () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
     if (watchId !== null && navigator.geolocation) {
       navigator.geolocation.clearWatch(watchId);
       setWatchId(null);
@@ -276,24 +282,6 @@ export default function SOSPage() {
     setActive(false); 
     router.push('/student');
   };
-
-  useEffect(() => {
-    if (active || isTestingGps || Boolean(testResult)) return;
-    timerRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          activateSOS();
-          if (timerRef.current) clearInterval(timerRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, isTestingGps, testResult]);
 
   const campusBuildings = activeTenant.campusBuildings || [
     'Main Administrative Block',
@@ -337,15 +325,13 @@ export default function SOSPage() {
             border: '4px solid var(--accent-red)',
             boxShadow: '0 0 50px rgba(239, 68, 68, 0.4)'
           }}>
-            <h1 style={{ fontSize: '5.5rem', color: 'var(--accent-red)', margin: 0, fontWeight: 800 }}>
-              {countdown}
-            </h1>
+            <ShieldAlert size={88} color="var(--accent-red)" />
           </div>
           <h2 style={{ fontSize: '2.2rem', fontWeight: 700, marginBottom: '12px' }}>
-            Activating Emergency SOS...
+            Emergency SOS Ready
           </h2>
           <p style={{ color: 'var(--text-secondary)', maxWidth: '460px', margin: '0 auto 32px auto', fontSize: '1rem' }}>
-            Hold on. Dispatching emergency alert to {activeTenant.shortName} security desk, capturing telemetry, and notifying registered guardians.
+            No emergency alert is sent until you choose to trigger SOS. Use the separate controlled GPS test below to verify location without contacting responders or guardians.
           </p>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
             <button 
@@ -361,13 +347,11 @@ export default function SOSPage() {
                 gap: '10px'
               }}
             >
-              <X size={20} /> Cancel SOS
+              <X size={20} /> Back to Dashboard
             </button>
             <button
-              onClick={() => {
-                if (timerRef.current) clearInterval(timerRef.current);
-                activateSOS();
-              }}
+              onClick={activateSOS}
+              disabled={hasStartedControlledGpsTest || isTestingGps}
               style={{
                 background: 'var(--accent-red)',
                 color: '#fff',
@@ -375,14 +359,14 @@ export default function SOSPage() {
                 padding: '14px 32px',
                 borderRadius: '12px',
                 fontWeight: 700,
-                cursor: 'pointer',
+                cursor: hasStartedControlledGpsTest || isTestingGps ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
                 boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)'
               }}
             >
-              <ShieldAlert size={20} /> Trigger Now
+              <ShieldAlert size={20} /> Trigger Emergency SOS
             </button>
           </div>
 
@@ -403,12 +387,12 @@ export default function SOSPage() {
               <span>Controlled Mobile GPS Test (Zero-Alarm Mode)</span>
             </div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
-              Safely verifies real hardware GPS satellite lock and Supabase <code>incident_locations</code> persistence. Zero sirens, zero campus panic, and no alerts sent to guardians or security desk.
+              Captures the browser-reported device location and verifies isolated test-record persistence. Starting this test disables live SOS on this page. No emergency alert is sent to responders or guardians.
             </p>
             <button
               type="button"
               onClick={runControlledGpsTest}
-              disabled={isTestingGps}
+              disabled={isTestingGps || hasStartedControlledGpsTest}
               style={{
                 background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
                 color: '#fff',
@@ -417,7 +401,7 @@ export default function SOSPage() {
                 borderRadius: '10px',
                 fontWeight: 600,
                 fontSize: '0.9rem',
-                cursor: isTestingGps ? 'not-allowed' : 'pointer',
+                cursor: isTestingGps || hasStartedControlledGpsTest ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -425,7 +409,7 @@ export default function SOSPage() {
                 transition: 'all 0.2s ease'
               }}
             >
-              {isTestingGps ? '📡 Acquiring Satellite GPS...' : '🧪 Run Controlled GPS Test'}
+              {isTestingGps ? '📡 Acquiring Device Location...' : testResult ? '✅ Controlled GPS Test Complete' : hasStartedControlledGpsTest ? 'Controlled GPS Test Attempted' : '🧪 Run Controlled GPS Test'}
             </button>
 
             {locationError && (
@@ -457,15 +441,13 @@ export default function SOSPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontWeight: 700, fontSize: '0.95rem', marginBottom: '8px' }}>
                   <CheckCircle size={18} />
-                  <span>Real Hardware GPS Verified &amp; Stored!</span>
+                  <span>Controlled Location Test Saved</span>
                 </div>
                 <div style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.7' }}>
                   <div>• <strong>Case Ref:</strong> <span style={{ color: '#6ee7b7' }}>{testResult.caseId}</span></div>
-                  <div>• <strong>Latitude:</strong> {testResult.latitude != null ? `${testResult.latitude.toFixed(6)}° N` : 'N/A'}</div>
-                  <div>• <strong>Longitude:</strong> {testResult.longitude != null ? `${testResult.longitude.toFixed(6)}° E` : 'N/A'}</div>
                   <div>• <strong>Accuracy:</strong> ±{testResult.accuracy != null ? `${Math.round(testResult.accuracy)} meters` : 'N/A'}</div>
                   <div>• <strong>Supabase Table:</strong> <code>incident_locations</code> &amp; <code>audit_logs</code></div>
-                  <div>• <strong>Safety Bypass:</strong> Real emergency alerts safely suppressed</div>
+                  <div>• <strong>Safety:</strong> Test incident only; live dispatch is unavailable in this page session</div>
                 </div>
                 <div style={{ marginTop: '12px', textAlign: 'right' }}>
                   <button

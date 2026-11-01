@@ -11,14 +11,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json().catch(() => ({}));
+    let body: Record<string, unknown>;
+    try {
+      const parsedBody: unknown = await req.json();
+      if (!parsedBody || typeof parsedBody !== 'object' || Array.isArray(parsedBody)) {
+        return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+      }
+      body = parsedBody as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+
     const { latitude, longitude, accuracy, zoneId, isTest } = body;
+    if (isTest !== undefined && typeof isTest !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid test mode flag' }, { status: 400 });
+    }
+    const isControlledTest = isTest === true;
 
     // Validate coordinates if provided
     const hasProvidedLocation = latitude != null || longitude != null;
     let hasLocation = false;
     let validLat: number | null = null;
     let validLng: number | null = null;
+    let validAccuracy: number | null = null;
 
     if (hasProvidedLocation) {
       const numLat = Number(latitude);
@@ -38,34 +53,81 @@ export async function POST(req: Request) {
       hasLocation = true;
       validLat = numLat;
       validLng = numLng;
+
+      if (accuracy != null) {
+        const numAccuracy = Number(accuracy);
+        if (!Number.isFinite(numAccuracy) || numAccuracy <= 0) {
+          return NextResponse.json({ error: 'Invalid location accuracy' }, { status: 400 });
+        }
+        validAccuracy = numAccuracy;
+      }
+    }
+
+    if (isControlledTest) {
+      if (!hasLocation || validAccuracy === null) {
+        return NextResponse.json({ error: 'Controlled location test requires valid coordinates and accuracy' }, { status: 400 });
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Controlled SOS test role lookup failed:', profileError);
+        return NextResponse.json({ error: 'Unable to verify test access' }, { status: 500 });
+      }
+      if (profile?.role !== 'STUDENT') {
+        return NextResponse.json({ error: 'Only students can submit a controlled location test' }, { status: 403 });
+      }
+
+      const testRateLimitTime = new Date(Date.now() - 60_000).toISOString();
+      const { data: recentTests, error: rateLimitError } = await supabase
+        .from('incidents')
+        .select('id')
+        .eq('student_id', user.id)
+        .eq('description', '[CONTROLLED TEST] Mobile GPS Verification')
+        .gte('created_at', testRateLimitTime)
+        .limit(1);
+
+      if (rateLimitError) {
+        console.error('Controlled SOS test rate-limit lookup failed:', rateLimitError);
+        return NextResponse.json({ error: 'Unable to verify test request' }, { status: 500 });
+      }
+      if (recentTests && recentTests.length > 0) {
+        return NextResponse.json({ error: 'Please wait before running another controlled location test' }, { status: 429 });
+      }
     }
 
     // Check for existing active SOS for this user to avoid duplicate flood
     let existingActiveSos: { id: string; case_id: string }[] | null = null;
     try {
-      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-      let q: any = supabase
-        .from('incidents')
-        .select('id, case_id')
-        .eq('student_id', user.id)
-        .eq('category', 'EMERGENCY');
+      if (!isControlledTest) {
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+        let q: any = supabase
+          .from('incidents')
+          .select('id, case_id')
+          .eq('student_id', user.id)
+          .eq('category', 'EMERGENCY');
 
-      if (typeof q?.eq === 'function') {
-        const q3 = q.eq('is_tracking_active', true);
-        if (q3) q = q3;
-      }
+        if (typeof q?.eq === 'function') {
+          const q3 = q.eq('is_tracking_active', true);
+          if (q3) q = q3;
+        }
 
-      if (typeof q?.in === 'function') {
-        const qIn = q.in('status', ['RECEIVED', 'ASSIGNED', 'IN_PROGRESS']);
-        if (qIn) q = qIn;
-      }
+        if (typeof q?.in === 'function') {
+          const qIn = q.in('status', ['RECEIVED', 'ASSIGNED', 'IN_PROGRESS']);
+          if (qIn) q = qIn;
+        }
 
-      if (typeof q?.limit === 'function') {
-        const qLimit = await q.limit(1);
-        existingActiveSos = qLimit?.data || null;
-      } else if (q && typeof q.then === 'function') {
-        const res = await q;
-        existingActiveSos = res?.data || null;
+        if (typeof q?.limit === 'function') {
+          const qLimit = await q.limit(1);
+          existingActiveSos = qLimit?.data || null;
+        } else if (q && typeof q.then === 'function') {
+          const res = await q;
+          existingActiveSos = res?.data || null;
+        }
       }
     } catch {
       // If duplicate query fails, proceed to record emergency SOS safely
@@ -84,7 +146,6 @@ export async function POST(req: Request) {
     // 1. Create Incident
     const caseId = `SOS-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    const isControlledTest = Boolean(isTest);
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     const incidentPayload: Record<string, any> = {
       case_id: caseId,
@@ -100,7 +161,7 @@ export async function POST(req: Request) {
     if (hasLocation) {
       incidentPayload.latitude = validLat;
       incidentPayload.longitude = validLng;
-      incidentPayload.location_accuracy = accuracy;
+      incidentPayload.location_accuracy = validAccuracy;
     }
     if (zoneId) {
       incidentPayload.campus_zone_id = zoneId;
@@ -123,33 +184,41 @@ export async function POST(req: Request) {
 
     // 2. Initial Location Tracking insert
     if (hasLocation) {
-      await supabase.from('incident_locations').insert({
+      const { error: locationError } = await supabase.from('incident_locations').insert({
         incident_id: incident.id,
         latitude: validLat,
         longitude: validLng,
-        accuracy
+        accuracy: validAccuracy
       });
+      if (locationError) {
+        console.error('SOS location insertion error:', locationError);
+        if (isControlledTest) {
+          return NextResponse.json({ error: 'Failed to save controlled location test' }, { status: 500 });
+        }
+      }
     }
 
     // Controlled test mode: complete cleanly without dispatching live campus alarms
     if (isControlledTest) {
-      await supabase.from('audit_logs').insert({
+      const { error: auditError } = await supabase.from('audit_logs').insert({
         actor_id: user.id,
         action: 'SOS_CONTROLLED_TEST_RECORDED',
         entity_type: 'incidents',
         entity_id: incident.id,
-        metadata: { latitude: validLat, longitude: validLng, accuracy, caseId, isTest: true }
+        metadata: { accuracy: validAccuracy, caseId, isTest: true }
       });
+      if (auditError) {
+        console.error('Controlled SOS test audit insertion error:', auditError);
+        return NextResponse.json({ error: 'Failed to complete controlled location test' }, { status: 500 });
+      }
 
       return NextResponse.json({
         success: true,
         isTest: true,
         incidentId: incident.id,
         caseId,
-        latitude: validLat,
-        longitude: validLng,
-        accuracy,
-        message: 'Controlled mobile GPS test recorded successfully into incident_locations'
+        accuracy: validAccuracy,
+        message: 'Controlled location test saved successfully'
       }, { status: 201 });
     }
 

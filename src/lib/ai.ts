@@ -1,11 +1,39 @@
 import { GoogleGenAI } from '@google/genai';
 
+export interface AiAnalysisResult {
+  category: string;
+  severity: string;
+  urgency: string;
+  confidence: number;
+  summary: string;
+}
+
+const ALLOWED_CATEGORIES = [
+  'EMERGENCY', 'HARASSMENT', 'THEFT', 'RAGGING', 'SECURITY', 'MEDICAL', 'COUNSELING', 'MAINTENANCE', 'GENERAL'
+] as const;
+
+const ALLOWED_SEVERITIES = ['L1', 'L2', 'L3', 'L4'] as const;
+const ALLOWED_URGENCIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
+
 function getAiClient() {
   const apiKey = process.env.GEMINI_API_KEY || 'MISSING_KEY';
   return new GoogleGenAI({ apiKey });
 }
 
-export async function analyzeIncident(description: string) {
+export async function analyzeIncident(description: string): Promise<AiAnalysisResult> {
+  if (!description || typeof description !== 'string' || !description.trim()) {
+    return {
+      category: 'GENERAL',
+      severity: 'L1',
+      urgency: 'LOW',
+      confidence: 0,
+      summary: 'Empty or invalid complaint text provided.',
+    };
+  }
+
+  // Sanitize input to max 4000 characters to prevent buffer overflow or prompt injection abuse
+  const sanitizedDescription = description.trim().slice(0, 4000);
+
   try {
     const ai = getAiClient();
     const prompt = `
@@ -33,7 +61,7 @@ Return strictly valid JSON:
 }
 
 <complaint>
-${description}
+${sanitizedDescription}
 </complaint>
 `;
 
@@ -57,7 +85,26 @@ ${description}
     }
 
     const text = response.text || '{}';
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+
+    // Validate and normalize schema fields
+    const category = ALLOWED_CATEGORIES.includes(parsed.category) ? parsed.category : 'GENERAL';
+    const severity = ALLOWED_SEVERITIES.includes(parsed.severity) ? parsed.severity : 'L2';
+    const urgency = ALLOWED_URGENCIES.includes(parsed.urgency) ? parsed.urgency : 'MEDIUM';
+    const confidence = typeof parsed.confidence === 'number' && !isNaN(parsed.confidence)
+      ? Math.max(0, Math.min(1, parsed.confidence > 1 ? parsed.confidence / 100 : parsed.confidence))
+      : 0.5;
+    const summary = typeof parsed.summary === 'string' && parsed.summary.trim()
+      ? parsed.summary.trim().slice(0, 500)
+      : 'Incident report received and classified.';
+
+    return {
+      category,
+      severity,
+      urgency,
+      confidence,
+      summary,
+    };
   } catch (error) {
     console.error('AI Analysis failed, falling back to rule engine:', error);
     return {
