@@ -105,7 +105,15 @@ export async function POST(req: Request) {
       incidentPayload.campus_zone_id = zoneId;
     }
 
-    const { data: incident, error: incidentError } = await supabase.from('incidents').insert(incidentPayload).select().single();
+    let { data: incident, error: incidentError } = await supabase.from('incidents').insert(incidentPayload).select().single();
+
+    // Fallback if is_tracking_active column is missing on remote schema
+    if (incidentError && (incidentError.code === 'PGRST204' || incidentError.code === '42703' || incidentError.message?.includes('is_tracking_active'))) {
+      delete incidentPayload.is_tracking_active;
+      const retry = await supabase.from('incidents').insert(incidentPayload).select().single();
+      incident = retry.data;
+      incidentError = retry.error;
+    }
 
     if (incidentError || !incident) {
       console.error('Incident insertion error:', incidentError);

@@ -151,13 +151,32 @@ export async function POST(request: Request) {
       insertPayload.college_id = profile.college_id;
     }
 
-    const { data: newWalk, error: insertError } = await supabase
+    let { data: newWalk, error: insertError } = await supabase
       .from('safe_walks')
       .insert(insertPayload)
       .select('id, status, expires_at')
       .single();
 
-    if (insertError) {
+    // Fallback if remote schema lacks a DEFAULT generator on column "id"
+    if (
+      insertError &&
+      (insertError.code === '23502' || insertError.message?.includes('not-null constraint')) &&
+      insertError.message?.includes('"id"')
+    ) {
+      const generatedId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : undefined;
+      if (generatedId) {
+        insertPayload.id = generatedId;
+        const retry = await supabase
+          .from('safe_walks')
+          .insert(insertPayload)
+          .select('id, status, expires_at')
+          .single();
+        newWalk = retry.data;
+        insertError = retry.error;
+      }
+    }
+
+    if (insertError || !newWalk) {
       console.error('Database error creating safe walk:', insertError);
       // 14. Do not expose secrets or internal database errors
       return NextResponse.json({ error: 'Failed to start safe walk' }, { status: 500 });

@@ -1,19 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Keep production output separate on local Windows dev so next dev and next build never collide.
-  // Standard '.next' is used during development and on Vercel deployments.
-  distDir: process.env.NODE_ENV === 'production' && !process.env.VERCEL ? '.next-production' : '.next',
-  // Cache Components/PPR is not used by this application (there are no
-  // `use cache` directives). Leaving it enabled caused Windows prerender
-  // workers to race while creating `.segments` build directories.
-  // The Windows sandbox can also deny concurrent writes to generated route
-  // segment directories. Generate this small application through one worker
-  // so production builds remain deterministic there.
+  transpilePackages: ['lucide-react'],
   experimental: {
     cpus: 1,
     staticGenerationMaxConcurrency: 1,
     staticGenerationMinPagesPerWorker: 100,
+    optimizePackageImports: ['lucide-react'],
   },
   async redirects() {
     return [

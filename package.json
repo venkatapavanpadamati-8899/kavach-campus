@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node -e \"const fs = require('node:fs'); for (let i = 0; i < 5; i++) { try { if (fs.existsSync('.next-production')) fs.rmSync('.next-production', { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); break; } catch {} }\"",
+    "prebuild": "node -e \"const fs = require('node:fs'); for (const dir of ['.next-production', '.next']) { for (let i = 0; i < 5; i++) { try { if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); break; } catch {} } }\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

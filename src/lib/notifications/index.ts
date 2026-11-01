@@ -94,9 +94,9 @@ export function isTwilioConfigured(): boolean {
  */
 export function isFcmConfigured(): boolean {
   return Boolean(
-    process.env.FCM_PROJECT_ID &&
-    process.env.FCM_CLIENT_EMAIL &&
-    process.env.FCM_PRIVATE_KEY
+    (process.env.FCM_PROJECT_ID || process.env.FIREBASE_PROJECT_ID) &&
+    (process.env.FCM_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL) &&
+    (process.env.FCM_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY)
   );
 }
 
@@ -489,7 +489,7 @@ export async function sendPushNotification(payload: PushPayload): Promise<Delive
       status: 'NOT_CONFIGURED',
       provider: 'FCM',
       idempotencyKey: payload.idempotencyKey,
-      error: 'FCM credentials not configured (FCM_PROJECT_ID, FCM_CLIENT_EMAIL, FCM_PRIVATE_KEY required)',
+      error: 'FCM credentials not configured (FCM_PROJECT_ID or FIREBASE_PROJECT_ID, FCM_CLIENT_EMAIL or FIREBASE_CLIENT_EMAIL, FCM_PRIVATE_KEY or FIREBASE_PRIVATE_KEY required)',
     };
     logNotificationEvent({
       provider: 'FCM',
