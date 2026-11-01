@@ -21,7 +21,8 @@ export async function POST(req: Request) {
     }
 
     const supabase = createAdminClient();
-    const { email, otp } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { email, otp } = body || {};
 
     if (!email || typeof email !== 'string' || !otp || typeof otp !== 'string') {
       return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 });
@@ -83,7 +84,10 @@ export async function POST(req: Request) {
     // Verify OTP with bcrypt hash, or demo OTP / demo SMS strictly in development mode for non-privileged accounts
     const isProduction = process.env.NODE_ENV === 'production';
     const isDemoValid = !isProduction && verifyDemoOtp(otp, regData?.role);
-    const demoSmsValid = !isProduction && verifyDemoSmsOtp(normalizedEmail, otp).success;
+    const demoSmsValid = !isProduction && (
+      verifyDemoSmsOtp(normalizedEmail, otp).success ||
+      (regData?.phone ? verifyDemoSmsOtp(regData.phone, otp).success : false)
+    );
     const isBcryptValid = await bcrypt.compare(otp, record.otp_hash);
     const isValid = isProduction ? isBcryptValid : (isBcryptValid || isDemoValid || demoSmsValid);
 

@@ -602,6 +602,7 @@ describe('Kavach Campus — Release Blocker Audit Behavioral Test Suite', () => 
         body: JSON.stringify({
           name: 'Personal Email Student',
           email: 'personal.student@gmail.com',
+          phone: '9876543210',
           password: 'SuperSecurePassword2026!',
           role: 'STUDENT',
           campusId: 'srkr-bhimavaram',

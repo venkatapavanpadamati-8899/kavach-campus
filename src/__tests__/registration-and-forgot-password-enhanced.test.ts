@@ -87,6 +87,27 @@ describe('Enhanced Registration & Forgot Password Tests', () => {
   // 2. Registration API — Academic Year & Department
   // =========================================================================
   describe('POST /api/auth/register — Academic Year & Department Validation', () => {
+    it('requires a valid mobile number before creating a registration OTP', async () => {
+      const req = new Request('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Phone Required Student',
+          email: 'phone.required@srkr.edu.in',
+          password: 'SecurePassword123!',
+          role: 'STUDENT',
+          registrationNumber: '21CS1045',
+          department: 'CSE',
+          academicYear: '2nd Year',
+        }),
+      });
+
+      const res = await registerHandler(req);
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toMatch(/valid 10-digit mobile number/i);
+      expect(createAdminClient).not.toHaveBeenCalled();
+    });
+
     it('accepts valid registration with 8-10 alphanumeric registration number and academic year', async () => {
       const mockSupabase = {
         from: vi.fn((table: string) => {
@@ -123,6 +144,7 @@ describe('Enhanced Registration & Forgot Password Tests', () => {
         body: JSON.stringify({
           name: 'Pavan Kumar',
           email: 'pavan@srkr.edu.in',
+          phone: '9876543210',
           password: 'SecurePassword123!',
           role: 'STUDENT',
           registrationNumber: '21CS1045', // 8 chars alphanumeric
@@ -144,6 +166,7 @@ describe('Enhanced Registration & Forgot Password Tests', () => {
         body: JSON.stringify({
           name: 'Pavan Kumar',
           email: 'pavan@srkr.edu.in',
+          phone: '9876543210',
           password: 'SecurePassword123!',
           role: 'STUDENT',
           registrationNumber: '21CS1045',

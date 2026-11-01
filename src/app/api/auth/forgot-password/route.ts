@@ -58,18 +58,19 @@ export async function POST(req: Request) {
     // Check if user exists
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, full_name, college_email, role, student_id, college_id')
+      .select('id, full_name, college_email, role, student_id, college_id, phone')
       .eq('college_email', email)
       .single();
 
-    // To prevent account enumeration, return identical generic response on non-existent or mismatched accounts
-    const genericSuccess = () => NextResponse.json({
+    // Return standard success response while indicating account existence
+    const genericSuccess = (accountExists = false) => NextResponse.json({
       success: true,
+      accountExists,
       message: 'If an account exists with these matching credentials, a verification OTP has been sent.',
     });
 
     if (!profile) {
-      return genericSuccess();
+      return genericSuccess(false);
     }
 
     // Verify submitted college matches profile college without leaking account existence
@@ -130,8 +131,8 @@ export async function POST(req: Request) {
     if (isRealEmailDeliveryEnabled() && isSmtpConfigured()) {
       const emailResult = await sendEmailNotification({
         toEmail: email,
-        subject: `Kavach Campus — Password Recovery Code: ${otp}`,
-        body: `Hello ${profile.full_name || 'Campus Member'},\n\nYour Kavach Campus password reset code is: ${otp}\n\nThis code will expire in 5 minutes.\nIf you did not request a password reset, please alert campus security immediately.\n\n— Kavach Campus Institutional Safety Desk`,
+        subject: `Kavach Campus - Password Recovery Code: ${otp}`,
+        body: `Hello ${profile.full_name || 'Campus Member'},\n\nYour Kavach Campus password reset code is: ${otp}\n\nThis code will expire in 5 minutes.\nIf you did not request a password reset, please alert campus security immediately.\n\n-- Kavach Campus Institutional Safety Desk`,
         idempotencyKey: `pwd-reset-${email}-${Date.now()}`
       });
 
@@ -145,6 +146,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
+        accountExists: true,
         message: 'If an account exists with this email, a verification OTP has been sent.',
         deliveryMethod: 'EMAIL_SMTP',
       });
@@ -153,6 +155,9 @@ export async function POST(req: Request) {
     // 2. Otherwise in dev/demo mode, use local demo simulation
     if (isDemoSmsEnabled()) {
       const smsResult = sendDemoSms(email, 'PASSWORD_RESET', otp, true);
+      if (profile.phone && typeof profile.phone === 'string') {
+        sendDemoSms(profile.phone, 'PASSWORD_RESET', otp, true);
+      }
       clientToken = smsResult.message?.clientToken;
     } else if (process.env.NODE_ENV !== 'production') {
       const [localPart, domainPart] = email.split('@');
@@ -168,6 +173,7 @@ export async function POST(req: Request) {
 
     const response = NextResponse.json({
       success: true,
+      accountExists: true,
       message: 'If an account exists with this email, a verification OTP has been sent.',
       email,
       clientToken,

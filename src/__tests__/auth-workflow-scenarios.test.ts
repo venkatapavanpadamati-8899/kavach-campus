@@ -103,6 +103,7 @@ describe('KAVACH CAMPUS — COMPLETE USER WORKFLOW SCENARIOS (A through M)', () 
     const payload = {
       name: 'Aditya Varma',
       email: 'aditya.student@campus.edu',
+      phone: '9876543210',
       password: 'StrongPassword123!',
       role: 'STUDENT',
       registrationNumber: '2101201045',
@@ -155,6 +156,7 @@ describe('KAVACH CAMPUS — COMPLETE USER WORKFLOW SCENARIOS (A through M)', () 
       body: JSON.stringify({
         name: 'Production Student',
         email: 'student@campus.edu',
+        phone: '9876543210',
         password: 'StrongPassword123!',
         role: 'STUDENT',
         registrationNumber: '2101201045',

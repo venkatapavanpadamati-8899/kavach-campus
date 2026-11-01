@@ -6,13 +6,12 @@ import { sendPushNotification, sendSmsNotification, insertInAppNotification } fr
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
-    const body = await req.json();
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const body = await req.json().catch(() => ({}));
     const { latitude, longitude, accuracy, zoneId } = body;
 
     // Validate coordinates if provided
@@ -110,10 +109,7 @@ export async function POST(req: Request) {
 
     if (incidentError || !incident) {
       console.error('Incident insertion error:', incidentError);
-      return NextResponse.json({ 
-        error: 'Failed to create SOS incident', 
-        details: incidentError?.message 
-      }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create SOS incident' }, { status: 500 });
     }
 
     // 2. Initial Location Tracking insert
@@ -130,12 +126,35 @@ export async function POST(req: Request) {
     const assignedStaffId = null; // Do not assign arbitrarily without GPS coords
     const routingMethod = 'PENDING_ASSIGNMENT_BROADCAST';
     
-    // Fetch all active security staff
-    const { data: staffList } = await supabase
-      .from('profiles')
-      .select('id, role')
-      .in('role', ['SECURITY'])
-      .eq('is_active', true);
+    // Do not broadcast an alert across campuses. A failed or absent profile
+    // lookup deliberately falls back to escalation without notifying an
+    // unrelated campus's responders.
+    let callerCollegeId: string | null = null;
+    try {
+      const profileResult = await supabase
+        .from('profiles')
+        .select('college_id')
+        .eq('id', user.id);
+      const profileData = Array.isArray(profileResult?.data)
+        ? profileResult.data[0]
+        : profileResult?.data;
+      if (typeof profileData?.college_id === 'string' && profileData.college_id.trim().length > 0) {
+        callerCollegeId = profileData.college_id;
+      }
+    } catch (profileError) {
+      console.error('SOS caller profile lookup failed:', profileError);
+    }
+
+    let staffList: Array<{ id: string; role: string }> | null = [];
+    if (callerCollegeId) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .in('role', ['SECURITY'])
+        .eq('is_active', true)
+        .eq('college_id', callerCollegeId);
+      staffList = data;
+    }
 
     if (staffList && staffList.length > 0) {
       const messageBody = `CRITICAL SOS: User ${user.id} activated SOS. Nearest responder please claim.`;

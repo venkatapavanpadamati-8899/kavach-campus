@@ -80,14 +80,27 @@ describe('SOS & Safe Walk Production End-to-End Workflow Verification', () => {
         }
         if (table === 'profiles') {
           return {
-            select: vi.fn(() => ({
-              in: vi.fn(() => ({
-                eq: vi.fn().mockResolvedValue({
-                  data: [securityGuard],
-                  error: null,
-                }),
-              })),
-            })),
+            select: vi.fn((columns: string) => {
+              if (columns === 'college_id') {
+                return {
+                  eq: vi.fn().mockResolvedValue({
+                    data: { college_id: 'srkr-engineering-college' },
+                    error: null,
+                  }),
+                };
+              }
+
+              return {
+                in: vi.fn(() => ({
+                  eq: vi.fn(() => ({
+                    eq: vi.fn().mockResolvedValue({
+                      data: [securityGuard],
+                      error: null,
+                    }),
+                  })),
+                })),
+              };
+            }),
           };
         }
         if (table === 'notifications') {

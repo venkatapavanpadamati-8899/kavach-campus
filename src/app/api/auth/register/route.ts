@@ -23,9 +23,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const data = await req.json();
+    const data = (await req.json().catch(() => ({}))) || {};
     const {
-      name,
+      name: rawName,
+      fullName: rawFullName,
       email,
       personalEmail,
       personal_email,
@@ -43,6 +44,9 @@ export async function POST(req: Request) {
       academic_year,
       degree
     } = data;
+    const name = typeof rawName === 'string' && rawName.trim()
+      ? rawName.trim()
+      : (typeof rawFullName === 'string' ? rawFullName.trim() : '');
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     const resolvedPersonalEmail = typeof personalEmail === 'string'
       ? personalEmail.trim().toLowerCase()
@@ -60,10 +64,6 @@ export async function POST(req: Request) {
       } else {
         normalizedPhone = digits;
       }
-    }
-
-    if (normalizedPhone && (normalizedPhone.length !== 10 || !/^[6-9]\d{9}$/.test(normalizedPhone))) {
-      return NextResponse.json({ error: 'Please enter a valid 10-digit mobile number' }, { status: 400 });
     }
 
     const rawGuardianPhone = typeof guardianPhone === 'string'
@@ -101,6 +101,10 @@ export async function POST(req: Request) {
         { error: 'Administrative and management roles cannot be self-assigned through public registration.' },
         { status: 403 }
       );
+    }
+
+    if (!normalizedPhone || normalizedPhone.length !== 10 || !/^[6-9]\d{9}$/.test(normalizedPhone)) {
+      return NextResponse.json({ error: 'Please enter a valid 10-digit mobile number' }, { status: 400 });
     }
 
     const assignedCollegeId = resolveCollegeIdFromEmail(normalizedEmail);
@@ -155,17 +159,29 @@ export async function POST(req: Request) {
     const supabase = createAdminClient();
 
     // Check if user already exists
-    const { data: existingUser } = await supabase.from('profiles').select('id').eq('college_email', normalizedEmail).single();
-    if (existingUser) {
-      return NextResponse.json({ error: 'Email already in use' }, { status: 400 });
+    const existingUserQuery: any = supabase.from('profiles').select('id').eq('college_email', normalizedEmail);
+    const existingUserRes = typeof existingUserQuery.maybeSingle === 'function'
+      ? await existingUserQuery.maybeSingle()
+      : await existingUserQuery.single();
+    if (existingUserRes?.data) {
+      return NextResponse.json(
+        {
+          error: 'This email address is already registered. Please sign in or reset your password.',
+          accountExists: true,
+        },
+        { status: 400 }
+      );
     }
 
     // Check if student registration number already exists within institution scope
     if (finalRole === 'STUDENT' && validatedRegNumber) {
       try {
+        // A request payload never establishes tenant membership. For pending
+        // registrations, duplicate checking is intentionally unscoped until
+        // an administrator verifies the applicant's institution.
         const effectiveCollege = assignedCollegeId !== 'PENDING_CAMPUS_VERIFICATION'
           ? assignedCollegeId
-          : (typeof collegeId === 'string' && collegeId.trim() ? collegeId.trim() : null);
+          : null;
 
         let query: any = supabase.from('profiles').select('id').eq('student_id', validatedRegNumber);
         if (effectiveCollege && typeof query.eq === 'function') {
@@ -276,7 +292,7 @@ export async function POST(req: Request) {
         guardian_phone: finalRole === 'STUDENT' ? normalizedGuardianPhone : null,
         role: finalRole,
         campusId: assignedCollegeId,
-        collegeId: (typeof collegeId === 'string' && collegeId.trim()) || assignedCollegeId,
+        collegeId: assignedCollegeId,
         degree: typeof degree === 'string' ? degree.trim() : null,
         studentId: validatedRegNumber,
         department: department || 'General',
@@ -315,8 +331,8 @@ export async function POST(req: Request) {
     if (isRealEmailDeliveryEnabled() && isSmtpConfigured()) {
       const emailResult = await sendEmailNotification({
         toEmail: normalizedEmail,
-        subject: `Kavach Campus — Verification Code: ${otp}`,
-        body: `Hello ${name.trim()},\n\nYour Kavach Campus verification code is: ${otp}\n\nThis code will expire in 5 minutes.\nDo not share this OTP with anyone.\n\n— Kavach Campus Institutional Safety Desk`,
+        subject: `Kavach Campus - Verification Code: ${otp}`,
+        body: `Hello ${name.trim()},\n\nYour Kavach Campus verification code is: ${otp}\n\nThis code will expire in 5 minutes.\nDo not share this OTP with anyone.\n\n-- Kavach Campus Institutional Safety Desk`,
         idempotencyKey: `reg-otp-${normalizedEmail}-${Date.now()}`
       });
 
@@ -342,6 +358,9 @@ export async function POST(req: Request) {
     let clientToken: string | undefined;
     if (isDemoSmsEnabled()) {
       const smsResult = sendDemoSms(normalizedEmail, 'REGISTRATION', otp, true);
+      if (normalizedPhone) {
+        sendDemoSms(normalizedPhone, 'REGISTRATION', otp, true);
+      }
       if (!smsResult.success || !smsResult.message) {
         if (!(await removePendingOtp())) {
           return NextResponse.json({ error: 'Registration service is temporarily unavailable.' }, { status: 500 });

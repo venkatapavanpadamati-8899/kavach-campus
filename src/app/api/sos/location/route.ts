@@ -4,13 +4,12 @@ import { createClient } from '@/lib/supabase/server';
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
-    const body = await req.json();
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const body = await req.json().catch(() => ({}));
     const { incidentId, latitude, longitude, accuracy, isStopped } = body;
     
     if (!incidentId) {
@@ -27,9 +26,8 @@ export async function POST(req: Request) {
     if (selectErr || !incident) {
       if (selectErr && (selectErr.code === '42703' || selectErr.code === 'PGRST204' || selectErr.message?.includes('is_tracking_active'))) {
         return NextResponse.json({
-          error: 'Tracking service schema blocker: incidents table is missing is_tracking_active column.',
-          code: 'SCHEMA_BLOCKER',
-          details: selectErr.message
+          error: 'Tracking service is temporarily unavailable.',
+          code: 'SCHEMA_BLOCKER'
         }, { status: 500 });
       }
       return NextResponse.json({ error: 'Incident not found' }, { status: 404 });
@@ -53,9 +51,8 @@ export async function POST(req: Request) {
         console.error('Failed to update is_tracking_active in incidents:', updErr);
         return NextResponse.json(
           {
-            error: 'Failed to persist stopped tracking state. Database column is_tracking_active is required.',
-            code: updErr.code || 'UPDATE_FAILED',
-            details: updErr.message
+            error: 'Failed to persist stopped tracking state.',
+            code: 'UPDATE_FAILED'
           },
           { status: 500 }
         );
@@ -104,18 +101,23 @@ export async function POST(req: Request) {
     }
 
     // Update main incident latest coords
-    await supabase.from('incidents').update({
+    const { error: incidentUpdateError } = await supabase.from('incidents').update({
       latitude,
       longitude,
       location_accuracy: accuracy,
       updated_at: new Date().toISOString()
     }).eq('id', incidentId);
 
+    if (incidentUpdateError) {
+      console.error('Failed to update SOS incident location:', incidentUpdateError);
+      return NextResponse.json({ error: 'Failed to persist SOS location update' }, { status: 500 });
+    }
+
     return NextResponse.json({ success: true });
     
   } catch (error: unknown) {
     console.error('SOS Location update failed:', error);
-    return NextResponse.json({ error: (error instanceof Error ? error.message : "An unexpected error occurred") }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update SOS location' }, { status: 500 });
   }
 }
 
@@ -157,14 +159,14 @@ export async function GET(req: Request) {
           .eq('id', user.id)
           .single();
         isSecurityOrAdmin = !!callerProfile && ['SECURITY', 'ADMIN', 'SUPER_ADMIN'].includes(callerProfile.role);
-        if (
-          isSecurityOrAdmin &&
-          callerProfile?.role !== 'SUPER_ADMIN' &&
-          incident.college_id &&
-          callerProfile?.college_id &&
-          incident.college_id !== callerProfile.college_id
-        ) {
-          isSecurityOrAdmin = false;
+        // Campus-scoped roles must fail closed when either campus id is absent.
+        // SUPER_ADMIN is the only explicitly cross-campus role.
+        if (isSecurityOrAdmin && callerProfile?.role !== 'SUPER_ADMIN') {
+          isSecurityOrAdmin = Boolean(
+            incident.college_id &&
+            callerProfile?.college_id &&
+            incident.college_id === callerProfile.college_id
+          );
         }
       } catch {
         isSecurityOrAdmin = false;
@@ -186,11 +188,13 @@ export async function GET(req: Request) {
       .limit(10);
 
     if (error) {
-       return NextResponse.json({ error: (error instanceof Error ? error.message : "An unexpected error occurred") }, { status: 403 });
+       console.error('SOS location telemetry lookup failed:', error);
+       return NextResponse.json({ error: 'Unable to retrieve location telemetry' }, { status: 403 });
     }
 
     return NextResponse.json({ success: true, locations });
   } catch (error: unknown) {
-    return NextResponse.json({ error: (error instanceof Error ? error.message : "An unexpected error occurred") }, { status: 500 });
+    console.error('SOS location telemetry request failed:', error);
+    return NextResponse.json({ error: 'Unable to retrieve location telemetry' }, { status: 500 });
   }
 }

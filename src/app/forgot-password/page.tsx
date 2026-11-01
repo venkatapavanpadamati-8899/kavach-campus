@@ -51,6 +51,11 @@ export default function ForgotPasswordPage() {
         throw new Error(data.error || 'Failed to request password reset');
       }
 
+      if (data.accountExists === false) {
+        setError('No registered account found with this email address. Please check your credentials or create a new account.');
+        return;
+      }
+
       setSuccess(true);
     } catch (err: unknown) {
       setError((err instanceof Error ? err.message : "An unexpected error occurred") || 'Failed to send reset link');
@@ -150,9 +155,16 @@ export default function ForgotPasswordPage() {
         {error && (
           <motion.div 
             initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-            style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: 'var(--accent-red)', marginBottom: '20px', fontSize: '0.9rem' }}
+            style={{ padding: '12px 14px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#fca5a5', marginBottom: '20px', fontSize: '0.9rem' }}
           >
-            {error}
+            <div>{error}</div>
+            {error.toLowerCase().includes('no registered account') && (
+              <div style={{ marginTop: '10px', fontSize: '0.86rem' }}>
+                <a href="/register" style={{ color: 'var(--accent-blue)', textDecoration: 'underline', fontWeight: 600 }}>
+                  Register a new account →
+                </a>
+              </div>
+            )}
           </motion.div>
         )}
 

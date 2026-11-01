@@ -108,8 +108,26 @@ export function isSmtpConfigured(): boolean {
   return Boolean(
     process.env.SMTP_HOST &&
     process.env.SMTP_USER &&
-    process.env.SMTP_PASS
+    process.env.SMTP_PASS &&
+    process.env.SMTP_HOST.trim().length > 0 &&
+    process.env.SMTP_USER.trim().length > 0 &&
+    process.env.SMTP_PASS.trim().length > 0
   );
+}
+
+/**
+ * Returns the resolved sender address for outgoing SMTP emails.
+ * Standard configuration: SMTP_FROM
+ * Backwards compatibility: SMTP_FROM_EMAIL
+ * Fallback: SMTP_USER
+ */
+export function getSmtpFromAddress(): string | undefined {
+  const from = process.env.SMTP_FROM?.trim() || process.env.SMTP_FROM_EMAIL?.trim();
+  if (from && from.length > 0) {
+    return from;
+  }
+  const user = process.env.SMTP_USER?.trim();
+  return user && user.length > 0 ? user : undefined;
 }
 
 /**
@@ -341,13 +359,24 @@ export async function sendEmailNotification(payload: EmailPayload): Promise<Deli
     };
   }
 
+  const fromAddress = getSmtpFromAddress();
+  if (!fromAddress) {
+    return {
+      success: false,
+      status: 'FAILED',
+      provider: 'SMTP',
+      idempotencyKey: payload.idempotencyKey,
+      error: 'SMTP sender address not configured (set SMTP_FROM or SMTP_USER)',
+    };
+  }
+
   try {
     const transport = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
+      host: process.env.SMTP_HOST?.trim(),
       port,
       secure: process.env.SMTP_SECURE === 'true' || (process.env.SMTP_SECURE !== 'false' && port === 465),
       auth: {
-        user: process.env.SMTP_USER,
+        user: process.env.SMTP_USER?.trim(),
         pass: process.env.SMTP_PASS,
       },
       connectionTimeout: 6000,
@@ -355,7 +384,7 @@ export async function sendEmailNotification(payload: EmailPayload): Promise<Deli
       socketTimeout: 6000,
     });
     const info = await transport.sendMail({
-      from: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER,
+      from: fromAddress,
       to: payload.toEmail,
       subject: payload.subject,
       text: payload.body,

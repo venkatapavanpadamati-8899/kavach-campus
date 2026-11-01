@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldAlert, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
+import { ShieldAlert, Users, TrendingUp, AlertTriangle, ArrowRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function ManagementDashboard() {
@@ -67,19 +68,44 @@ export default function ManagementDashboard() {
         ))}
       </div>
 
-      <h2 style={{ fontSize: '1.5rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <AlertTriangle color="var(--accent-red)" /> Critical Escalations
-      </h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h2 style={{ fontSize: '1.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <AlertTriangle color="var(--accent-red)" /> Critical Escalations
+        </h2>
+        <Link href="/management/incidents" className="btn-secondary" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          View All Incidents <ArrowRight size={14} />
+        </Link>
+      </div>
       <div className="glass-panel" style={{ padding: '24px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
         {data.criticalList.length === 0 ? (
           <p style={{ color: 'var(--text-secondary)', margin: 0 }}>No critical escalations at this time.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {data.criticalList.map(item => (
-              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(239,68,68,0.1)', borderRadius: '8px' }}>
-                <span style={{ fontWeight: 600 }}>{item.case_id}</span>
-                <span>{item.title || item.category}</span>
-              </div>
+              <Link
+                key={item.id}
+                href={`/management/incidents/${item.id}`}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '14px 18px',
+                  background: 'rgba(239,68,68,0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  transition: 'background 0.2s, transform 0.15s',
+                }}
+              >
+                <div>
+                  <span style={{ fontWeight: 600, color: 'var(--accent-red)', marginRight: '12px' }}>{item.case_id}</span>
+                  <span style={{ fontWeight: 500 }}>{item.title || item.category}</span>
+                </div>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  Review <ArrowRight size={14} />
+                </span>
+              </Link>
             ))}
           </div>
         )}

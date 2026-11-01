@@ -542,4 +542,125 @@ describe('Kavach Campus OTP System — Real SMTP & Free Demo Mobile Audit', () =
       expect(json.error).toBe('Invalid OTP');
     });
   });
+
+  describe('4. OTP Expiration, Max Attempts & Error Handling', () => {
+    it('rejects expired OTP with 400 and deletes pending record', async () => {
+      const mockDelete = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      });
+
+      mockAdminFrom.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: {
+                id: 'rec-exp-1',
+                email: 'expired@srkr.edu.in',
+                otp_hash: 'dummyhash',
+                verified: false,
+                attempts: 0,
+                max_attempts: 5,
+                expires_at: new Date(Date.now() - 60 * 1000).toISOString(), // Expired 1 min ago
+                registration_data: { userId: 'usr-exp-1' },
+              },
+              error: null,
+            }),
+          }),
+        }),
+        delete: mockDelete,
+      });
+
+      const req = new Request('http://localhost:3000/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'expired@srkr.edu.in', otp: '123456' }),
+      });
+
+      const res = await verifyOtpRoute(req);
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error).toContain('OTP has expired');
+      expect(mockDelete).toHaveBeenCalled();
+    });
+
+    it('rejects verification when attempts reach max_attempts and deletes record', async () => {
+      const mockDelete = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      });
+
+      mockAdminFrom.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: {
+                id: 'rec-lock-1',
+                email: 'locked@srkr.edu.in',
+                otp_hash: 'dummyhash',
+                verified: false,
+                attempts: 5,
+                max_attempts: 5,
+                expires_at: new Date(Date.now() + 300000).toISOString(),
+                registration_data: { userId: 'usr-lock-1' },
+              },
+              error: null,
+            }),
+          }),
+        }),
+        delete: mockDelete,
+      });
+
+      const req = new Request('http://localhost:3000/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'locked@srkr.edu.in', otp: '123456' }),
+      });
+
+      const res = await verifyOtpRoute(req);
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error).toContain('Too many failed attempts');
+      expect(mockDelete).toHaveBeenCalled();
+    });
+
+    it('rejects incorrect OTP with 401 and increments attempts', async () => {
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash('999111', salt);
+      const mockUpdate = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      });
+
+      mockAdminFrom.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: {
+                id: 'rec-wrong-1',
+                email: 'student@srkr.edu.in',
+                otp_hash: hash,
+                verified: false,
+                attempts: 2,
+                max_attempts: 5,
+                expires_at: new Date(Date.now() + 300000).toISOString(),
+                registration_data: { role: 'STUDENT' },
+              },
+              error: null,
+            }),
+          }),
+        }),
+        update: mockUpdate,
+      });
+
+      const req = new Request('http://localhost:3000/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'student@srkr.edu.in', otp: '000000' }),
+      });
+
+      const res = await verifyOtpRoute(req);
+      expect(res.status).toBe(401);
+      const json = await res.json();
+      expect(json.error).toBe('Invalid OTP');
+      expect(mockUpdate).toHaveBeenCalledWith({ attempts: 3 });
+    });
+  });
 });

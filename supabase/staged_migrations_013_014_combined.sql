@@ -37,7 +37,9 @@ WHERE i.student_id = p.id
 
 ALTER TABLE public.evidence
   ADD COLUMN IF NOT EXISTS case_id TEXT,
-  ADD COLUMN IF NOT EXISTS file_path TEXT;
+  ADD COLUMN IF NOT EXISTS file_path TEXT,
+  ADD COLUMN IF NOT EXISTS incident_id UUID,
+  ADD COLUMN IF NOT EXISTS storage_path TEXT;
 
 UPDATE public.evidence e
 SET case_id = i.case_id
@@ -47,7 +49,13 @@ WHERE e.incident_id = i.id
 
 UPDATE public.evidence
 SET file_path = storage_path
-WHERE file_path IS NULL;
+WHERE file_path IS NULL
+  AND storage_path IS NOT NULL;
+
+UPDATE public.evidence
+SET storage_path = file_path
+WHERE storage_path IS NULL
+  AND file_path IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_evidence_case_id
   ON public.evidence (case_id);
@@ -109,6 +117,49 @@ CREATE TRIGGER trg_sync_evidence_incident_reference
 -- -------------------------------------------------------------------------------------
 -- SECTION 3: CAMPUS STAFF HELPER & ROLE ESCALATION PREVENTION
 -- -------------------------------------------------------------------------------------
+
+-- Tenant Isolation and Role Helper Functions (Ensures Migration is Self-Contained)
+CREATE OR REPLACE FUNCTION public.get_user_role()
+RETURNS TEXT
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role::TEXT FROM public.profiles WHERE id = auth.uid() LIMIT 1;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.get_user_role() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_user_role() TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE(
+    public.get_user_role()::TEXT IN ('ADMIN', 'SUPER_ADMIN'),
+    FALSE
+  );
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.get_user_college_id()
+RETURNS TEXT
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT college_id FROM public.profiles WHERE id = auth.uid() LIMIT 1;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.get_user_college_id() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_user_college_id() TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.is_campus_staff()
 RETURNS BOOLEAN

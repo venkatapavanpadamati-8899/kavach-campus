@@ -400,6 +400,7 @@ describe('Auth Security Flows — Registration, Forgot Password, Reset Password'
         body: JSON.stringify({
           name: 'Pavan Student',
           email: 'newstudent@srkr.edu.in',
+          phone: '9876543210',
           collegeId: 'srkr-bhimavaram',
           studentId: '2101201045',
           password: 'ValidPassword123!',

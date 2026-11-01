@@ -158,6 +158,17 @@ describe('Demo SMS Service (src/lib/demo-sms.ts)', () => {
       expect(secondTry.success).toBe(false);
     });
 
+    it('rejects expired demo OTP safely', () => {
+      const recipient = 'expired.test@campus.edu';
+      const result = sendDemoSms(recipient, 'REGISTRATION', '111222');
+      expect(result.success).toBe(true);
+      // Fast-forward expiration
+      result.message!.expiresAt = Date.now() - 1000;
+      const verifyResult = verifyDemoSmsOtp(recipient, '111222');
+      expect(verifyResult.success).toBe(false);
+      expect(verifyResult.error).toContain('expired');
+    });
+
     it('rejects incorrect OTP and counts down attempts', () => {
       const recipient = 'attempts.test@campus.edu';
       sendDemoSms(recipient, 'REGISTRATION', '123789');

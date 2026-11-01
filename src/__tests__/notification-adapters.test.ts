@@ -3,6 +3,7 @@ import {
   isTwilioConfigured,
   isFcmConfigured,
   isSmtpConfigured,
+  getSmtpFromAddress,
   isRealDeliveryEnabled,
   isRealEmailDeliveryEnabled,
   sendEmailNotification,
@@ -63,10 +64,31 @@ describe('Notification Provider Adapters (src/lib/notifications)', () => {
       delete process.env.SMTP_PASS;
       expect(isSmtpConfigured()).toBe(false);
 
+      process.env.SMTP_HOST = '   ';
+      process.env.SMTP_USER = 'mailer@test.edu';
+      process.env.SMTP_PASS = 'test-password';
+      expect(isSmtpConfigured()).toBe(false);
+
       process.env.SMTP_HOST = 'smtp.test.edu';
       process.env.SMTP_USER = 'mailer@test.edu';
       process.env.SMTP_PASS = 'test-password';
       expect(isSmtpConfigured()).toBe(true);
+    });
+
+    it('resolves sender address consistently via getSmtpFromAddress', () => {
+      delete process.env.SMTP_FROM;
+      delete process.env.SMTP_FROM_EMAIL;
+      delete process.env.SMTP_USER;
+      expect(getSmtpFromAddress()).toBeUndefined();
+
+      process.env.SMTP_USER = 'mailer@campus.edu';
+      expect(getSmtpFromAddress()).toBe('mailer@campus.edu');
+
+      process.env.SMTP_FROM_EMAIL = 'legacy-from@campus.edu';
+      expect(getSmtpFromAddress()).toBe('legacy-from@campus.edu');
+
+      process.env.SMTP_FROM = 'Kavach <standard-from@campus.edu>';
+      expect(getSmtpFromAddress()).toBe('Kavach <standard-from@campus.edu>');
     });
 
     it('defaults real delivery to false to prevent unintended emergency messages', () => {
@@ -163,6 +185,33 @@ describe('Notification Provider Adapters (src/lib/notifications)', () => {
         subject: 'Test',
         text: 'Test message',
       }));
+    });
+
+    it('uses SMTP_FROM if configured instead of SMTP_USER', async () => {
+      process.env.SMTP_HOST = 'smtp.test.edu';
+      process.env.SMTP_USER = 'mailer@test.edu';
+      process.env.SMTP_PASS = 'test-password';
+      process.env.SMTP_FROM = 'alerts@campus.edu';
+      delete process.env.SMTP_FROM_EMAIL;
+      process.env.ENABLE_REAL_NOTIFICATIONS = 'true';
+      const sendMail = vi.fn().mockResolvedValue({
+        accepted: ['test@example.edu'],
+        messageId: 'test-message-from-id',
+      });
+      mockCreateTransport.mockReturnValue({
+        sendMail,
+      });
+
+      await sendEmailNotification({
+        toEmail: 'test@example.edu',
+        subject: 'Test From',
+        body: 'Test body',
+      });
+
+      expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({
+        from: 'alerts@campus.edu',
+      }));
+      delete process.env.SMTP_FROM;
     });
 
     it('reports UNKNOWN rather than success when SMTP handoff throws', async () => {

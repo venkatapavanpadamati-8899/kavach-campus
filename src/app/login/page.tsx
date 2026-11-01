@@ -42,6 +42,16 @@ function formatAuthError(err: unknown): string {
     return 'Too many login attempts. Please wait a moment before trying again.';
   }
   if (
+    message.includes('Unsupported phone provider') ||
+    message.includes('phone_provider') ||
+    message.includes('Phone provider') ||
+    message.includes('provider is not enabled') ||
+    message.includes('SMS provider') ||
+    message.includes('sms provider')
+  ) {
+    return 'Mobile OTP login is not enabled on this platform. Please use your institutional email and password to sign in instead.';
+  }
+  if (
     message.includes('Failed to fetch') ||
     message.includes('NetworkError') ||
     message.includes('fetch failed') ||
@@ -74,6 +84,8 @@ function LoginForm() {
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [demoOtp, setDemoOtp] = useState<string | null>(null);
+  const [simulatedSms, setSimulatedSms] = useState<string | null>(null);
 
   // Focus & feedback states for 3D Character interaction
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
@@ -172,7 +184,7 @@ function LoginForm() {
     }
   };
 
-  // 1. Send OTP to Mobile
+  // 1. Send OTP to Mobile (Demo Only)
   const handleSendMobileOtp = async () => {
     setError('');
     setMsg('');
@@ -184,22 +196,28 @@ function LoginForm() {
 
     setLoading(true);
     try {
-      const fullPhone = `+91${cleanPhone}`;
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        phone: fullPhone,
+      const res = await fetch('/api/auth/mobile-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 'send', phone: cleanPhone }),
       });
-
-      if (otpError) {
-        // Never show an OTP field unless the configured provider accepted the
-        // request; doing so would imply that a code was sent when it was not.
-        throw otpError;
-      } else {
-        setOtpSent(true);
-        setCountdown(60);
-        setMsg(`6-digit secure login OTP has been sent to +91 ${cleanPhone}.`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate mobile OTP');
       }
+
+      setOtpSent(true);
+      setCountdown(60);
+      if (data.demoOtp) {
+        setDemoOtp(data.demoOtp);
+        setOtp(data.demoOtp);
+      }
+      if (data.simulatedBody) {
+        setSimulatedSms(data.simulatedBody);
+      }
+      setMsg(data.message || `6-digit Demo OTP generated for +91 ${cleanPhone}.`);
     } catch (err: unknown) {
-      setError(formatAuthError(err));
+      setError(err instanceof Error ? err.message : formatAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -220,41 +238,45 @@ function LoginForm() {
 
     setLoading(true);
     try {
-      const fullPhone = `+91${cleanPhone}`;
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        phone: fullPhone,
-        token: cleanOtp,
-        type: 'sms',
+      const res = await fetch('/api/auth/mobile-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 'verify', phone: cleanPhone, otp: cleanOtp }),
       });
-
-      if (verifyError) throw verifyError;
-
-      if (!data.user) {
-        throw new Error('Authentication succeeded but user session could not be established.');
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Invalid OTP');
       }
 
       setIsSuccess(true);
 
-      // Fetch profile to route correctly
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role, is_approved, college_id')
-        .eq('id', data.user.id)
-        .single();
+      // If token_hash returned and browser client is active, verify session
+      if (data.token_hash && isSupabaseConfigured()) {
+        try {
+          await supabase.auth.verifyOtp({
+            token_hash: data.token_hash,
+            type: 'magiclink',
+          });
+        } catch {
+          // Non-fatal if session verification succeeds on server
+        }
+      }
 
-      if (!profile || !profile.is_approved) {
+      const profile = data.user;
+      if (!profile || !profile.isApproved) {
         if (profile?.role === 'STUDENT') {
           router.push('/student/verification-status?notice=verification_required');
           return;
         }
       }
 
-      const authenticatedCollege = profile?.college_id ? getCollegeById(profile.college_id) : null;
+      const authenticatedCollege = profile?.collegeId ? getCollegeById(profile.collegeId) : null;
       if (authenticatedCollege) setActiveCollegeTenant(authenticatedCollege);
 
-      router.push(getSafeRedirectUrl(profile?.role || 'STUDENT'));
+      const redirectDest = data.destination || getSafeRedirectUrl(profile?.role || 'STUDENT');
+      router.push(redirectDest);
     } catch (err: unknown) {
-      setError(formatAuthError(err));
+      setError(err instanceof Error ? err.message : formatAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -310,12 +332,25 @@ function LoginForm() {
         router.push(getSafeRedirectUrl(profile.role));
       } else {
         // Magic Link
+        const cleanEmail = email.trim().toLowerCase();
+        // Check account existence before dispatching magic link
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('college_email', cleanEmail)
+          .maybeSingle();
+
+        if (!existingProfile) {
+          setError('No registered account found with this email address. Please register an account first.');
+          return;
+        }
+
         const callbackUrl = typeof window !== 'undefined' && window.location.origin
           ? `${window.location.origin}/api/auth/callback`
           : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback`;
 
         const { error: magicError } = await supabase.auth.signInWithOtp({
-          email: email.trim().toLowerCase(),
+          email: cleanEmail,
           options: {
             emailRedirectTo: callbackUrl,
           },
@@ -660,6 +695,18 @@ function LoginForm() {
                 exit={{ opacity: 0, y: -10 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
               >
+                {/* Informational notice: Mobile OTP is Demo simulation */}
+                <div style={{
+                  padding: '10px 14px',
+                  background: 'rgba(59, 130, 246, 0.08)',
+                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                  borderRadius: '10px',
+                  fontSize: '0.82rem',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.5,
+                }}>
+                  📱 <strong>Mobile Sign-In:</strong> Enter your registered 10-digit mobile number to receive a 6-digit Demo OTP. (Real OTP is delivered via verified SMTP for email accounts).
+                </div>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <div
                     style={{
@@ -733,6 +780,7 @@ function LoginForm() {
                     onClick={() => {
                       setOtpSent(false);
                       setOtp('');
+                      setDemoOtp(null);
                     }}
                     style={{
                       background: 'transparent',
@@ -745,6 +793,59 @@ function LoginForm() {
                     Change Number
                   </button>
                 </div>
+
+                {demoOtp && (
+                  <div style={{
+                    padding: '12px 14px',
+                    background: 'rgba(59, 130, 246, 0.12)',
+                    border: '1px solid rgba(59, 130, 246, 0.35)',
+                    borderRadius: '10px',
+                    fontSize: '0.86rem',
+                    color: '#93c5fd',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>📱 <strong>[DEMO MODE]</strong> Mobile OTP:</span>
+                      <button
+                        type="button"
+                        onClick={() => setOtp(demoOtp)}
+                        style={{
+                          background: 'var(--accent-blue)',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          letterSpacing: '1px',
+                        }}
+                      >
+                        {demoOtp} (Click to Fill)
+                      </button>
+                    </div>
+                    <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                      Zero SMS dispatched. 6-digit simulation code for rapid demo verification.
+                    </span>
+                    {simulatedSms && (
+                      <div style={{
+                        marginTop: '4px',
+                        padding: '6px 8px',
+                        background: 'rgba(15, 23, 42, 0.6)',
+                        border: '1px dashed rgba(59, 130, 246, 0.3)',
+                        borderRadius: '6px',
+                        fontFamily: 'monospace',
+                        fontSize: '0.72rem',
+                        color: '#bfdbfe',
+                        whiteSpace: 'pre-line',
+                      }}>
+                        {simulatedSms}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div style={{ position: 'relative' }}>
                   <KeyRound

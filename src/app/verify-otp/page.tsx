@@ -2,7 +2,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Shield, KeyRound, Loader2, ArrowRight, Smartphone, RefreshCw, AlertCircle } from 'lucide-react';
+import { Shield, KeyRound, Loader2, ArrowRight, Smartphone, RefreshCw, AlertCircle, Mail } from 'lucide-react';
 
 function VerifyOTPForm() {
   const router = useRouter();
@@ -35,15 +35,25 @@ function VerifyOTPForm() {
     return () => clearInterval(cooldownTimer);
   }, [resendCooldown]);
 
-  // Check for local demo SMS in development (authorized session only)
+  // Check for local demo SMS in development (authorized session only for mobile phone recipients)
   useEffect(() => {
-    if (email && process.env.NODE_ENV !== 'production') {
+    const cleanRecipient = email.trim().toLowerCase();
+    const isEmail = cleanRecipient.includes('@');
+    if (isEmail) {
+      // Email OTP: real mailbox delivery only. Never display or fetch simulated demo OTP.
+      setSimulatedSms(null);
+      return;
+    }
+
+    const digits = cleanRecipient.replace(/\D/g, '');
+    const isPhone = digits.length === 10 && /^[6-9]\d{9}$/.test(digits);
+
+    if (isPhone && process.env.NODE_ENV !== 'production') {
       const urlToken = searchParams.get('token');
-      const cleanEmail = email.trim().toLowerCase();
-      const storedToken = typeof window !== 'undefined' ? sessionStorage.getItem(`kavach_demo_token_${cleanEmail}`) : null;
+      const storedToken = typeof window !== 'undefined' ? sessionStorage.getItem(`kavach_demo_token_${digits}`) : null;
       const token = urlToken || storedToken;
 
-      const fetchUrl = `/api/auth/demo-sms?recipient=${encodeURIComponent(cleanEmail)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
+      const fetchUrl = `/api/auth/demo-sms?recipient=${encodeURIComponent(digits)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
       fetch(fetchUrl, {
         headers: token ? { 'x-demo-token': token } : {}
       })
@@ -59,7 +69,7 @@ function VerifyOTPForm() {
             }
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [email, searchParams]);
 
@@ -77,10 +87,12 @@ function VerifyOTPForm() {
       if (!res.ok) {
         throw new Error(data.error || 'Failed to resend verification code');
       }
-      if (data.clientToken && typeof window !== 'undefined') {
-        const cleanEmail = email.trim().toLowerCase();
-        sessionStorage.setItem(`kavach_demo_token_${cleanEmail}`, data.clientToken);
-        const fetchUrl = `/api/auth/demo-sms?recipient=${encodeURIComponent(cleanEmail)}&token=${encodeURIComponent(data.clientToken)}`;
+      const cleanRecipient = email.trim().toLowerCase();
+      const isEmail = cleanRecipient.includes('@');
+      if (!isEmail && data.clientToken && typeof window !== 'undefined') {
+        const digits = cleanRecipient.replace(/\D/g, '');
+        sessionStorage.setItem(`kavach_demo_token_${digits}`, data.clientToken);
+        const fetchUrl = `/api/auth/demo-sms?recipient=${encodeURIComponent(digits)}&token=${encodeURIComponent(data.clientToken)}`;
         fetch(fetchUrl, { headers: { 'x-demo-token': data.clientToken } })
           .then(r => r.ok ? r.json() : null)
           .then(d => {
@@ -89,7 +101,7 @@ function VerifyOTPForm() {
               if (d.message.otp) setOtp(d.message.otp);
             }
           })
-          .catch(() => {});
+          .catch(() => { });
       }
       setTimeLeft(300); // Reset 5-minute expiry
       setResendCooldown(60); // 60-second cooldown
@@ -111,9 +123,9 @@ function VerifyOTPForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp })
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) {
         throw new Error(data.error || 'OTP verification failed');
       }
@@ -122,7 +134,7 @@ function VerifyOTPForm() {
       setTimeout(() => {
         router.push('/login');
       }, 2000);
-      
+
     } catch (err: unknown) {
       setError((err instanceof Error ? err.message : "An unexpected error occurred"));
     } finally {
@@ -140,7 +152,7 @@ function VerifyOTPForm() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
         <div className="ambient-light"></div>
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
           className="glass-panel" style={{ width: '100%', maxWidth: '440px', padding: '40px', textAlign: 'center' }}
         >
@@ -158,30 +170,58 @@ function VerifyOTPForm() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: '20px' }}>
       <div className="ambient-light"></div>
       <div className="ambient-light-alt"></div>
-      
-      <motion.div 
+
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="glass-panel" 
+        className="glass-panel"
         style={{ width: '100%', maxWidth: '460px', padding: '36px', position: 'relative', zIndex: 10 }}
       >
-        {/* Demo Mode Notice Badge */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '8px 12px',
-          background: 'rgba(59, 130, 246, 0.1)',
-          border: '1px solid rgba(59, 130, 246, 0.25)',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          fontSize: '0.85rem',
-          color: 'var(--accent-blue)'
-        }}>
-          <Smartphone size={16} />
-          <span><strong>Demo OTP Verification</strong> — ₹0 Free Simulation. Real SMS is disabled; enter the 6-digit verification code.</span>
-        </div>
+        {/* Mode Notice Badge: Real Email Delivery vs Demo Mobile OTP */}
+        {email.includes('@') ? (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            padding: '12px 14px',
+            background: 'rgba(59, 130, 246, 0.08)',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+            borderRadius: '10px',
+            marginBottom: '20px',
+            fontSize: '0.82rem',
+            color: 'var(--text-secondary)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', fontWeight: 600 }}>
+              <Mail size={16} />
+              <span>Email Verification (Real Mailbox Delivery)</span>
+            </div>
+            <p style={{ margin: 0, lineHeight: 1.4 }}>
+              A 6-digit verification code was sent to <strong>{email}</strong> via verified SMTP. Please check your inbox and spam folder. Real email OTP is never displayed on-screen.
+            </p>
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            padding: '12px 14px',
+            background: 'rgba(59, 130, 246, 0.08)',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+            borderRadius: '10px',
+            marginBottom: '20px',
+            fontSize: '0.82rem',
+            color: 'var(--text-secondary)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', fontWeight: 600 }}>
+              <Smartphone size={16} />
+              <span>Mobile OTP: DEMO MODE ONLY</span>
+            </div>
+            <p style={{ margin: 0, lineHeight: 1.4 }}>
+              Mobile verification runs in ₹0 free simulation mode (no real SMS sent). For live campus production, institutional email OTP is delivered via verified SMTP.
+            </p>
+          </div>
+        )}
 
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <motion.div
@@ -202,7 +242,7 @@ function VerifyOTPForm() {
         </div>
 
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: 'var(--accent-red)', marginBottom: '16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}
@@ -231,26 +271,26 @@ function VerifyOTPForm() {
 
         <form onSubmit={handleVerify} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ position: 'relative' }}>
-            <input 
-              type="email" 
-              placeholder="Campus Email or Phone" 
-              className="input-field" 
+            <input
+              type="email"
+              placeholder="Campus Email or Phone"
+              className="input-field"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required 
+              required
             />
           </div>
-          
+
           <div style={{ position: 'relative' }}>
-            <input 
-              type="text" 
-              placeholder="6-digit OTP" 
+            <input
+              type="text"
+              placeholder="6-digit OTP"
               className="input-field"
               maxLength={6}
               style={{ fontSize: '1.2rem', letterSpacing: '4px', textAlign: 'center' }}
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              required 
+              required
             />
           </div>
 
@@ -262,8 +302,8 @@ function VerifyOTPForm() {
 
         {/* Resend OTP Action */}
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={handleResend}
             disabled={resending || resendCooldown > 0}
             style={{

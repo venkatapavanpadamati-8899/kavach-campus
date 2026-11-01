@@ -64,7 +64,8 @@ export default function RegisterPage() {
     academicYear: 'Year 1'
   });
   const [customDepartment, setCustomDepartment] = useState('');
-  const [consent, setConsent] = useState(true);
+  // Consent must be an affirmative action; never pre-select the agreement.
+  const [consent, setConsent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -158,6 +159,13 @@ export default function RegisterPage() {
         return;
       }
 
+      const normalizedPhone = formData.phone.replace(/\D/g, '');
+      if (!/^[6-9]\d{9}$/.test(normalizedPhone)) {
+        setError('Please enter a valid 10-digit mobile number.');
+        setLoading(false);
+        return;
+      }
+
       const regNumTrimmed = formData.registrationNumber.trim();
       if (formData.role === 'STUDENT') {
         const regCheck = validateStudentRegistrationNumber({
@@ -194,7 +202,7 @@ export default function RegisterPage() {
       const payload = {
         name: formData.name.trim(),
         email: emailTrimmed.toLowerCase(),
-        phone: formData.phone.trim() || undefined,
+        phone: normalizedPhone,
         guardianPhone: formData.role === 'STUDENT'
           ? formData.guardianPhone.replace(/\D/g, '')
           : undefined,
@@ -395,9 +403,19 @@ export default function RegisterPage() {
         {error && (
           <motion.div
             initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-            style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', color: 'var(--accent-red)', marginBottom: '20px', fontSize: '0.9rem' }}
+            style={{ padding: '12px 14px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#fca5a5', marginBottom: '20px', fontSize: '0.9rem' }}
           >
-            {error}
+            <div>{error}</div>
+            {(error.toLowerCase().includes('already registered') || error.toLowerCase().includes('already in use') || error.toLowerCase().includes('already exists')) && (
+              <div style={{ marginTop: '10px', display: 'flex', gap: '14px', fontSize: '0.86rem' }}>
+                <a href="/login" style={{ color: 'var(--accent-blue)', textDecoration: 'underline', fontWeight: 600 }}>
+                  Go to Sign In →
+                </a>
+                <a href="/forgot-password" style={{ color: 'var(--accent-blue)', textDecoration: 'underline' }}>
+                  Reset Password →
+                </a>
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -437,6 +455,7 @@ export default function RegisterPage() {
               value={formData.phone}
               onChange={handleChange}
               maxLength={10}
+              required
             />
           </div>
 

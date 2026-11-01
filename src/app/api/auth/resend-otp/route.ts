@@ -100,8 +100,8 @@ export async function POST(req: Request) {
     if (isRealEmailDeliveryEnabled() && isSmtpConfigured()) {
       const emailResult = await sendEmailNotification({
         toEmail: normalizedEmail,
-        subject: `Kavach Campus — Verification Code: ${newOtp}`,
-        body: `Hello ${recipientName},\n\nYour new Kavach Campus verification code is: ${newOtp}\n\nThis code will expire in 5 minutes.\nDo not share this code with anyone.\n\n— Kavach Campus Institutional Safety Desk`,
+        subject: `Kavach Campus - Verification Code: ${newOtp}`,
+        body: `Hello ${recipientName},\n\nYour new Kavach Campus verification code is: ${newOtp}\n\nThis code will expire in 5 minutes.\nDo not share this code with anyone.\n\n-- Kavach Campus Institutional Safety Desk`,
         idempotencyKey: `resend-otp-${normalizedEmail}-${Date.now()}`
       });
 
@@ -124,6 +124,10 @@ export async function POST(req: Request) {
     let clientToken: string | undefined;
     if (isDemoSmsEnabled()) {
       const smsResult = sendDemoSms(normalizedEmail, 'REGISTRATION', newOtp, true);
+      const regPhone = regData.phone;
+      if (regPhone && typeof regPhone === 'string') {
+        sendDemoSms(regPhone, 'REGISTRATION', newOtp, true);
+      }
       if (!smsResult.success || !smsResult.message) {
         return NextResponse.json(
           { error: smsResult.error || 'Unable to create demo verification message.' },

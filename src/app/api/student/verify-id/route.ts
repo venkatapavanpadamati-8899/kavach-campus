@@ -9,6 +9,7 @@ import {
   evaluateVerificationDecision,
   AdmissionType,
 } from '@/lib/verification/id-card';
+import { resolveCollegeIdFromEmail } from '@/lib/colleges';
 
 export async function GET() {
   try {
@@ -61,7 +62,6 @@ export async function POST(req: Request) {
     let admissionType: AdmissionType = 'REGULAR';
     let admissionYear = 2024;
     let expectedGraduationYear = 2028;
-    let collegeId = '';
     let idCardUrl: string | null = null;
     let ocrText = '';
     let uploadedFileBuffer: Buffer | null = null;
@@ -92,7 +92,6 @@ export async function POST(req: Request) {
       admissionType = ((formData.get('admissionType') as string) || 'REGULAR') as AdmissionType;
       admissionYear = Number(formData.get('admissionYear'));
       expectedGraduationYear = Number(formData.get('expectedGraduationYear'));
-      collegeId = (formData.get('collegeId') as string) || '';
       ocrText = (formData.get('ocrText') as string) || '';
 
       incomingFullName = (formData.get('fullName') as string) || '';
@@ -159,7 +158,6 @@ export async function POST(req: Request) {
       admissionType = (body.admissionType || 'REGULAR') as AdmissionType;
       admissionYear = Number(body.admissionYear);
       expectedGraduationYear = Number(body.expectedGraduationYear);
-      collegeId = body.collegeId || '';
       idCardUrl = body.idCardUrl || null;
       ocrText = body.ocrText || '';
     }
@@ -210,17 +208,25 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fetch caller profile for name comparison
+    // The client may provide a claimed college for manual review, but it never
+    // controls authorization or the persistent campus assignment.
     const { data: profile } = await adminSupabase
       .from('profiles')
-      .select('full_name, department')
+      .select('full_name, department, college_id, college_email')
       .eq('id', user.id)
       .single();
 
     const fullName = profile?.full_name || 'Student';
+    const profileCollegeId = typeof profile?.college_id === 'string' &&
+      profile.college_id !== 'PENDING_CAMPUS_VERIFICATION'
+      ? profile.college_id
+      : '';
+    const emailCollegeId = resolveCollegeIdFromEmail(profile?.college_email);
+    const trustedCollegeId = profileCollegeId ||
+      (emailCollegeId !== 'PENDING_CAMPUS_VERIFICATION' ? emailCollegeId : '');
 
     // 4. Evaluate decision based on OCR text, batch consistency, and ID match
-    const decision = evaluateVerificationDecision({
+    const evaluatedDecision = evaluateVerificationDecision({
       fullName,
       studentId: studentId.trim(),
       admissionType: admissionType as AdmissionType,
@@ -228,6 +234,13 @@ export async function POST(req: Request) {
       expectedGraduationYear: Number(expectedGraduationYear),
       ocrExtractedText: ocrText,
     });
+    const decision = trustedCollegeId
+      ? evaluatedDecision
+      : {
+          status: 'PENDING_MANUAL_REVIEW' as const,
+          reason: 'Campus assignment requires administrator review before identity approval.',
+          isAutoApproved: false,
+        };
 
     // 5. Upload files to private storage bucket if uploaded, or enforce user.id isolation
     let resolvedIdCardUrl = idCardUrl ? String(idCardUrl).trim() : null;
@@ -320,9 +333,8 @@ export async function POST(req: Request) {
       student_id: studentId.trim(),
       is_approved: decision.status === 'VERIFIED',
     };
-    if (collegeId && collegeId.trim()) {
-      profileUpdates.college_id = collegeId.trim();
-    }
+    // Never persist a client-supplied collegeId. Campus assignment is an
+    // administrator/server decision, not an ID-upload form field.
     if (incomingFullName && incomingFullName.trim()) {
       profileUpdates.full_name = incomingFullName.trim();
     }
@@ -361,12 +373,14 @@ export async function POST(req: Request) {
       .eq('id', user.id);
 
     // Persist to dedicated student_residences table
-    if (incomingAccommodation) {
+    // A residence cannot be safely assigned to a default campus. Defer this
+    // optional record until the submitted institution has been verified.
+    if (incomingAccommodation && trustedCollegeId) {
       try {
         const residenceType = incomingAccommodation.toLowerCase().includes('hostel') ? 'COLLEGE_HOSTEL' : 'DAY_SCHOLAR';
         const resPayload: Record<string, unknown> = {
           id: user.id,
-          college_id: (collegeId && collegeId.trim()) ? collegeId.trim() : 'srkr-bhimavaram',
+          college_id: trustedCollegeId,
           residence_type: residenceType,
           updated_at: new Date().toISOString(),
         };

@@ -292,8 +292,9 @@ describe('Cron Workflows & Automated Escalation APIs', () => {
           case_id: 'KC-2026-UNACK1',
           assigned_to: 'staff-guard-uuid-1',
           created_at: '2026-10-11T08:00:00Z',
+          college_id: 'srkr-bhimavaram',
         },
-      ] as { id: string; case_id: string; assigned_to: string; created_at: string }[],
+      ] as { id: string; case_id: string; assigned_to: string; created_at: string; college_id: string }[],
       concurrencyRaceWonByOther = false,
     } = {}) {
       return {
@@ -345,7 +346,7 @@ describe('Cron Workflows & Automated Escalation APIs', () => {
             return {
               select: vi.fn(() => ({
                 in: vi.fn().mockResolvedValue({
-                  data: [{ id: 'admin-uuid-1' }],
+                  data: [{ id: 'admin-uuid-1', role: 'ADMIN', college_id: 'srkr-bhimavaram' }],
                   error: null,
                 }),
               })),

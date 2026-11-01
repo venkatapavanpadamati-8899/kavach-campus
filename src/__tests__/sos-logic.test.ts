@@ -17,6 +17,7 @@ describe('SOS API Logic (src/app/api/sos/route.ts)', () => {
     user = { id: 'student-usr-sos-1' } as { id: string } | null,
     incidentInsertError = null as unknown,
     staffList = [{ id: 'security-guard-1', role: 'SECURITY' }] as { id: string; role: string }[] | null,
+    callerCollegeId = 'srkr-engineering-college' as string | null,
     existingActiveSos = [] as { id: string; case_id: string }[],
   } = {}) {
     return {
@@ -65,14 +66,27 @@ describe('SOS API Logic (src/app/api/sos/route.ts)', () => {
         }
         if (table === 'profiles') {
           return {
-            select: vi.fn(() => ({
-              in: vi.fn(() => ({
-                eq: vi.fn().mockResolvedValue({
-                  data: staffList,
-                  error: null,
-                }),
-              })),
-            })),
+            select: vi.fn((columns: string) => {
+              if (columns === 'college_id') {
+                return {
+                  eq: vi.fn().mockResolvedValue({
+                    data: callerCollegeId ? { college_id: callerCollegeId } : null,
+                    error: null,
+                  }),
+                };
+              }
+
+              return {
+                in: vi.fn(() => ({
+                  eq: vi.fn(() => ({
+                    eq: vi.fn().mockResolvedValue({
+                      data: staffList,
+                      error: null,
+                    }),
+                  })),
+                })),
+              };
+            }),
           };
         }
         if (table === 'notifications') {
@@ -135,6 +149,20 @@ describe('SOS API Logic (src/app/api/sos/route.ts)', () => {
     const req = new Request('http://localhost:3000/api/sos', {
       method: 'POST',
       body: JSON.stringify({ latitude: 17.44, longitude: 78.34 }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBe('Unauthorized');
+  });
+
+  it('rejects unauthenticated SOS requests with 401 even when body is completely empty', async () => {
+    const mockClient = createMockSupabase({ user: null });
+    vi.mocked(createClient).mockResolvedValue(mockClient as unknown as Awaited<ReturnType<typeof createClient>>);
+
+    const req = new Request('http://localhost:3000/api/sos', {
+      method: 'POST',
     });
 
     const res = await POST(req);
@@ -293,6 +321,29 @@ describe('SOS API Logic (src/app/api/sos/route.ts)', () => {
     });
   });
 
+  it('does not broadcast an SOS to responders when the caller has no verified campus', async () => {
+    const mockClient = createMockSupabase({
+      callerCollegeId: null,
+      staffList: [{ id: 'other-campus-guard', role: 'SECURITY' }],
+    });
+    vi.mocked(createClient).mockResolvedValue(mockClient as unknown as Awaited<ReturnType<typeof createClient>>);
+
+    const req = new Request('http://localhost:3000/api/sos', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+    expect(insertedNotifications).toHaveLength(0);
+    expect(insertedEscalations).toContainEqual({
+      incident_id: 'incident-sos-100',
+      from_level: 'SYSTEM',
+      to_level: 'ADMIN',
+      reason: 'NO_STAFF_AVAILABLE_FOR_SOS',
+    });
+  });
+
   it('broadcasts to all active security staff when available and creates pending escalation', async () => {
     const mockClient = createMockSupabase({
       staffList: [
@@ -340,5 +391,6 @@ describe('SOS API Logic (src/app/api/sos/route.ts)', () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe('Failed to create SOS incident');
+    expect(body.details).toBeUndefined();
   });
 });

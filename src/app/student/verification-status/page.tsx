@@ -29,7 +29,7 @@ export default function StudentVerificationStatusPage() {
     section: 'A',
     residentialStatus: 'Day Scholar',
     // Verification & College routing
-    collegeId: 'srkr',
+    collegeId: '',
     admissionType: 'REGULAR',
     admissionYear: '2024',
     expectedGraduationYear: '2028',
@@ -120,7 +120,7 @@ export default function StudentVerificationStatusPage() {
             personalPhone: data.profile?.phone || prev.personalPhone,
             collegeId: (data.profile?.college_id && data.profile.college_id !== 'PENDING_CAMPUS_VERIFICATION')
               ? data.profile.college_id
-              : prev.collegeId,
+              : '',
           }));
         }
       } catch (err) {
@@ -151,6 +151,8 @@ export default function StudentVerificationStatusPage() {
     try {
       const formPayload = new FormData();
       formPayload.append('studentId', formData.studentId.trim());
+      // This is a claimed campus for review only. The server must derive the
+      // authorized college from the authenticated profile, never this value.
       formPayload.append('collegeId', formData.collegeId);
       formPayload.append('fullName', formData.fullName.trim());
       formPayload.append('department', formData.department);
@@ -454,7 +456,7 @@ export default function StudentVerificationStatusPage() {
               
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                  Affiliated Engineering College *
+                  College claimed for verification *
                 </label>
                 <select
                   className="input-field"
@@ -463,6 +465,7 @@ export default function StudentVerificationStatusPage() {
                   onChange={e => setFormData({ ...formData, collegeId: e.target.value })}
                   required
                 >
+                  <option value="" disabled>Select college for administrator review</option>
                   {INDIAN_ENGINEERING_COLLEGES.map(c => (
                     <option key={c.id} value={c.id}>{c.name} ({c.shortName})</option>
                   ))}
@@ -818,9 +821,9 @@ export default function StudentVerificationStatusPage() {
                     <span>{/^[0-9]{10}$/.test(formData.studentId.trim()) ? '✓' : '✗'}</span>
                     <span>10-Digit Roll No: {formData.studentId || 'Pending'}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399' }}>
-                    <span>✓</span>
-                    <span>Affiliated College: {formData.collegeId.toUpperCase()}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: formData.collegeId ? '#fbbf24' : 'var(--text-muted)' }}>
+                    <span>{formData.collegeId ? '○' : '!'}</span>
+                    <span>{formData.collegeId ? 'College claim queued for verification' : 'College claim pending'}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399' }}>
                     <span>✓</span>

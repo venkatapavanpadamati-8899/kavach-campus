@@ -175,6 +175,7 @@ describe('Kavach Campus — Batch 26 Verified Defects Remediation Suite', () => 
         body: JSON.stringify({
           name: 'Cooldown Student',
           email: 'cooldown.student@srkr.edu.in',
+          phone: '9876543210',
           password: 'ValidPassword123!',
           role: 'STUDENT',
           registrationNumber: '2101201045',
@@ -417,6 +418,7 @@ describe('Kavach Campus — Batch 26 Verified Defects Remediation Suite', () => 
         body: JSON.stringify({
           name: 'Production Student',
           email: 'prod.student@srkr.edu.in',
+          phone: '9876543210',
           password: 'Password123!',
           role: 'STUDENT',
           registrationNumber: '2101201045',

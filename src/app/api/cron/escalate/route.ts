@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
     const { data: overdueIncidents, error: fetchError } = await supabase
       .from('incidents')
-      .select('id, case_id, assigned_to, created_at')
+      .select('id, case_id, assigned_to, created_at, college_id')
       .eq('status', 'ASSIGNED')
       .lt('updated_at', fiveMinutesAgo.toISOString());
 
@@ -104,11 +104,18 @@ export async function POST(req: Request) {
       });
       
       // Notify Admins
-      const { data: adminList } = await supabase
+      const { data: adminCandidates } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, role, college_id')
         .in('role', ['ADMIN', 'SUPER_ADMIN']);
-        
+
+      // Campus admins must receive only their own campus escalation. A
+      // SUPER_ADMIN is the sole explicitly cross-campus recipient.
+      const adminList = (adminCandidates || []).filter((admin) =>
+        admin.role === 'SUPER_ADMIN' ||
+        (Boolean(incident.college_id) && admin.college_id === incident.college_id)
+      );
+
       if (adminList) {
         for (const admin of adminList) {
           await insertInAppNotification(supabase, {

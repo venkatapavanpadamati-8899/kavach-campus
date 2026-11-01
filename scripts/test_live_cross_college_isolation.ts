@@ -144,12 +144,14 @@ async function runCrossCollegeSecurityTests() {
     if (profilesError) throw new Error(`Failed to seed synthetic profiles: ${profilesError.message}`);
 
     // Create an incident belonging to SRKR Student
+    const testCaseId = `SRKR-TEST-${timestamp}`;
     const { data: srkrIncident, error: incErr } = await adminClient.from('incidents').insert({
       student_id: srkrUser.user.id,
-      title: 'SRKR Campus Light Failure',
-      description: 'Street light not working near CSE block',
+      case_id: testCaseId,
+      description: 'SRKR Campus Light Failure: Street light not working near CSE block',
       category: 'INFRASTRUCTURE',
-      priority: 'MEDIUM',
+      severity: 'MEDIUM',
+      urgency: 'MEDIUM',
       status: 'RECEIVED',
       college_id: 'srkr-bhimavaram',
     }).select().single();
@@ -240,13 +242,14 @@ async function runCrossCollegeSecurityTests() {
     );
 
     // Test 5: Vishnu student attempts to insert incident claiming SRKR college_id
+    const forgedDescription = `Forged Incident ${timestamp}: Attempting to inject into SRKR tenant`;
     const { error: crossInsertErr } = await vishnuStudentClient
       .from('incidents')
       .insert({
-        title: 'Forged Incident',
-        description: 'Attempting to inject into SRKR tenant',
+        description: forgedDescription,
         category: 'HARASSMENT',
-        priority: 'HIGH',
+        severity: 'HIGH',
+        urgency: 'HIGH',
         status: 'RECEIVED',
         college_id: 'srkr-bhimavaram',
       });
@@ -255,7 +258,7 @@ async function runCrossCollegeSecurityTests() {
     const { data: forgedInc } = await adminClient
       .from('incidents')
       .select('*')
-      .eq('title', 'Forged Incident');
+      .eq('description', forgedDescription);
     recordResult(
       'Negative Test 5: Student cannot spoof college_id of a different college',
       !forgedInc || forgedInc.length === 0 || forgedInc[0]?.college_id === 'vishnu-bhimavaram',

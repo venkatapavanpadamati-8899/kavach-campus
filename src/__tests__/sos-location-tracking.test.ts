@@ -200,7 +200,7 @@ describe('SOS Live Location Tracking API (src/app/api/sos/location/route.ts)', (
       expect(res.status).toBe(500);
       const json = await res.json();
       expect(json.code).toBe('SCHEMA_BLOCKER');
-      expect(json.error).toContain('is_tracking_active');
+      expect(json.error).toBe('Tracking service is temporarily unavailable.');
     });
 
     it('returns 500 when updating is_tracking_active fails during stop tracking', async () => {
@@ -220,8 +220,8 @@ describe('SOS Live Location Tracking API (src/app/api/sos/location/route.ts)', (
       const res = await updateLocation(req);
       expect(res.status).toBe(500);
       const json = await res.json();
-      expect(json.error).toBe('Failed to persist stopped tracking state. Database column is_tracking_active is required.');
-      expect(json.code).toBe('PGRST204');
+      expect(json.error).toBe('Failed to persist stopped tracking state.');
+      expect(json.code).toBe('UPDATE_FAILED');
     });
 
     it('rejects subsequent location ping when is_tracking_active is explicitly false with 400', async () => {

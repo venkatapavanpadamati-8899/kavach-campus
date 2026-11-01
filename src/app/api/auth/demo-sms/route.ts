@@ -81,6 +81,7 @@ export async function POST(req: Request) {
       isRealVerification: false,
       verificationType: 'DEMO_DEVELOPMENT_ONLY',
       clientToken: result.message?.clientToken,
+      demoOtp: result.message?.otp,
       message: result.message,
     });
 

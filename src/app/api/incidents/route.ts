@@ -13,14 +13,12 @@ import { insertInAppNotification } from '@/lib/notifications';
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
-    const body = await req.json();
-
-    // Auth validation
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const body = await req.json().catch(() => ({}));
     const { description, locationLat, locationLng, isAnonymous, category } = body;
 
     if (!description || typeof description !== 'string' || !description.trim()) {
