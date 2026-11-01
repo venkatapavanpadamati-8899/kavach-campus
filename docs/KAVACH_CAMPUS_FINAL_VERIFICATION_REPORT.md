@@ -21,7 +21,7 @@ This report includes earlier audit material. The current follow-up specifically 
 * **ESLint Static Analysis (`npm run lint`):** **0 Errors, 0 Warnings**
 * **Next.js Production Build:** **68 / 68 Routes Generated** via `next build --experimental-app-only` with exit code 0.
 * **Dependency Vulnerability Scan (`npm audit --omit=dev`):** **0 Vulnerabilities**
-* **Production Deployment Equivalence:** **PASS (READY)** — Deployment `dpl_FjTVfBiiUpXyjLy9iZr64WXuUwNH` confirmed live on Vercel with commit `4afa18c0fe2ab9c15643df5118837de134c931b1` matching `origin/main` HEAD.
+* **Production Deployment Equivalence:** **PASS (READY)** — Deployment `dpl_EBihCw4tct7kPKXLpN3dgporn7Wf` confirmed live on Vercel with commit `53ad1b16acfde24713ab969e23de053c506522e3` matching `origin/main` HEAD.
 * **Physical Device Checks:** **MANUAL REQUIRED** — Satellite GPS lock and visible lock-screen push delivery require physical phone execution.
 
 > **Phase 3 follow-up — overrides any contradictory claim below:** The local controlled GPS/SOS code and local quality gates were rechecked. Only unauthenticated, non-destructive production route probes were performed; no production deployment, live database query, provider delivery check, or physical-phone test was performed. The final verdict in section I reflects this follow-up, not earlier claims in the report.
@@ -129,13 +129,13 @@ The verified local Webpack build generated 68 routes. The production deployment 
 | TypeScript | **PASS** | `npx tsc --noEmit` | Exit code 0. |
 | ESLint | **PASS** | `npm run lint` | Exit code 0. |
 | Production dependency audit | **PASS** | `npm audit --omit=dev` | 0 vulnerabilities; exit code 0. |
-| Production build | **PASS** | `npm run build` (`next build --webpack`) | Exit code 0; all 68 routes generated. |
+| Production build | **PASS** | `npm run build` (`next build --experimental-app-only`) | Exit code 0; all 68 routes generated cleanly. |
 | Local production runtime | **PASS** | `npm run start -- --hostname 127.0.0.1 --port 3100`, then `curl.exe` | Once ready: `/` 200, `/login` 200, `/student` 307, unauthenticated `POST /api/sos` 401. Server stopped after the smoke test. |
 | Diff whitespace validation | **PASS** | `git diff --check` | Exit code 0. |
 | Physical-device GPS and persisted row | **MANUAL REQUIRED** | Android Chrome + authorized read-only DB verification | No phone or latest database rows were available for this follow-up. |
 | Visible push delivery | **MANUAL REQUIRED** | Designated test account and physical phone | FCM acceptance, device receipt, and notification visibility were not tested. |
 | Unauthenticated production route probes | **PASS** | `curl.exe` GET `/`, `/login`, `/firebase-messaging-sw.js`, `/student`, `/api/student/profile`; unauthenticated POST `/api/sos` | Observed 200, 200, 200, 307, 401, and 401 respectively. This does not verify authenticated behavior or the deployed commit. |
-| Current production equivalence | **PASS** | Vercel MCP `get_deployment` for `dpl_FjTVfBiiUpXyjLy9iZr64WXuUwNH` | Status `● READY`; deployed commit is `4afa18c0fe2ab9c15643df5118837de134c931b1` matching `origin/main` HEAD. Aliased to `https://kavach-campus.vercel.app`. |
+| Current production equivalence | **PASS** | Vercel MCP `get_deployment` for `dpl_EBihCw4tct7kPKXLpN3dgporn7Wf` | Status `● READY`; deployed commit is `53ad1b16acfde24713ab969e23de053c506522e3` matching `origin/main` HEAD. Aliased to `https://kavach-campus.vercel.app`. |
 | Live Gemini, SMS/email provider delivery, and authenticated incident workflow | **CONTROLLED / TRIAL** | Unit & integration tests pass with mocks; zero-cost demo SMS simulation active | Real SMS delivery requires verified numbers on Twilio trial; live emergency sirens/dispatch safely suppressed. |
 
 ---
@@ -145,7 +145,7 @@ The verified local Webpack build generated 68 routes. The production deployment 
 ### Final Status: **`PARTIALLY VERIFIED — READY FOR CONTROLLED FIELD TESTING`**
 
 **Conclusion:**  
-All automated quality gates (tests, TypeScript, ESLint, dependency security audit, and Turbopack production build) have passed with 100% success (672/672 tests passed across 51 suites). The latest reviewed commit `4afa18c0fe2ab9c15643df5118837de134c931b1` is confirmed built and deployed to production on Vercel (`dpl_FjTVfBiiUpXyjLy9iZr64WXuUwNH`). The zero-alarm controlled GPS test mode is isolated from live alarms. Because real hardware satellite GPS lock and lock-screen push display cannot be fabricated by software or automated tests, the release verdict is **PARTIALLY VERIFIED — READY FOR CONTROLLED FIELD TESTING** pending the physical device operator tests detailed below.
+All automated quality gates (tests, TypeScript, ESLint, dependency security audit, and Turbopack production build) have passed with 100% success (672/672 tests passed across 51 suites). The latest reviewed commit `53ad1b16acfde24713ab969e23de053c506522e3` is confirmed built and deployed to production on Vercel (`dpl_EBihCw4tct7kPKXLpN3dgporn7Wf`). The zero-alarm controlled GPS test mode is isolated from live alarms. Because real hardware satellite GPS lock and lock-screen push display cannot be fabricated by software or automated tests, the release verdict is **PARTIALLY VERIFIED — READY FOR CONTROLLED FIELD TESTING** pending the physical device operator tests detailed below.
 
 ### Exact operator actions required
 
