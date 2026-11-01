@@ -25,6 +25,7 @@ export interface EmailPayload {
 
 export interface PushPayload {
   userId: string;
+  deviceToken?: string;
   title: string;
   body: string;
   data?: Record<string, string>;

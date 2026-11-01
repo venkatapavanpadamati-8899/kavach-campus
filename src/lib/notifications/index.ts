@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { JWT } from 'google-auth-library';
 import { DeliveryResult, SmsPayload, PushPayload, EmailPayload, EmergencyDispatchParams } from './types';
 
 export * from './types';
@@ -463,6 +464,23 @@ export async function sendEmailNotification(payload: EmailPayload): Promise<Deli
   }
 }
 
+let fcmJwtClient: JWT | null = null;
+
+function getFcmJwtClient(): JWT | null {
+  const email = process.env.FCM_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
+  const rawKey = process.env.FCM_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY;
+  if (!email || !rawKey) return null;
+  const key = rawKey.replace(/\\n/g, '\n');
+  if (!fcmJwtClient) {
+    fcmJwtClient = new JWT({
+      email,
+      key,
+      scopes: ['https://www.googleapis.com/auth/firebase.messaging'],
+    });
+  }
+  return fcmJwtClient;
+}
+
 /**
  * Server-side Push Notification Dispatch Adapter
  * Safely handles timeouts and bounded retries. Never throws.
@@ -509,13 +527,137 @@ export async function sendPushNotification(payload: PushPayload): Promise<Delive
     };
   }
 
+  const targetToken = payload.deviceToken || payload.data?.token;
+  const targetTopic = payload.data?.topic;
+
+  if (!targetToken && !targetTopic) {
+    const res: DeliveryResult = {
+      success: false,
+      status: 'FAILED',
+      provider: 'FCM',
+      idempotencyKey: payload.idempotencyKey,
+      error: `No registered device token provided for user: ${payload.userId}`,
+    };
+    logNotificationEvent({
+      provider: 'FCM',
+      status: 'FAILED',
+      idempotencyKey: payload.idempotencyKey,
+      error: res.error,
+    });
+    return res;
+  }
+
+  const projectId = process.env.FCM_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+  const MAX_RETRIES = 2;
+  let lastError = 'Unknown FCM error';
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const client = getFcmJwtClient();
+      if (!client) {
+        throw new Error('FCM client initialization failed');
+      }
+      const tokenResp = await client.getAccessToken();
+      const accessToken = tokenResp.token;
+      if (!accessToken) {
+        throw new Error('Failed to acquire OAuth2 access token for FCM');
+      }
+
+      const endpoint = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      const messageObj: Record<string, unknown> = {
+        notification: {
+          title: payload.title,
+          body: payload.body,
+        },
+        data: payload.data || {},
+      };
+      if (targetToken) {
+        messageObj.token = targetToken;
+      } else if (targetTopic) {
+        messageObj.topic = targetTopic;
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: messageObj }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        const fcmErrMessage = (errData as { error?: { message?: string } })?.error?.message || `HTTP ${response.status}`;
+        lastError = `FCM HTTP ${response.status}: ${fcmErrMessage}`;
+
+        if (response.status >= 500 && attempt < MAX_RETRIES) {
+          continue;
+        }
+
+        const failResult: DeliveryResult = {
+          success: false,
+          status: 'FAILED',
+          provider: 'FCM',
+          idempotencyKey: payload.idempotencyKey,
+          retryCount: attempt,
+          error: lastError,
+        };
+        logNotificationEvent({
+          provider: 'FCM',
+          status: 'FAILED',
+          idempotencyKey: payload.idempotencyKey,
+          retryCount: attempt,
+          error: lastError,
+        });
+        return failResult;
+      }
+
+      const data = await response.json();
+      const successResult: DeliveryResult = {
+        success: true,
+        status: 'DELIVERED',
+        provider: 'FCM',
+        messageId: data.name,
+        idempotencyKey: payload.idempotencyKey,
+        retryCount: attempt,
+      };
+      recordIdempotency(payload.idempotencyKey, successResult);
+      logNotificationEvent({
+        provider: 'FCM',
+        status: 'DELIVERED',
+        idempotencyKey: payload.idempotencyKey,
+        retryCount: attempt,
+      });
+      return successResult;
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err.message : String(err);
+      if (attempt < MAX_RETRIES) {
+        continue;
+      }
+    }
+  }
+
   const res: DeliveryResult = {
     success: false,
-    status: 'NOT_CONFIGURED',
+    status: 'FAILED',
     provider: 'FCM',
     idempotencyKey: payload.idempotencyKey,
-    error: `FCM HTTP v1 adapter pending OAuth2 setup for user: ${payload.userId}`,
+    retryCount: MAX_RETRIES,
+    error: `FCM push dispatch failed after ${MAX_RETRIES} retries: ${lastError}`,
   };
+  logNotificationEvent({
+    provider: 'FCM',
+    status: 'FAILED',
+    idempotencyKey: payload.idempotencyKey,
+    retryCount: MAX_RETRIES,
+    error: lastError,
+  });
   return res;
 }
 
