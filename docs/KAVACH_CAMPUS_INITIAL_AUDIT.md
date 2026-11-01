@@ -1,66 +1,75 @@
-# KAVACH CAMPUS — WORKSPACE & BASELINE AUDIT
+# KAVACH CAMPUS — INITIAL WORKSPACE & BASELINE AUDIT
 
-**Date:** 2026-11-01T18:45:00+05:30  
-**Project:** Kavach Campus — Smart College Student Safety & Emergency Response Platform  
+**Audit Date:** 2026-11-01T18:50:00+05:30  
+**Project:** Kavach Campus (Smart College Student Safety and Emergency Response Platform)  
+**Repository:** [https://github.com/venkatapavanpadamati-8899/kavach-campus](https://github.com/venkatapavanpadamati-8899/kavach-campus)  
 **Production URL:** [https://kavach-campus.vercel.app](https://kavach-campus.vercel.app)  
-**Workspace:** `D:\Kavach Campus`  
-**Git Branch:** `main`  
-**Latest Commit SHA:** `0a44a79ee0562eec411030e4ad9b846e4e0b043b`  
+**Auditor Role:** Autonomous Senior Software Engineer, Security Auditor, QA Engineer & Release Manager  
 
 ---
 
-## 1. Workspace Inventory
+## 1. Executive Summary & Verified Current State
 
-### A. Core Architecture & Tech Stack
-- **Framework:** Next.js 16.4.3 (Turbopack, App Router)
-- **Language:** TypeScript 5.7.3 (Strict Mode)
-- **UI & Styling:** React 19, Framer Motion, Lucide Icons, CSS Modules
-- **Database & Auth:** Supabase (PostgreSQL with Row-Level Security, `@supabase/ssr`, `@supabase/supabase-js`)
-- **AI Engine:** Google Gemini API (`@google/genai` Current SDK, `gemini-flash-lite-latest` with rule-based safety overrides)
-- **Push Messaging:** Firebase Cloud Messaging (FCM HTTP v1, Service Worker `public/firebase-messaging-sw.js`)
-- **SMS Gateway:** Twilio API (E.164 phone formatting with zero-cost demo SMS simulation fallback)
-- **Email Service:** SendGrid SMTP (port 587 with verified sender identity)
-- **Hosting:** Vercel Production (`prj_vTRdyPOUO2iHAOOZW8AGXl3SHfQT`)
+This baseline audit inspects the full local workspace, Git configuration, application architecture, test infrastructure, and live external endpoints.
 
-### B. Application Structure
-- **Entry Points & Routing:**
-  - Public routes: `/`, `/about`, `/contact`, `/features`, `/privacy`, `/login`, `/register`, `/verify-otp`, `/forgot-password`, `/reset-password`
-  - Dedicated admin portals: `/admin/login`, `/super-admin/login`
-  - Protected student portal: `/student`, `/student/profile`, `/student/sos`, `/student/report`, `/student/safe-walk`, `/student/contacts`, `/student/cases`, `/student/verification-status`, `/student/voice-report`
-  - Protected staff portal: `/staff`, `/staff/incidents`, `/staff/incidents/[id]`
-  - Protected management portal: `/management`, `/management/incidents`, `/management/incidents/[id]`
-  - Protected campus admin portal: `/admin`, `/admin/campus`, `/admin/users`, `/admin/incidents`, `/admin/system-audit`, `/admin/ai`
-  - Protected super-admin portal: `/super-admin`, `/super-admin/pending-campus`
-- **Edge Proxy:** `src/proxy.ts` protects all `/student/*`, `/staff/*`, `/admin/*`, `/management/*`, `/super-admin/*`, `/api/protected/*` routes with server-side authentication and role-based redirects.
-- **API Endpoints:** 33 server route handlers covering authentication, incident ingestion, location tracking, Safe Walk, evidence upload, AI analysis, push notifications, and scheduled crons.
+### Baseline Metrics
+- **Package Manager & Framework:** npm, Next.js 16.4.3 (App Router with Turbopack), React 19, TypeScript 5.
+- **Dependencies Audit:** `npm audit --omit=dev` ➔ **0 vulnerabilities** (Clean).
+- **TypeScript Static Check:** `npx tsc --noEmit` ➔ **0 errors** (Clean).
+- **ESLint Code Quality:** `npm run lint` ➔ **0 warnings, 0 errors** (Clean).
+- **Automated Test Coverage:** `50 test suites passed (50/50)`, `661 unit/integration tests passed (661/661)` with 0 failures and 0 skipped.
+- **Production Next.js Build:** Turbopack compiled and generated **68/68 static and dynamic routes** cleanly with exit code 0.
+- **Live Vercel Production:** Running active deployment serving [https://kavach-campus.vercel.app](https://kavach-campus.vercel.app).
 
 ---
 
-## 2. Baseline Status
+## 2. Architecture & Subsystem Inventory
 
-| Verification Gate | Command | Result | Status |
-| :--- | :--- | :---: | :---: |
-| **Unit & Integration Tests** | `npm test` | **643 passed (49 files)** | ✅ PASS |
-| **TypeScript Typecheck** | `npx tsc --noEmit` | **0 errors** | ✅ PASS |
-| **Code Style & ESLint** | `npm run lint` | **0 errors, 0 warnings** | ✅ PASS |
-| **Production Build** | `npm run build` | **68 routes compiled** | ✅ PASS |
-| **Dependency Security Audit** | `npm audit --omit=dev` | **0 vulnerabilities** | ✅ PASS |
-| **Git Working Tree** | `git status` / `git diff --check` | **Clean, 0 whitespace errors** | ✅ PASS |
-| **Vercel Production State** | `list_deployments` | **`● READY` (`dpl_DYzbovy7AueohJGS7exniWKwUgGJ`)** | ✅ PASS |
+### A. Authentication & Authorization
+- **Multi-Factor OTP:** Email OTP via Nodemailer SMTP with bcrypt hash storage in `user_otp_verifications`.
+- **Demo SMS Mode:** Zero-cost `ENABLE_DEMO_SMS=true` simulation for mobile verification without incurring paid SMS carrier charges.
+- **RBAC Roles:** `STUDENT`, `STAFF`, `MENTOR`, `COUNSELLOR`, `SECURITY`, `HOD`, `PRINCIPAL`, `WOMENS_CELL`, `ADMIN`, `SUPER_ADMIN`.
+- **Tenant Scope:** Campus multi-tenancy enforced with verified college tenants (e.g. SRKR, Vishnu, etc.).
+
+### B. Artificial Intelligence Engine
+- **Provider:** Google Gemini API via official `@google/genai` SDK (`gemini-flash-lite-latest` and `gemini-3.5-flash-lite`).
+- **Capabilities:** Analyzes complaint text in English, Telugu, Hindi, and mixed languages.
+- **Safety Overrides:** Deterministic safety rules override AI if life-safety keywords (weapons, blood, knife, fight, harass, suicide, etc.) are present in any language.
+- **Output Schema:** `{ category, severity: L1-L4, urgency: LOW-CRITICAL, confidence, summary }`.
+
+### C. Smart Responder & Mentor Routing Engine
+- **Role Hierarchy:** Low severity ➔ Mentors/Counsellors; High/Critical ➔ Security/HOD/Principal/Admin.
+- **Haversine Distance:** Calculates Great-Circle distance in meters between student coordinates and on-duty responders with location consent.
+- **Coordinate Freshness:** Rejects stale coordinates older than 15 minutes.
+- **Safe Fallback:** Departmental fallback without inventing coordinates when GPS is unavailable.
+
+### D. GPS & Live Coordinates
+- **Validation:** Strict range bounds ($-90 \le \text{lat} \le 90$, $-180 \le \text{lng} \le 180$).
+- **Database Tables:** `incidents`, `incident_locations`, `staff_locations`.
+- **Controlled Test Mode:** Dedicated Zero-Alarm test mode on `/student/sos` records real satellite GPS into `incident_locations` while suppressing sirens and guard alerts.
+- **Maps Redirection:** Generates direct Google Maps links (`https://www.google.com/maps/search/?api=1&query=lat,lng`) for responder dispatch.
+
+### E. Profile Management
+- **Persistence:** Read & write endpoints (`GET /api/student/profile`, `PUT /api/student/profile`).
+- **Fields:** Personal info, college info, blood group, medical conditions, hostel/residence type (`DAY_SCHOLAR`, `COLLEGE_HOSTEL`, `PRIVATE_HOSTEL`).
+- **Tampering Guards:** Rejects modifications to server-controlled institutional verification fields (`verification_status`, `verified_by`, `ocr_extracted_data`).
 
 ---
 
-## 3. Security, RLS & Tenant Boundaries
+## 3. Defects, Security Risks & Status
 
-- **Student Privacy:** Students can access only their own records. Cross-student profile access, updates, and evidence uploads are strictly denied by RLS policies.
-- **Tenant Isolation:** Incidents and responder dispatches require matching `college_id`. Staff cannot view or respond to incidents from other campuses.
-- **Secret Isolation:** No server-side secrets (`SUPABASE_SERVICE_ROLE_KEY`, `FIREBASE_PRIVATE_KEY`, `TWILIO_AUTH_TOKEN`, `SMTP_PASS`) are exposed in client bundles.
-- **Diagnostic Information Hiding:** `/api/system/health` requires `ADMIN` or `SUPER_ADMIN` credentials. Anonymous probes receive HTTP 401.
+| Identified Area | Nature of Risk / Issue | Current Status | Resolution |
+| :--- | :--- | :--- | :--- |
+| **Global Error Prerendering** | Next.js 16 build crash during prerendering `/_global-error` when no root error boundary existed. | **FIXED** | Implemented custom `src/app/global-error.tsx` client component. |
+| **AI Evaluation Test Coverage** | Standalone AI evaluation suite covering all 12 edge cases & mentor routing was missing. | **FIXED** | Authored `src/__tests__/ai-evaluation-and-routing.test.ts` (18 tests passing). |
+| **AI Output Sanitization** | Non-standard string categories or severities could cause runtime typing mismatch. | **FIXED** | Hardened `src/lib/ai.ts` with input truncation and schema validation. |
+| **Twilio Trial Limitations** | Carrier SMS delivery blocked for unverified external numbers (`Error 572002`). | **DOCUMENTED / CONTROLLED** | Handled by zero-cost simulation fallback (`ENABLE_DEMO_SMS=true`). |
 
 ---
 
-## 4. Hardware Dependencies & External Provider Blockers
+## 4. Exact Next Steps
 
-1. **Real Mobile Device GPS:** Automated tests verify coordinate ranges, duplicate suppression, and database writes via mocks. Real physical device GPS capture requires operator verification on an Android/iOS phone.
-2. **FCM Physical Push Receipt:** FCM HTTP v1 dispatch and service worker are deployed and responding with HTTP 200. Physical display of lock screen alerts on hardware requires operator permission.
-3. **Twilio SMS Trial Account:** Outbound dispatch to unverified external phone numbers is blocked by Twilio Trial policy (`Code 572002`). Zero-cost simulation fallback (`ENABLE_DEMO_SMS=true`) remains operational.
+1. Commit and push the AI test suite and `global-error.tsx` fixes to GitHub.
+2. Deploy the latest commit to Vercel production.
+3. Execute production smoke tests against live endpoints.
+4. Generate the final comprehensive verification report (`docs/KAVACH_CAMPUS_FINAL_VERIFICATION_REPORT.md`).
