@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { latitude, longitude, accuracy, zoneId } = body;
+    const { latitude, longitude, accuracy, zoneId, isTest } = body;
 
     // Validate coordinates if provided
     const hasProvidedLocation = latitude != null || longitude != null;
@@ -84,16 +84,17 @@ export async function POST(req: Request) {
     // 1. Create Incident
     const caseId = `SOS-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
+    const isControlledTest = Boolean(isTest);
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     const incidentPayload: Record<string, any> = {
       case_id: caseId,
       student_id: user.id,
-      description: 'EMERGENCY SOS ACTIVATED',
+      description: isControlledTest ? '[CONTROLLED TEST] Mobile GPS Verification' : 'EMERGENCY SOS ACTIVATED',
       category: 'EMERGENCY',
-      severity: 'CRITICAL',
-      urgency: 'HIGH',
-      status: 'RECEIVED',
-      is_tracking_active: true
+      severity: isControlledTest ? 'LOW' : 'CRITICAL',
+      urgency: isControlledTest ? 'LOW' : 'HIGH',
+      status: isControlledTest ? 'RESOLVED' : 'RECEIVED',
+      is_tracking_active: isControlledTest ? false : true
     };
 
     if (hasLocation) {
@@ -128,6 +129,28 @@ export async function POST(req: Request) {
         longitude: validLng,
         accuracy
       });
+    }
+
+    // Controlled test mode: complete cleanly without dispatching live campus alarms
+    if (isControlledTest) {
+      await supabase.from('audit_logs').insert({
+        actor_id: user.id,
+        action: 'SOS_CONTROLLED_TEST_RECORDED',
+        entity_type: 'incidents',
+        entity_id: incident.id,
+        metadata: { latitude: validLat, longitude: validLng, accuracy, caseId, isTest: true }
+      });
+
+      return NextResponse.json({
+        success: true,
+        isTest: true,
+        incidentId: incident.id,
+        caseId,
+        latitude: validLat,
+        longitude: validLng,
+        accuracy,
+        message: 'Controlled mobile GPS test recorded successfully into incident_locations'
+      }, { status: 201 });
     }
 
     // 3. Intelligent Staff Routing (Zone or Distance)
