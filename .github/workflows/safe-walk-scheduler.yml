@@ -3,6 +3,7 @@ name: Kavach Safe Walk & Escalation Scheduler
 on:
   schedule:
     # Runs every 2 minutes to satisfy the life-safety response interval
+    # Note: GitHub Actions scheduled cron runs on a best-effort basis (typically 5-10 min minimum interval in practice)
     - cron: '*/2 * * * *'
   workflow_dispatch:
     inputs:
@@ -26,9 +27,13 @@ jobs:
       RAW_PROJECT_URL: ${{ secrets.VERCEL_PROJECT_URL || vars.VERCEL_PROJECT_URL }}
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
       IS_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+      ENABLE_PRODUCTION_CRON: ${{ secrets.ENABLE_PRODUCTION_CRON || vars.ENABLE_PRODUCTION_CRON || 'false' }}
     steps:
       - name: Validate Scheduler Configuration
+        shell: bash
         run: |
+          set -Eeuo pipefail
+
           RAW_URL="${RAW_PROJECT_URL:-https://kavach-campus.vercel.app}"
 
           # Enforce that CRON_SECRET is present in repository secrets
@@ -38,6 +43,10 @@ jobs:
             exit 1
           fi
 
+          # Mask CRON_SECRET immediately before any command can accidentally expose it
+          echo "::add-mask::$CRON_SECRET"
+
+          # Validate target URL as strict HTTPS origin
           if ! TARGET_URL="$(node -e '
             try {
               const url = new URL(process.argv[1]);
@@ -53,40 +62,101 @@ jobs:
           fi
           printf 'TARGET_URL=%s\n' "$TARGET_URL" >> "$GITHUB_ENV"
 
-          # Mask CRON_SECRET to ensure it never leaks to logs
-          echo "::add-mask::$CRON_SECRET"
+          # Production Execution Guard: Pauses live scheduled production polling during remediation
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$TARGET_URL" = "https://kavach-campus.vercel.app" ] && [ "${ENABLE_PRODUCTION_CRON:-false}" != "true" ]; then
+            echo "::notice title=Production Cron Guard Active::Scheduled production cron calls are paused during staging validation. Set repository variable/secret ENABLE_PRODUCTION_CRON='true' to activate live production polling."
+            echo "PAUSE_LIVE_CRON=true" >> "$GITHUB_ENV"
+          fi
+
           echo "Configuration validated successfully: Target URL is $TARGET_URL and CRON_SECRET is present."
 
       - name: Dry Run Notice
         if: env.IS_DRY_RUN == 'true'
-        run: echo "::notice title=Dry Run::Configuration validated. Live endpoints were skipped because dry_run was requested."
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "::notice title=CONFIGURATION-ONLY DRY RUN::Configuration validated. Live endpoints were skipped because dry_run was requested."
 
       - name: Trigger Safe Walk Timeout Check
-        if: env.IS_DRY_RUN != 'true'
+        if: env.IS_DRY_RUN != 'true' && env.PAUSE_LIVE_CRON != 'true'
+        shell: bash
         run: |
-          HTTP_STATUS=$(curl -s -S --output /dev/null --connect-timeout 10 --max-time 30 -w "%{http_code}" -X POST "${TARGET_URL}/api/cron/safe-walk-timeout" \
+          set -Eeuo pipefail
+
+          RESPONSE_FILE=$(mktemp)
+          CURL_EXIT=0
+          HTTP_STATUS=$(curl -s -S \
+            --connect-timeout 10 \
+            --max-time 30 \
+            -w "%{http_code}" \
+            -o "$RESPONSE_FILE" \
+            -X POST "${TARGET_URL}/api/cron/safe-walk-timeout" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "Content-Type: application/json")
+            -H "Content-Type: application/json") || CURL_EXIT=$?
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::Network/Transport failure contacting safe-walk-timeout endpoint (curl exit code: $CURL_EXIT)."
+            rm -f "$RESPONSE_FILE"
+            exit 1
+          fi
 
           echo "Safe Walk Timeout Response HTTP Status: $HTTP_STATUS"
 
           if [ "$HTTP_STATUS" -ne 200 ]; then
             echo "::error::Safe walk timeout endpoint returned unexpected status: $HTTP_STATUS"
+            rm -f "$RESPONSE_FILE"
             exit 1
           fi
+
+          # Validate response body contract (must contain success: true)
+          if ! grep -q '"success":[[:space:]]*true' "$RESPONSE_FILE"; then
+            echo "::error::Safe walk timeout response body does not satisfy the required success contract."
+            cat "$RESPONSE_FILE"
+            rm -f "$RESPONSE_FILE"
+            exit 1
+          fi
+
+          rm -f "$RESPONSE_FILE"
           echo "Safe Walk timeout check succeeded."
 
       - name: Trigger Staff Escalation Check
-        if: env.IS_DRY_RUN != 'true'
+        if: env.IS_DRY_RUN != 'true' && env.PAUSE_LIVE_CRON != 'true'
+        shell: bash
         run: |
-          HTTP_STATUS=$(curl -s -S --output /dev/null --connect-timeout 10 --max-time 30 -w "%{http_code}" -X POST "${TARGET_URL}/api/cron/escalate" \
+          set -Eeuo pipefail
+
+          RESPONSE_FILE=$(mktemp)
+          CURL_EXIT=0
+          HTTP_STATUS=$(curl -s -S \
+            --connect-timeout 10 \
+            --max-time 30 \
+            -w "%{http_code}" \
+            -o "$RESPONSE_FILE" \
+            -X POST "${TARGET_URL}/api/cron/escalate" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "Content-Type: application/json")
+            -H "Content-Type: application/json") || CURL_EXIT=$?
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::Network/Transport failure contacting escalation endpoint (curl exit code: $CURL_EXIT)."
+            rm -f "$RESPONSE_FILE"
+            exit 1
+          fi
 
           echo "Staff Escalation Response HTTP Status: $HTTP_STATUS"
 
           if [ "$HTTP_STATUS" -ne 200 ]; then
             echo "::error::Escalation endpoint returned unexpected status: $HTTP_STATUS"
+            rm -f "$RESPONSE_FILE"
             exit 1
           fi
+
+          # Validate response body contract (must contain success: true)
+          if ! grep -q '"success":[[:space:]]*true' "$RESPONSE_FILE"; then
+            echo "::error::Escalation response body does not satisfy the required success contract."
+            cat "$RESPONSE_FILE"
+            rm -f "$RESPONSE_FILE"
+            exit 1
+          fi
+
+          rm -f "$RESPONSE_FILE"
           echo "Staff escalation check succeeded."

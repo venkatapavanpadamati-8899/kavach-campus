@@ -46,6 +46,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid action. Must be APPROVE or REJECT' }, { status: 400 });
     }
 
+    if (user.id === targetUserId) {
+      return NextResponse.json({ error: 'Self-approval and self-role elevation are prohibited.' }, { status: 403 });
+    }
+
     // Target cannot be assigned SUPER_ADMIN through approval route
     if (requestedRole === 'SUPER_ADMIN' || requestedRole === 'SUPERADMIN') {
       return NextResponse.json({ error: 'Cannot assign SUPER_ADMIN role via standard approval' }, { status: 400 });

@@ -6,6 +6,9 @@ export interface AiAnalysisResult {
   urgency: string;
   confidence: number;
   summary: string;
+  reasoning_summary?: string;
+  recommended_roles?: string[];
+  human_review_required?: boolean;
 }
 
 const ALLOWED_CATEGORIES = [
@@ -98,12 +101,23 @@ ${sanitizedDescription}
       ? parsed.summary.trim().slice(0, 500)
       : 'Incident report received and classified.';
 
+    const recommended_roles =
+      category === 'EMERGENCY' || category === 'SECURITY' ? ['SECURITY', 'CAMPUS_ADMIN']
+      : category === 'HARASSMENT' ? ['WOMENS_CELL', 'COUNSELOR', 'PRINCIPAL']
+      : category === 'RAGGING' ? ['HOD', 'PRINCIPAL', 'DEAN']
+      : category === 'MEDICAL' ? ['MEDICAL', 'SECURITY']
+      : category === 'COUNSELING' ? ['COUNSELOR', 'MENTOR']
+      : ['STAFF'];
+
     return {
       category,
       severity,
       urgency,
       confidence,
       summary,
+      reasoning_summary: summary,
+      recommended_roles,
+      human_review_required: true,
     };
   } catch (error) {
     console.error('AI Analysis failed, falling back to rule engine:', error);
@@ -113,6 +127,9 @@ ${sanitizedDescription}
       urgency: 'HIGH',
       confidence: 0,
       summary: 'AI analysis unavailable. Human review required.',
+      reasoning_summary: 'AI analysis unavailable. Human review required.',
+      recommended_roles: ['STAFF', 'CAMPUS_ADMIN'],
+      human_review_required: true,
     };
   }
 }

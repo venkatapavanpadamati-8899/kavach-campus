@@ -247,6 +247,37 @@ describe('Role-Based College Visibility & Cross-Campus Isolation Rules', () => {
       expect(json.error).toContain('Admin privileges required');
     });
 
+    it('strictly rejects self-approval and self-role escalation attempts with 403 Forbidden', async () => {
+      const adminUser = { id: 'usr-admin-self', email: 'admin@srkr.edu.in' };
+      const adminProfile = { id: adminUser.id, role: 'ADMIN', college_id: 'srkr-bhimavaram', is_approved: true };
+
+      const mockClient = {
+        auth: { getUser: vi.fn().mockResolvedValue({ data: { user: adminUser }, error: null }) },
+        from: vi.fn((table: string) => {
+          if (table === 'profiles') {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ data: adminProfile, error: null }),
+            };
+          }
+          return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis() };
+        }),
+      };
+      vi.mocked(createClient).mockResolvedValue(mockClient as any);
+
+      const req = new Request('http://localhost:3000/api/admin/users/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: 'usr-admin-self', action: 'APPROVE', requestedRole: 'ADMIN' }),
+      });
+      const res = await approvePost(req);
+
+      expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json.error).toContain('Self-approval');
+    });
+
     it('prevents IDOR: Student A cannot delete Student B Safe Box file via DELETE /api/student/safe-box', async () => {
       const studentA = { id: 'usr-student-a', email: 'studentA@srkr.edu.in' };
 

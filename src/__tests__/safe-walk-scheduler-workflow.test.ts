@@ -38,7 +38,30 @@ describe('Safe Walk scheduler workflow', () => {
     expect(workflow).toContain('/api/cron/safe-walk-timeout');
     expect(workflow).toContain('/api/cron/escalate');
     expect(workflow).toContain('-X POST');
-    expect(workflow).toContain('--connect-timeout 10 --max-time 30');
+    expect(workflow).toContain('--connect-timeout 10');
+    expect(workflow).toContain('--max-time 30');
     expect(workflow).toContain('HTTP_STATUS');
+  });
+
+  it('enforces non-overlapping execution and protects active life-safety tasks', () => {
+    expect(workflow).toContain('group: safe-walk-escalation-scheduler');
+    expect(workflow).toContain('cancel-in-progress: false');
+  });
+
+  it('provides a dedicated dry-run notice step and avoids calling endpoints during dry-run', () => {
+    expect(workflow).toContain("if: env.IS_DRY_RUN == 'true'");
+    expect(workflow).toContain('CONFIGURATION-ONLY DRY RUN');
+    expect(workflow).toContain('Configuration validated. Live endpoints were skipped because dry_run was requested.');
+  });
+
+  it('enforces strict shell error handling, curl exit code capture, and response contract validation', () => {
+    expect(workflow).toContain('set -Eeuo pipefail');
+    expect(workflow).toContain('CURL_EXIT');
+    expect(workflow).toContain('does not satisfy the required success contract');
+  });
+
+  it('enforces production execution guard to prevent accidental production calls during remediation', () => {
+    expect(workflow).toContain('ENABLE_PRODUCTION_CRON');
+    expect(workflow).toContain('Production Cron Guard Active');
   });
 });

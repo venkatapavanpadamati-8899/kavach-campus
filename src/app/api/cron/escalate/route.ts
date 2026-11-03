@@ -59,7 +59,11 @@ export async function POST(req: Request) {
     }
 
     if (!overdueIncidents || overdueIncidents.length === 0) {
-      return NextResponse.json({ message: 'No overdue incidents found' }, { status: 200 });
+      return NextResponse.json({
+        success: true,
+        message: 'No overdue incidents found',
+        escalatedCount: 0,
+      }, { status: 200 });
     }
 
     console.log(`Found ${overdueIncidents.length} overdue incidents to escalate.`);

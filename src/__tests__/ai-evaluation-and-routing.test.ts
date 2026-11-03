@@ -20,6 +20,7 @@ vi.mock('@google/genai', () => ({
 
 describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite', () => {
   beforeEach(() => {
+    mockGenerateContent.mockReset();
     vi.clearAllMocks();
   });
 
@@ -316,6 +317,27 @@ describe('Kavach Campus — Comprehensive AI Evaluation & Mentor Routing Suite',
       expect(result.urgency).toBe('HIGH');
       expect(result.confidence).toBe(0);
       expect(result.summary).toContain('AI analysis unavailable');
+    });
+
+    it('Scenario 19: satisfies Phase 3.9 schema with reasoning, recommended roles, and human review', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({
+          category: 'HARASSMENT',
+          severity: 'L3',
+          urgency: 'HIGH',
+          confidence: 0.92,
+          summary: 'Student reported persistent verbal harassment near library.',
+        }),
+      });
+
+      const result = await analyzeIncident('Someone is repeatedly harassing students outside the library complex.');
+      expect(result.category).toBe('HARASSMENT');
+      expect(result.severity).toBe('L3');
+      expect(result.urgency).toBe('HIGH');
+      expect(result.confidence).toBe(0.92);
+      expect(result.reasoning_summary).toBeDefined();
+      expect(result.recommended_roles).toContain('WOMENS_CELL');
+      expect(result.human_review_required).toBe(true);
     });
   });
 
