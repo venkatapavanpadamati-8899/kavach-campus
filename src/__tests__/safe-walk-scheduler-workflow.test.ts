@@ -21,10 +21,17 @@ describe('Safe Walk scheduler workflow', () => {
     expect(workflow).toContain('printf \'TARGET_URL=%s\\n\' "$TARGET_URL" >> "$GITHUB_ENV"');
   });
 
-  it('keeps manual dispatch non-invasive and reserves live requests for the schedule', () => {
-    expect(workflow).toContain("if: github.event_name == 'workflow_dispatch'");
-    expect(workflow).toContain('configuration-only dry run');
-    expect(workflow.match(/if: github\.event_name == 'schedule'/g)).toHaveLength(2);
+  it('runs on a 2-minute schedule and supports manual workflow_dispatch with dry_run option', () => {
+    expect(workflow).toContain("- cron: '*/2 * * * *'");
+    expect(workflow).toContain('workflow_dispatch:');
+    expect(workflow).toContain('dry_run:');
+    expect(workflow).toContain("if: env.IS_DRY_RUN != 'true'");
+  });
+
+  it('honestly reports failure when CRON_SECRET is missing instead of pretending success', () => {
+    expect(workflow).toContain('if [ -z "$CRON_SECRET" ]; then');
+    expect(workflow).toContain('CRON_SECRET is not configured in GitHub Repository Secrets');
+    expect(workflow).toContain('exit 1');
   });
 
   it('uses the expected POST endpoints and bounds request time', () => {

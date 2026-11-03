@@ -2,10 +2,15 @@ name: Kavach Safe Walk & Escalation Scheduler
 
 on:
   schedule:
-    # Runs every 5 minutes to satisfy the life-safety response interval
-    - cron: '*/5 * * * *'
+    # Runs every 2 minutes to satisfy the life-safety response interval
+    - cron: '*/2 * * * *'
   workflow_dispatch:
-    # Manual dispatch validates configuration only; it never contacts live cron endpoints.
+    inputs:
+      dry_run:
+        description: 'Dry run only (validate configuration without invoking live endpoints)'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
   contents: read
@@ -20,13 +25,17 @@ jobs:
     env:
       RAW_PROJECT_URL: ${{ secrets.VERCEL_PROJECT_URL || vars.VERCEL_PROJECT_URL }}
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      IS_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
       - name: Validate Scheduler Configuration
         run: |
           RAW_URL="${RAW_PROJECT_URL:-https://kavach-campus.vercel.app}"
+
+          # Enforce that CRON_SECRET is present in repository secrets
           if [ -z "$CRON_SECRET" ]; then
-            echo "::notice title=Safe Walk Scheduler Awaiting Secret::CRON_SECRET is not yet configured in GitHub Repository Secrets. Scheduler endpoints will be skipped until CRON_SECRET is added to Settings -> Secrets and variables -> Actions."
-            echo "SKIP_CRON=true" >> "$GITHUB_ENV"
+            echo "::error title=Configuration Error: Missing Secret::CRON_SECRET is not configured in GitHub Repository Secrets. The life-safety scheduler cannot run without authentication. Add CRON_SECRET under Settings -> Secrets and variables -> Actions."
+            echo "FATAL: Life-safety scheduler cannot run without authentication secret CRON_SECRET."
+            exit 1
           fi
 
           if ! TARGET_URL="$(node -e '
@@ -46,19 +55,15 @@ jobs:
 
           # Mask CRON_SECRET to ensure it never leaks to logs
           echo "::add-mask::$CRON_SECRET"
-          echo "Configuration validated successfully: Target URL is $TARGET_URL."
+          echo "Configuration validated successfully: Target URL is $TARGET_URL and CRON_SECRET is present."
 
-      - name: Dry Run Manual Dispatch
-        if: github.event_name == 'workflow_dispatch'
-        run: echo "Manual dispatch is a configuration-only dry run; no scheduler endpoint was called."
+      - name: Dry Run Notice
+        if: env.IS_DRY_RUN == 'true'
+        run: echo "::notice title=Dry Run::Configuration validated. Live endpoints were skipped because dry_run was requested."
 
       - name: Trigger Safe Walk Timeout Check
-        if: github.event_name == 'schedule'
+        if: env.IS_DRY_RUN != 'true'
         run: |
-          if [ "$SKIP_CRON" = "true" ]; then
-            echo "Safe Walk timeout check skipped: CRON_SECRET is not configured in repository secrets."
-            exit 0
-          fi
           HTTP_STATUS=$(curl -s -S --output /dev/null --connect-timeout 10 --max-time 30 -w "%{http_code}" -X POST "${TARGET_URL}/api/cron/safe-walk-timeout" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             -H "Content-Type: application/json")
@@ -69,14 +74,11 @@ jobs:
             echo "::error::Safe walk timeout endpoint returned unexpected status: $HTTP_STATUS"
             exit 1
           fi
+          echo "Safe Walk timeout check succeeded."
 
       - name: Trigger Staff Escalation Check
-        if: github.event_name == 'schedule'
+        if: env.IS_DRY_RUN != 'true'
         run: |
-          if [ "$SKIP_CRON" = "true" ]; then
-            echo "Staff escalation check skipped: CRON_SECRET is not configured in repository secrets."
-            exit 0
-          fi
           HTTP_STATUS=$(curl -s -S --output /dev/null --connect-timeout 10 --max-time 30 -w "%{http_code}" -X POST "${TARGET_URL}/api/cron/escalate" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             -H "Content-Type: application/json")
@@ -87,3 +89,4 @@ jobs:
             echo "::error::Escalation endpoint returned unexpected status: $HTTP_STATUS"
             exit 1
           fi
+          echo "Staff escalation check succeeded."
