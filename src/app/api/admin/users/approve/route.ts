@@ -55,10 +55,23 @@ export async function POST(req: Request) {
       'STUDENT',
       'STAFF',
       'COUNSELLOR',
+      'COUNSELOR',
       'WOMENS_CELL',
       'HOD',
       'SECURITY',
       'PRINCIPAL',
+      'PROVOST',
+      'VICE_PRINCIPAL',
+      'DEAN',
+      'PROFESSOR',
+      'ASSOCIATE_PROFESSOR',
+      'ASSISTANT_PROFESSOR',
+      'JUNIOR_PROFESSOR',
+      'LECTURER',
+      'TEACHER',
+      'ADMINISTRATIVE_OFFICER',
+      'NON_TEACHING_STAFF',
+      'CAMPUS_ADMIN',
       'ADMIN',
       'MENTOR',
       'WARDEN',
@@ -68,9 +81,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Requested role is invalid' }, { status: 400 });
     }
 
-    // Staff access governance: Management Admin is responsible for granting staff access.
+    // Staff access governance: Management Admin, Campus Admin or Principal is responsible for granting staff access.
     // Normal Admin and Super Admin are monitoring-only roles by default.
-    const staffRoles = ['STAFF', 'COUNSELLOR', 'WOMENS_CELL', 'HOD', 'SECURITY', 'PRINCIPAL', 'MENTOR', 'WARDEN'];
+    const staffRoles = [
+      'STAFF',
+      'COUNSELLOR',
+      'COUNSELOR',
+      'WOMENS_CELL',
+      'HOD',
+      'SECURITY',
+      'PRINCIPAL',
+      'PROVOST',
+      'VICE_PRINCIPAL',
+      'DEAN',
+      'PROFESSOR',
+      'ASSOCIATE_PROFESSOR',
+      'ASSISTANT_PROFESSOR',
+      'JUNIOR_PROFESSOR',
+      'LECTURER',
+      'TEACHER',
+      'ADMINISTRATIVE_OFFICER',
+      'NON_TEACHING_STAFF',
+      'MENTOR',
+      'WARDEN'
+    ];
     const isStaffRole = requestedRole != null && staffRoles.includes(requestedRole);
     if (isStaffRole && !isManagementAdmin && isMonitoringOnly) {
       return NextResponse.json(
@@ -79,8 +113,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Only SUPER_ADMIN can approve an ADMIN account
-    if (requestedRole === 'ADMIN' && !isSuperAdmin) {
+    // Only SUPER_ADMIN can approve an ADMIN or CAMPUS_ADMIN account
+    if ((requestedRole === 'ADMIN' || requestedRole === 'CAMPUS_ADMIN') && !isSuperAdmin) {
       return NextResponse.json({ error: 'Super Admin authorization required to approve Admin accounts' }, { status: 403 });
     }
 

@@ -18,6 +18,14 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(callbackUrl);
   }
 
+  // Aliases for secure administrative logins
+  if (pathname === '/secure-admin/login' || pathname === '/secure-admin') {
+    return NextResponse.redirect(new URL('/admin/login', request.url));
+  }
+  if (pathname === '/secure-super-admin/login' || pathname === '/secure-super-admin') {
+    return NextResponse.redirect(new URL('/super-admin/login', request.url));
+  }
+
   // Dedicated Administrator and Super Admin login pages are public
   if (pathname === '/super-admin/login' || pathname === '/admin/login') {
     return supabaseResponse;
@@ -111,9 +119,9 @@ export default async function proxy(request: NextRequest) {
   }
 
   // Role Based Access Control Matrix
-  const isAdmin = role === 'ADMIN' || isSuperAdmin;
-  const isManagement = role === 'HOD' || role === 'PRINCIPAL' || isAdmin;
-  const isStaff = role === 'STAFF' || role === 'COUNSELLOR' || role === 'COUNSELOR' || role === 'WOMENS_CELL' || role === 'SECURITY' || role === 'WARDEN' || role === 'MENTOR' || isManagement;
+  const isAdmin = role === 'ADMIN' || isSuperAdmin || role === 'CAMPUS_ADMIN';
+  const isManagement = role === 'HOD' || role === 'PRINCIPAL' || role === 'PROVOST' || role === 'VICE_PRINCIPAL' || role === 'DEAN' || role === 'MANAGEMENT' || role === 'COLLEGE_MANAGEMENT' || isAdmin;
+  const isStaff = role === 'STAFF' || role === 'PROFESSOR' || role === 'ASSOCIATE_PROFESSOR' || role === 'ASSISTANT_PROFESSOR' || role === 'JUNIOR_PROFESSOR' || role === 'LECTURER' || role === 'TEACHER' || role === 'COUNSELLOR' || role === 'COUNSELOR' || role === 'WOMENS_CELL' || role === 'SECURITY' || role === 'WARDEN' || role === 'MENTOR' || role === 'ADMINISTRATIVE_OFFICER' || role === 'NON_TEACHING_STAFF' || isManagement;
 
   if (pathname.startsWith('/super-admin') && !isSuperAdmin) {
     return NextResponse.redirect(new URL('/super-admin/login?error=unauthorized', request.url));
@@ -161,5 +169,16 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/login', '/student/:path*', '/staff/:path*', '/admin/:path*', '/management/:path*', '/super-admin/:path*', '/api/protected/:path*'],
+  matcher: [
+    '/',
+    '/login',
+    '/student/:path*',
+    '/staff/:path*',
+    '/admin/:path*',
+    '/management/:path*',
+    '/super-admin/:path*',
+    '/secure-admin/:path*',
+    '/secure-super-admin/:path*',
+    '/api/protected/:path*'
+  ],
 };

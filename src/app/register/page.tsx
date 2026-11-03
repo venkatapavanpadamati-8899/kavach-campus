@@ -7,6 +7,9 @@ import { createClient } from '@/lib/supabase/client';
 import { validateStudentRegistrationNumber } from '@/lib/verification/id-card';
 import { InteractiveSafetyCharacter } from '@/components/animations/InteractiveSafetyCharacter';
 import { getAuthCallbackUrl } from '@/lib/oauth';
+import { CollegeSearchInput } from '@/components/ui/CollegeSearchInput';
+import { STAFF_HIERARCHY } from '@/lib/staff-roles';
+import { CollegeTenant } from '@/lib/colleges';
 
 // Comprehensive branch-to-department mapping across academic programs
 const BRANCH_DEPARTMENT_MAP: Record<string, string> = {
@@ -50,6 +53,7 @@ const BRANCH_DEPARTMENT_MAP: Record<string, string> = {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [selectedCollege, setSelectedCollege] = useState<CollegeTenant | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -198,6 +202,10 @@ export default function RegisterPage() {
         }
       }
 
+      const isPrivilegedSelfRole = ['ADMIN', 'SUPER_ADMIN', 'MANAGEMENT', 'PRINCIPAL', 'HOD', 'PROVOST', 'VICE_PRINCIPAL', 'DEAN'].includes(formData.role);
+      const apiRole = isPrivilegedSelfRole ? 'STAFF' : formData.role;
+      const requestedDesignation = formData.role !== 'STUDENT' ? formData.role : undefined;
+
       const payload = {
         name: formData.name.trim(),
         email: emailTrimmed.toLowerCase(),
@@ -206,7 +214,11 @@ export default function RegisterPage() {
           ? formData.guardianPhone.replace(/\D/g, '')
           : undefined,
         password: formData.password,
-        role: formData.role,
+        role: apiRole,
+        requestedRole: requestedDesignation,
+        designation: requestedDesignation,
+        collegeId: selectedCollege?.id || undefined,
+        claimedCollegeId: selectedCollege?.id || undefined,
         degree: formData.role === 'STUDENT' ? formData.degree : undefined,
         department: formData.department.trim(),
         branch: formData.branch?.trim() || undefined,
@@ -238,7 +250,7 @@ export default function RegisterPage() {
       setTimeout(() => {
         const tokenQuery = data.clientToken ? `&token=${encodeURIComponent(data.clientToken)}` : '';
         router.push(`/verify-otp?email=${encodeURIComponent(emailTrimmed)}${tokenQuery}`);
-      }, 2000);
+      }, 800);
 
     } catch (err: unknown) {
       setError((err instanceof Error ? err.message : "An unexpected error occurred"));
@@ -252,23 +264,23 @@ export default function RegisterPage() {
       <div
         style={{
           minHeight: '100vh',
-        width: '100%',
-        minWidth: '100%',
-        boxSizing: 'border-box',
-        display: 'flex',
+          width: '100%',
+          minWidth: '100%',
+          boxSizing: 'border-box',
+          display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
-          backgroundImage: "linear-gradient(180deg, rgba(10, 15, 30, 0.65) 0%, rgba(15, 23, 42, 0.78) 100%), url('/images/auth_campus_bg.jpg')",
+          backgroundImage: "linear-gradient(180deg, rgba(4, 31, 22, 0.72) 0%, rgba(3, 23, 16, 0.88) 100%), url('/images/auth_campus_bg.jpg')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'scroll'
+          backgroundAttachment: 'scroll'
         }}
       >
-        <div className="ambient-light"></div>
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           className="glass-panel"
           style={{
             width: '100%',
@@ -276,19 +288,22 @@ export default function RegisterPage() {
             padding: '40px',
             textAlign: 'center',
             borderRadius: '20px',
-            background: 'rgba(15, 23, 42, 0.88)',
+            background: 'rgba(4, 31, 22, 0.92)',
             backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.12)'
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7)'
           }}
         >
-          <div style={{ display: 'inline-flex', padding: '16px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', marginBottom: '16px' }}>
-            <Shield size={48} color="var(--accent-green)" />
+          <div style={{ display: 'inline-flex', padding: '16px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.20)', marginBottom: '16px' }}>
+            <Shield size={48} color="#10b981" />
           </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '8px' }}>Registration Complete!</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>
-            {campusVerificationRequired
-              ? 'Your email domain is not linked to a pre-verified campus. You can submit your Student ID card after sign-in to complete campus verification.'
-              : 'Your institutional email determines your campus. Redirecting to email verification...'}
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#ecfdf5', marginBottom: '8px' }}>Registration Submitted!</h2>
+          <p style={{ color: '#a7f3d0', fontSize: '0.92rem', lineHeight: 1.5 }}>
+            {formData.role !== 'STUDENT'
+              ? 'Your staff verification request has been registered. Redirecting to verification...'
+              : (campusVerificationRequired
+                  ? 'Your student account is pending campus ID card verification. Redirecting to verification...'
+                  : 'Institutional credentials verified. Redirecting to verification...')}
           </p>
         </motion.div>
       </div>
@@ -511,6 +526,14 @@ export default function RegisterPage() {
             </span>
           </div>
 
+          {/* Searchable College Selection (by College Name or 6-digit PIN code) */}
+          <CollegeSearchInput
+            selectedCollege={selectedCollege}
+            onSelectCollege={(c) => setSelectedCollege(c)}
+            required
+            label={formData.role === 'STUDENT' ? "Select College / Institution" : "Affiliated College / Institution"}
+          />
+
           {formData.role === 'STUDENT' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ position: 'relative' }}>
@@ -605,18 +628,17 @@ export default function RegisterPage() {
                 <select
                   name="role"
                   className="input-field"
-                  style={{ paddingLeft: '44px', appearance: 'none', background: 'rgba(255, 255, 255, 0.08)', color: '#fff' }}
+                  style={{ paddingLeft: '44px', appearance: 'none', background: 'rgba(16, 185, 129, 0.08)', color: '#ecfdf5' }}
                   value={formData.role}
                   onChange={handleChange}
+                  required
                 >
-                  <option value="STAFF" style={{ background: '#1e1b4b' }}>Staff Member</option>
-                  <option value="MENTOR" style={{ background: '#1e1b4b' }}>Mentor</option>
-                  <option value="COUNSELLOR" style={{ background: '#1e1b4b' }}>Counselor</option>
-                  <option value="SECURITY" style={{ background: '#1e1b4b' }}>Campus Security</option>
-                  <option value="WOMENS_CELL" style={{ background: '#1e1b4b' }}>Women&apos;s Cell</option>
-                  <option value="HOD" style={{ background: '#1e1b4b' }}>Head of Department (HOD)</option>
-                  <option value="PRINCIPAL" style={{ background: '#1e1b4b' }}>Principal</option>
-                  <option value="MANAGEMENT" style={{ background: '#1e1b4b' }}>College Management</option>
+                  <option value="STAFF" style={{ background: '#041f16' }}>General Staff Member</option>
+                  {STAFF_HIERARCHY.map((staffRole) => (
+                    <option key={staffRole.code} value={staffRole.code} style={{ background: '#041f16' }}>
+                      {staffRole.level}. {staffRole.title}
+                    </option>
+                  ))}
                 </select>
               </div>
               <input
@@ -733,8 +755,12 @@ export default function RegisterPage() {
           )}
 
           {formData.role !== 'STUDENT' && (
-            <div style={{ padding: '10px 14px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '8px', color: '#f59e0b', fontSize: '0.85rem' }}>
-              ℹ️ Staff requests require verification and approval by an authorized campus administrator.
+            <div style={{ padding: '12px 14px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '8px', color: '#a7f3d0', fontSize: '0.85rem', lineHeight: 1.5 }}>
+              {['PRINCIPAL', 'PROVOST', 'VICE_PRINCIPAL', 'DEAN', 'HOD', 'MANAGEMENT'].includes(formData.role) ? (
+                <>🏛️ <strong>Leadership Access Request:</strong> Institutional leadership accounts ({formData.role}) are routed to the Platform Super Admin / Oversight Team for campus authentication and governance activation.</>
+              ) : (
+                <>ℹ️ <strong>Staff Verification:</strong> Faculty and staff access requests require accreditation and approval by your campus administration or Principal.</>
+              )}
             </div>
           )}
 

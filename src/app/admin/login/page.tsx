@@ -91,9 +91,19 @@ function CampusAdminLoginForm() {
       // Check authorized institutional roles
       const isInstitutionalAdmin =
         role === 'ADMIN' ||
+        role === 'CAMPUS_ADMIN' ||
         role === 'MANAGEMENT' ||
         role === 'PRINCIPAL' ||
+        role === 'PROVOST' ||
+        role === 'VICE_PRINCIPAL' ||
+        role === 'DEAN' ||
         role === 'HOD' ||
+        role === 'PROFESSOR' ||
+        role === 'ASSOCIATE_PROFESSOR' ||
+        role === 'ASSISTANT_PROFESSOR' ||
+        role === 'JUNIOR_PROFESSOR' ||
+        role === 'LECTURER' ||
+        role === 'TEACHER' ||
         role === 'STAFF' ||
         role === 'COUNSELLOR' ||
         role === 'COUNSELOR' ||
@@ -101,6 +111,8 @@ function CampusAdminLoginForm() {
         role === 'SECURITY' ||
         role === 'WARDEN' ||
         role === 'MENTOR' ||
+        role === 'ADMINISTRATIVE_OFFICER' ||
+        role === 'NON_TEACHING_STAFF' ||
         role === 'SUPER_ADMIN';
 
       if (!isInstitutionalAdmin) {
@@ -141,9 +153,9 @@ function CampusAdminLoginForm() {
 
       if (role === 'SUPER_ADMIN') {
         router.push('/super-admin');
-      } else if (role === 'ADMIN') {
+      } else if (role === 'ADMIN' || role === 'CAMPUS_ADMIN') {
         router.push('/admin');
-      } else if (role === 'HOD' || role === 'PRINCIPAL' || role === 'MANAGEMENT') {
+      } else if (role === 'HOD' || role === 'PRINCIPAL' || role === 'PROVOST' || role === 'VICE_PRINCIPAL' || role === 'DEAN' || role === 'MANAGEMENT') {
         router.push('/management');
       } else {
         router.push('/staff');
@@ -332,11 +344,19 @@ function CampusAdminLoginForm() {
           </button>
         </form>
 
-        <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-          Student or standard user?{' '}
-          <a href="/login" style={{ color: 'var(--accent-blue)', fontWeight: 600, textDecoration: 'none' }}>
-            Go to Student Portal
-          </a>
+        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'center', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+          <div>
+            Need to manage your campus safety?{' '}
+            <a href="/admin/campus/register" style={{ color: '#10b981', fontWeight: 600, textDecoration: 'none' }}>
+              Request Campus Admin Access
+            </a>
+          </div>
+          <div>
+            Student or standard user?{' '}
+            <a href="/login" style={{ color: 'var(--accent-blue)', fontWeight: 600, textDecoration: 'none' }}>
+              Go to Student Portal
+            </a>
+          </div>
         </div>
 
         {/* Security Audit Watermark */}

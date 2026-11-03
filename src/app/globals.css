@@ -42,12 +42,14 @@ body {
   min-width: 100%;
   margin: 0;
   padding: 0;
-  background-color: #080d1a;
+  background-color: #04140d;
   color: var(--text-primary);
   font-family: var(--font-sans);
   overflow-x: hidden;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .viewport-full-bg {
@@ -86,30 +88,31 @@ a {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  background: linear-gradient(135deg, #10b981 0%, #34d399 50%, #6ee7b7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   color: white;
-  border: none;
+  border: 1px solid rgba(52, 211, 153, 0.4);
   padding: 12px 24px;
   border-radius: var(--border-radius-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 15px var(--accent-blue-glow);
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
   font-family: var(--font-sans);
   font-size: 1rem;
+  letter-spacing: 0.01em;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 25px var(--accent-blue-glow);
-  filter: brightness(1.1);
+  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.45);
+  filter: brightness(1.08);
 }
 
 .input-field {
@@ -186,6 +189,53 @@ a {
     linear-gradient(180deg, #151321 0%, var(--bg-primary) 70%);
 }
 
+/* Desktop Fixed Sidebar Layout & Independent Main Scrolling */
+.dashboard-shell {
+  display: flex;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dashboard-sidebar {
+  width: 270px;
+  height: 100vh;
+  max-height: 100vh;
+  position: sticky;
+  top: 0;
+  left: 0;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 40;
+}
+
+.dashboard-sidebar-nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dashboard-sidebar-footer {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.dashboard-main {
+  flex: 1;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 /* Keep authenticated dashboards usable without horizontal scrolling on phones. */
 @media (max-width: 860px) {
   .dashboard-shell {
@@ -194,7 +244,9 @@ a {
   }
 
   .dashboard-sidebar {
+    position: relative !important;
     width: 100% !important;
+    height: auto !important;
     min-height: auto;
     padding: 14px 12px !important;
   }
@@ -216,7 +268,8 @@ a {
   }
 
   .dashboard-main {
-    width: 100%;
+    margin-left: 0 !important;
+    width: 100% !important;
     padding: 18px 14px !important;
   }
 

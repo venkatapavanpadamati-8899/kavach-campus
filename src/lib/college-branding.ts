@@ -109,17 +109,17 @@ const SRKR_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
   },
   staff_dashboard: {
     imageUrl: '/images/staff_admin_bg.jpg',
-    overlay: 'linear-gradient(180deg, rgba(20, 20, 35, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
+    overlay: 'linear-gradient(180deg, rgba(6, 45, 34, 0.45) 0%, rgba(4, 20, 13, 0.72) 100%)',
     caption: 'SRKR Faculty Secretariat & Departmental Response Cell'
   },
   admin_dashboard: {
-    imageUrl: '/images/staff_admin_bg.jpg',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(6, 45, 34, 0.48) 0%, rgba(4, 20, 13, 0.75) 100%)',
     caption: 'SRKR Campus Command & Security Operations Center'
   },
   management_dashboard: {
-    imageUrl: '/images/staff_admin_bg.jpg',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(4, 32, 24, 0.45) 0%, rgba(4, 20, 13, 0.72) 100%)',
     caption: 'SRKR Governing Body & Institutional Analytics Suite'
   }
 };
@@ -187,17 +187,17 @@ const VISHNU_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
   },
   staff_dashboard: {
     imageUrl: '/images/staff_admin_bg.jpg',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
+    overlay: 'linear-gradient(180deg, rgba(6, 45, 34, 0.45) 0%, rgba(4, 20, 13, 0.72) 100%)',
     caption: 'Vishnu Faculty & First Responder Dispatch Matrix'
   },
   admin_dashboard: {
-    imageUrl: '/images/staff_admin_bg.jpg',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(6, 45, 34, 0.48) 0%, rgba(4, 20, 13, 0.75) 100%)',
     caption: 'Vishnu Central Campus Command & Control Tower'
   },
   management_dashboard: {
-    imageUrl: '/images/staff_admin_bg.jpg',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(4, 32, 24, 0.45) 0%, rgba(4, 20, 13, 0.72) 100%)',
     caption: 'Vishnu Executive Board & Institutional Quality Council'
   }
 };
@@ -266,17 +266,17 @@ const DEFAULT_FALLBACK_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
   },
   staff_dashboard: {
     imageUrl: '/images/staff_admin_bg.jpg',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
+    overlay: 'linear-gradient(180deg, rgba(6, 45, 34, 0.45) 0%, rgba(4, 20, 13, 0.72) 100%)',
     caption: 'Faculty & Responder Control Room'
   },
   admin_dashboard: {
-    imageUrl: '/images/staff_admin_bg.jpg',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
-    caption: 'Campus Control Tower'
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(6, 45, 34, 0.48) 0%, rgba(4, 20, 13, 0.75) 100%)',
+    caption: 'Campus Central Command Tower'
   },
   management_dashboard: {
-    imageUrl: '/images/staff_admin_bg.jpg',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(4, 32, 24, 0.45) 0%, rgba(4, 20, 13, 0.72) 100%)',
     caption: 'Executive Management Council'
   }
 };

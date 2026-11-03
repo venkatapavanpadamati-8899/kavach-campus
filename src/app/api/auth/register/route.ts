@@ -108,10 +108,32 @@ export async function POST(req: Request) {
     }
 
     const assignedCollegeId = resolveCollegeIdFromEmail(normalizedEmail);
-    const campusVerificationRequired = assignedCollegeId === 'PENDING_CAMPUS_VERIFICATION';
+    const requestedCollegeId = (typeof collegeId === 'string' && collegeId.trim())
+      ? collegeId.trim()
+      : (typeof data.claimedCollegeId === 'string' && data.claimedCollegeId.trim() ? data.claimedCollegeId.trim() : null);
+    const effectiveCollegeId = (assignedCollegeId !== 'PENDING_CAMPUS_VERIFICATION')
+      ? assignedCollegeId
+      : (requestedCollegeId || 'PENDING_CAMPUS_VERIFICATION');
+    const campusVerificationRequired = effectiveCollegeId === 'PENDING_CAMPUS_VERIFICATION';
 
     // Allowed public self-requested roles (STUDENT is instant; staff request requires admin review)
-    const allowedStaffRoles = ['STAFF', 'MENTOR', 'COUNSELLOR', 'COUNSELOR', 'SECURITY', 'WOMENS_CELL', 'WARDEN'];
+    const allowedStaffRoles = [
+      'STAFF',
+      'PROFESSOR',
+      'ASSOCIATE_PROFESSOR',
+      'ASSISTANT_PROFESSOR',
+      'JUNIOR_PROFESSOR',
+      'LECTURER',
+      'TEACHER',
+      'MENTOR',
+      'COUNSELLOR',
+      'COUNSELOR',
+      'ADMINISTRATIVE_OFFICER',
+      'NON_TEACHING_STAFF',
+      'SECURITY',
+      'WOMENS_CELL',
+      'WARDEN'
+    ];
     const finalRole = (role && allowedStaffRoles.includes(role)) ? role : 'STUDENT';
 
     if (finalRole === 'STUDENT' && rawGuardianPhone && !/^[6-9]\d{9}$/.test(normalizedGuardianPhone)) {
@@ -252,12 +274,14 @@ export async function POST(req: Request) {
             role: finalRole,
             phone: normalizedPhone,
             guardian_phone: finalRole === 'STUDENT' ? normalizedGuardianPhone : null,
-            campus_id: assignedCollegeId,
+            campus_id: effectiveCollegeId,
             student_id: validatedRegNumber,
             department: department || 'General',
             branch: typeof data.branch === 'string' ? data.branch.trim() : null,
             section: typeof data.section === 'string' ? data.section.trim() : null,
             personal_email: resolvedPersonalEmail || null,
+            designation: typeof data.designation === 'string' ? data.designation.trim() : (typeof data.requestedRole === 'string' ? data.requestedRole.trim() : null),
+            requested_role: typeof data.requestedRole === 'string' ? data.requestedRole.trim() : (typeof data.designation === 'string' ? data.designation.trim() : null),
           }
         });
         if (authCreated?.user?.id) {
@@ -291,14 +315,16 @@ export async function POST(req: Request) {
         guardianPhone: finalRole === 'STUDENT' ? normalizedGuardianPhone : null,
         guardian_phone: finalRole === 'STUDENT' ? normalizedGuardianPhone : null,
         role: finalRole,
-        campusId: assignedCollegeId,
-        collegeId: assignedCollegeId,
+        campusId: effectiveCollegeId,
+        collegeId: effectiveCollegeId,
         degree: typeof degree === 'string' ? degree.trim() : null,
         studentId: validatedRegNumber,
         department: department || 'General',
         branch: typeof data.branch === 'string' ? data.branch.trim() : null,
         section: typeof data.section === 'string' ? data.section.trim() : null,
         academicYear: finalRole === 'STUDENT' ? (typeof academicYear === 'string' ? academicYear.trim() : (typeof academic_year === 'string' ? academic_year.trim() : '1st Year')) : null,
+        designation: typeof data.designation === 'string' ? data.designation.trim() : (typeof data.requestedRole === 'string' ? data.requestedRole.trim() : null),
+        requestedRole: typeof data.requestedRole === 'string' ? data.requestedRole.trim() : (typeof data.designation === 'string' ? data.designation.trim() : null),
         isApproved: finalRole === 'STUDENT' && !campusVerificationRequired
       }
     });

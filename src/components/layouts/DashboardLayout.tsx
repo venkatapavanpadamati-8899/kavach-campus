@@ -164,7 +164,9 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
       className="dashboard-shell"
       style={{
         display: 'flex',
-        minHeight: '100vh',
+        height: '100vh',
+        maxHeight: '100vh',
+        overflow: 'hidden',
         width: '100%',
         minWidth: '100%',
         boxSizing: 'border-box',
@@ -177,36 +179,42 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
         transition: 'background-image 0.5s ease'
       }}
     >
-      {/* Sidebar */}
+      {/* Sidebar - strictly fixed on the left and does NOT scroll with main content */}
       <motion.aside
         className="dashboard-sidebar"
         initial={{ x: -250 }}
         animate={{ x: 0 }}
         style={{
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
           width: '270px',
-          background: 'linear-gradient(180deg, #0b1329 0%, #0c1a36 45%, #071021 100%)',
+          height: '100vh',
+          background: 'linear-gradient(180deg, #041f16 0%, #062b1f 45%, #031710 100%)',
           backdropFilter: 'blur(28px)',
           WebkitBackdropFilter: 'blur(28px)',
-          borderRight: '1px solid rgba(56, 189, 248, 0.18)',
-          boxShadow: 'inset -1px 0 0 rgba(56, 189, 248, 0.12), 6px 0 32px rgba(2, 6, 23, 0.70)',
+          borderRight: '1px solid rgba(16, 185, 129, 0.22)',
+          boxShadow: 'inset -1px 0 0 rgba(16, 185, 129, 0.12), 6px 0 32px rgba(2, 6, 23, 0.70)',
           display: 'flex',
           flexDirection: 'column',
-          padding: '22px 14px',
-          zIndex: 40
+          padding: '20px 14px 18px 14px',
+          zIndex: 50,
+          boxSizing: 'border-box'
         }}
       >
         {/* Brand Logo & Active Campus Name */}
-        <div style={{ padding: '0 6px 20px 6px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '16px' }}>
+        <div style={{ padding: '0 6px 18px 6px', borderBottom: '1px solid rgba(16, 185, 129, 0.16)', marginBottom: '14px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
             <div
               style={{ width: '40px', height: '40px', flexShrink: 0 }}
               dangerouslySetInnerHTML={{ __html: branding.logoSvg }}
             />
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, background: 'linear-gradient(45deg, #60a5fa, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.01em' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, background: 'linear-gradient(45deg, #10b981, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.01em' }}>
                 Kavach Campus
               </h2>
-              <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>Safety in One Tap</span>
+              <span style={{ fontSize: '0.72rem', color: '#a7f3d0', fontWeight: 500 }}>Safety in One Tap</span>
             </div>
           </div>
 
@@ -218,16 +226,16 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
               gap: '8px',
               padding: '8px 12px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.20) 0%, rgba(99, 102, 241, 0.15) 100%)',
-              border: '1px solid rgba(59, 130, 246, 0.35)',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.20) 0%, rgba(5, 150, 105, 0.15) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
               marginTop: '10px'
             }}>
-              <ShieldAlert size={15} color="#60a5fa" />
+              <ShieldAlert size={15} color="#34d399" />
               <div style={{ overflow: 'hidden' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#93c5fd', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ecfdf5', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   Platform Administration
                 </div>
-                <div style={{ fontSize: '0.68rem', color: '#60a5fa' }}>Central Governance</div>
+                <div style={{ fontSize: '0.68rem', color: '#6ee7b7' }}>Central Governance</div>
               </div>
             </div>
           ) : (
@@ -237,17 +245,17 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
               gap: '8px',
               padding: '8px 12px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.22) 0%, rgba(59, 130, 246, 0.15) 100%)',
-              border: '1px solid rgba(124, 58, 237, 0.35)',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.20) 0%, rgba(4, 120, 87, 0.15) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
               marginTop: '10px'
             }}>
-              <Building2 size={16} color="#c084fc" />
+              <Building2 size={16} color="#34d399" />
               <div style={{ overflow: 'hidden' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {tenant?.shortName || (role === 'MANAGEMENT' ? 'Campus Management' : 'Campus verification pending')}
                 </div>
                 {tenant ? (
-                  <div style={{ fontSize: '0.68rem', color: '#a5b4fc' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#a7f3d0' }}>
                     {tenant.city}, {tenant.state}
                   </div>
                 ) : (
@@ -258,8 +266,8 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
           )}
         </div>
 
-        {/* Navigation Items */}
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto' }}>
+        {/* Navigation Items - Scrollable if exceeds viewport, keeping header & footer stationary */}
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', paddingRight: '2px', minHeight: 0 }}>
           {navItems.map((item: SidebarItem) => {
             const isActive = pathname === item.href || (item.href !== '/student' && item.href !== '/staff' && item.href !== '/admin' && item.href !== '/management' && pathname.startsWith(item.href));
             return (
@@ -269,13 +277,13 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
                   display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px',
                   borderRadius: '10px', cursor: 'pointer',
                   background: isActive
-                    ? 'linear-gradient(90deg, rgba(37, 99, 235, 0.28) 0%, rgba(56, 189, 248, 0.14) 100%)'
+                    ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.24) 0%, rgba(5, 150, 105, 0.14) 100%)'
                     : 'transparent',
                   border: isActive
-                    ? '1px solid rgba(56, 189, 248, 0.45)'
+                    ? '1px solid rgba(16, 185, 129, 0.50)'
                     : '1px solid transparent',
-                  color: isActive ? '#f8fafc' : '#94a3b8',
-                  boxShadow: isActive ? '0 4px 14px rgba(37, 99, 235, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
+                  color: isActive ? '#ecfdf5' : '#94a3b8',
+                  boxShadow: isActive ? '0 4px 14px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   fontSize: '0.92rem'
                 }}>
@@ -288,12 +296,12 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
                         bottom: '6px',
                         width: '3.5px',
                         borderRadius: '0 4px 4px 0',
-                        background: 'linear-gradient(180deg, #38bdf8 0%, #818cf8 100%)',
-                        boxShadow: '0 0 8px rgba(56, 189, 248, 0.6)'
+                        background: 'linear-gradient(180deg, #10b981 0%, #34d399 100%)',
+                        boxShadow: '0 0 8px rgba(16, 185, 129, 0.7)'
                       }}
                     />
                   )}
-                  <item.icon size={19} color={isActive ? '#38bdf8' : '#94a3b8'} />
+                  <item.icon size={19} color={isActive ? '#34d399' : '#94a3b8'} />
                   <span style={{ fontWeight: isActive ? 600 : 400 }}>{item.name}</span>
                 </div>
               </Link>
@@ -301,13 +309,13 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
           })}
         </nav>
 
-        {/* User Profile Mini Badge & Sign Out */}
-        <div style={{ marginTop: 'auto', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        {/* User Profile Mini Badge & Sign Out - Strictly Pinned at Bottom Left Corner */}
+        <div style={{ marginTop: 'auto', paddingTop: '14px', paddingBottom: '6px', borderTop: '1px solid rgba(16, 185, 129, 0.16)', flexShrink: 0 }}>
           <div style={{
             padding: '10px 12px',
             borderRadius: '10px',
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'rgba(16, 185, 129, 0.08)',
+            border: '1px solid rgba(16, 185, 129, 0.18)',
             marginBottom: '10px',
             display: 'flex',
             alignItems: 'center',
@@ -318,7 +326,7 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
               height: '32px',
               borderRadius: '50%',
               overflow: 'hidden',
-              background: 'linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)',
+              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -335,7 +343,7 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
               <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {isPlatformAdmin ? 'Platform Admin' : (tenant?.shortName || 'Verified Member')}
               </div>
-              <div style={{ fontSize: '0.68rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div style={{ fontSize: '0.68rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
                 {role}
               </div>
@@ -344,8 +352,8 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
 
           <button style={{
             display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px',
-            width: '100%', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.10)',
-            border: '1px solid rgba(239, 68, 68, 0.22)', color: '#f87171', cursor: 'pointer', textAlign: 'left',
+            width: '100%', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.28)', color: '#fca5a5', cursor: 'pointer', textAlign: 'left',
             fontSize: '0.88rem', fontWeight: 500, transition: 'all 0.2s'
           }}
           onClick={async () => {
@@ -372,8 +380,8 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
         </div>
       </motion.aside>
 
-      {/* Main Content Area */}
-      <main className="dashboard-main" style={{ flex: 1, padding: '24px 32px', overflowY: 'auto' }}>
+      {/* Main Content Area - scrolls independently while sidebar remains permanently fixed */}
+      <main className="dashboard-main" style={{ flex: 1, marginLeft: '270px', height: '100vh', maxHeight: '100vh', overflowY: 'auto', overflowX: 'hidden', width: 'calc(100% - 270px)', padding: '24px 32px', boxSizing: 'border-box' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           {/* Topbar: Top Right Corner College Logo & Info */}
           <header className="dashboard-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', flexWrap: 'wrap', gap: '16px' }}>
