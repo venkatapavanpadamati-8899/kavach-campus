@@ -24,6 +24,7 @@ const mockServerClient = {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
             single: mockProfilesSelect,
+            maybeSingle: mockProfilesSelect,
           })),
         })),
       };
@@ -33,6 +34,7 @@ const mockServerClient = {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
             single: mockStudentProfilesSelect,
+            maybeSingle: mockStudentProfilesSelect,
           })),
         })),
       };
@@ -51,7 +53,11 @@ const mockAdminClient = {
           eq: vi.fn(() => ({
             neq: vi.fn().mockResolvedValue({ data: [] }),
             single: vi.fn().mockResolvedValue({
-              data: { id: 'usr-student-01', full_name: 'Test Student', department: 'CSE', college_id: 'srkr-bhimavaram' },
+              data: { id: 'usr-student-01', full_name: 'Test Student', department: 'CSE', college_id: 'srkr-bhimavaram', role: 'STUDENT' },
+            }),
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { id: 'usr-student-01', full_name: 'Test Student', department: 'CSE', college_id: 'srkr-bhimavaram', role: 'STUDENT' },
+              error: null,
             }),
           })),
           in: vi.fn().mockResolvedValue({
@@ -306,6 +312,50 @@ describe('Student ID Verification API & Storage Security', () => {
       const json = await res.json();
       expect(json.success).toBe(true);
       expect(json.verificationStatus).toBe('PENDING_MANUAL_REVIEW');
+    });
+
+    it('rejects a claimed college that conflicts with the authenticated college', async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: 'usr-student-01' } }, error: null });
+      const { POST } = await import('@/app/api/student/verify-id/route');
+      const req = new NextRequest('http://localhost:3000/api/student/verify-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: '2101201045',
+          admissionType: 'REGULAR',
+          admissionYear: 2021,
+          expectedGraduationYear: 2025,
+          claimedCollegeId: 'vishnu-bhimavaram',
+          idCardUrl: 'kavach-id-cards/usr-student-01/id-card.jpg',
+        }),
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(403);
+      expect((await res.json()).error).toContain('does not match');
+      expect(mockStorageUpload).not.toHaveBeenCalled();
+    });
+
+    it('rejects an ID card storage path owned by another user', async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: 'usr-student-01' } }, error: null });
+      const { POST } = await import('@/app/api/student/verify-id/route');
+      const req = new NextRequest('http://localhost:3000/api/student/verify-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: '2101201045',
+          admissionType: 'REGULAR',
+          admissionYear: 2021,
+          expectedGraduationYear: 2025,
+          claimedCollegeId: 'srkr-bhimavaram',
+          idCardUrl: 'kavach-id-cards/usr-other-student/id-card.jpg',
+        }),
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(403);
+      expect((await res.json()).error).toContain('not owned by this account');
+      expect(mockStudentProfilesUpsert).not.toHaveBeenCalled();
     });
 
     it('rejects fake/disguised file with invalid binary signature', async () => {

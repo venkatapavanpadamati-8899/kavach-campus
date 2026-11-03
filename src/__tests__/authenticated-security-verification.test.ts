@@ -682,6 +682,18 @@ describe('STEP 81: Authenticated Security & Access Control Verification Suite', 
             })),
           };
         }
+        if (table === 'student_profiles') {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'vishnu-student', claimed_college_id: null },
+                  error: null,
+                }),
+              })),
+            })),
+          };
+        }
         return {};
       });
 
@@ -700,7 +712,7 @@ describe('STEP 81: Authenticated Security & Access Control Verification Suite', 
         expect(await res.json()).toEqual({
           error: 'Cannot review students outside your assigned campus',
         });
-        expect(mockAdminFrom).toHaveBeenCalledTimes(1);
+        expect(mockAdminFrom).toHaveBeenCalledTimes(2);
       } finally {
         if (originalEnv === undefined) {
           delete process.env.SUPABASE_SERVICE_ROLE_KEY;

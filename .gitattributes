@@ -1,0 +1,7 @@
+*.md text diff
+*.ts text diff
+*.tsx text diff
+*.json text diff
+*.yml text diff
+*.sql text diff
+

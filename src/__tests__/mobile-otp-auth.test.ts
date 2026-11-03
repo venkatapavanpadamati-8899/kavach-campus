@@ -278,6 +278,31 @@ describe('Kavach Campus — Mobile Demo OTP Authentication & Email Separation Su
       expect(json.error).toMatch(/No registered account found with.*mobile number/i);
     });
 
+    it('fails closed when a phone number matches multiple profiles', async () => {
+      mockAdminFrom.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: null,
+              error: { code: 'PGRST116', message: 'JSON object requested, multiple rows returned' },
+            }),
+          }),
+        }),
+      });
+
+      const req = new Request('http://localhost:3000/api/auth/mobile-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 'verify', phone: '9876543210', otp: '123456' }),
+      });
+
+      const res = await mobileLoginRoute(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(409);
+      expect(json.error).toMatch(/associated with multiple accounts/i);
+    });
+
     it('returns 403 if staff/admin account is pending administrator approval', async () => {
       mockAdminFrom.mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -397,7 +422,42 @@ describe('Kavach Campus — Mobile Demo OTP Authentication & Email Separation Su
       expect(json.user.role).toBe('STUDENT');
       expect(json.destination).toBe('/student');
       expect(json.token_hash).toBe('hash_test_123');
-      expect(json.action_link).toContain('token_hash=hash_test_123');
+      expect(json.action_link).toBeUndefined();
+    });
+
+    it('does not report success when Supabase cannot generate a sign-in token', async () => {
+      mockAdminFrom.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: {
+                id: 'usr-student-approved',
+                full_name: 'Aditya Student',
+                college_email: 'aditya@srkr.edu.in',
+                phone: '9876543210',
+                role: 'STUDENT',
+                is_approved: true,
+                college_id: 'srkr-bhimavaram',
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+      mockAdminGenerateLink.mockResolvedValue({ data: { properties: {} }, error: { message: 'link generation failed' } });
+      sendDemoSms('9876543210', 'LOGIN', '555666');
+
+      const req = new Request('http://localhost:3000/api/auth/mobile-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 'verify', phone: '9876543210', otp: '555666' }),
+      });
+
+      const res = await mobileLoginRoute(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(503);
+      expect(json.success).toBeUndefined();
     });
 
     it('routes unapproved student to /student/verification-status', async () => {
@@ -420,6 +480,10 @@ describe('Kavach Campus — Mobile Demo OTP Authentication & Email Separation Su
         }),
       });
 
+      mockAdminGenerateLink.mockResolvedValue({
+        data: { properties: { hashed_token: 'pending_student_hash' } },
+        error: null,
+      });
       sendDemoSms('9876543210', 'LOGIN', '123123');
 
       const req = new Request('http://localhost:3000/api/auth/mobile-login', {

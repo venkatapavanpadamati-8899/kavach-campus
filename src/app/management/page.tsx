@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ShieldAlert, Users, TrendingUp, AlertTriangle, ArrowRight } from 'lucide-react';
+import { ShieldAlert, Users, TrendingUp, AlertTriangle, ArrowRight, Building2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { getCollegeById, CollegeTenant } from '@/lib/colleges';
 
 export default function ManagementDashboard() {
+  const [collegeInfo, setCollegeInfo] = useState<CollegeTenant | null>(null);
   const [data, setData] = useState({
     activeIncidents: '0',
     avgResponseTime: '2m 14s',
@@ -15,27 +17,65 @@ export default function ManagementDashboard() {
   });
 
   useEffect(() => {
+    let cancelled = false;
     async function loadManagementData() {
       try {
         const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        let userCollegeId: string | null = null;
+        let isSuperAdmin = false;
+
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, college_id')
+            .eq('id', user.id)
+            .single();
+
+          if (profile) {
+            isSuperAdmin = profile.role === 'SUPER_ADMIN';
+            userCollegeId = profile.college_id;
+            if (profile.college_id) {
+              const col = getCollegeById(profile.college_id);
+              if (!cancelled && col) setCollegeInfo(col);
+            }
+          }
+        }
+
+        let incidentQuery = supabase.from('incidents').select('*', { count: 'exact', head: true }).neq('status', 'RESOLVED');
+        let dutyQuery = supabase.from('staff_profiles').select('*', { count: 'exact', head: true }).eq('is_on_duty', true);
+        let criticalQuery = supabase.from('incidents').select('id, case_id, title, category').eq('severity', 'CRITICAL').neq('status', 'RESOLVED').limit(5);
+
+        // Strict cross-college data isolation: College management sees only their own college's incidents and staff
+        if (userCollegeId && !isSuperAdmin) {
+          incidentQuery = incidentQuery.eq('college_id', userCollegeId);
+          dutyQuery = dutyQuery.eq('college_id', userCollegeId);
+          criticalQuery = criticalQuery.eq('college_id', userCollegeId);
+        }
+
         const [{ count: activeCount }, { count: dutyCount }, { data: criticals }] = await Promise.all([
-          supabase.from('incidents').select('*', { count: 'exact', head: true }).neq('status', 'RESOLVED'),
-          supabase.from('staff_profiles').select('*', { count: 'exact', head: true }).eq('is_on_duty', true),
-          supabase.from('incidents').select('id, case_id, title, category').eq('severity', 'CRITICAL').neq('status', 'RESOLVED').limit(5),
+          incidentQuery,
+          dutyQuery,
+          criticalQuery,
         ]);
 
-        setData({
-          activeIncidents: (activeCount ?? 0).toString(),
-          avgResponseTime: '< 3 mins',
-          staffOnDuty: (dutyCount ?? 0).toString(),
-          criticalList: criticals ?? [],
-          loading: false,
-        });
+        if (!cancelled) {
+          setData({
+            activeIncidents: (activeCount ?? 0).toString(),
+            avgResponseTime: '< 3 mins',
+            staffOnDuty: (dutyCount ?? 0).toString(),
+            criticalList: criticals ?? [],
+            loading: false,
+          });
+        }
       } catch {
-        setData(prev => ({ ...prev, loading: false }));
+        if (!cancelled) {
+          setData(prev => ({ ...prev, loading: false }));
+        }
       }
     }
     loadManagementData();
+    return () => { cancelled = true; };
   }, []);
 
   const kpis = [
@@ -46,6 +86,23 @@ export default function ManagementDashboard() {
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      {collegeInfo && (
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '6px 14px',
+          borderRadius: '20px',
+          background: 'rgba(59, 130, 246, 0.15)',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          marginBottom: '16px'
+        }}>
+          <Building2 size={16} color="#60a5fa" />
+          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#93c5fd' }}>
+            {collegeInfo.name} ({collegeInfo.city}, {collegeInfo.state})
+          </span>
+        </div>
+      )}
       <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Management Overview</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>High-level analytics and critical escalation monitoring.</p>
 

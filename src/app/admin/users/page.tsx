@@ -25,6 +25,8 @@ type VerificationRecord = {
   admissionYear: number;
   expectedGraduationYear: number;
   verificationStatus: string;
+  claimedCollege?: string | null;
+  claimedCollegeId?: string | null;
   verifiedAt?: string;
   verifiedBy?: string;
   verificationNotes?: string;
@@ -239,6 +241,11 @@ export default function AdminUsersPage() {
                     <td style={{ padding: '16px' }}>
                       <div style={{ fontWeight: 600 }}>{v.fullName}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{v.collegeEmail}</div>
+                      {v.claimedCollege && (
+                        <div style={{ fontSize: '0.8rem', color: '#fbbf24', marginTop: '4px' }}>
+                          Claimed campus: {v.claimedCollege}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '16px' }}>
                       <div style={{ fontFamily: 'monospace', fontWeight: 600 }}>{v.studentId}</div>

@@ -18,7 +18,7 @@ export async function POST(
     // 2. Authorize role: only staff, security, management, or administrators can escalate
     const { data: userProfile } = await supabase
       .from('profiles')
-      .select('id, role, full_name')
+      .select('id, role, full_name, college_id')
       .eq('id', user.id)
       .single();
 
@@ -48,12 +48,20 @@ export async function POST(
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     const { data: incident, error: incError } = await supabase
       .from('incidents')
-      .select('id, case_id, status, category, severity')
+      .select('id, case_id, status, category, severity, college_id')
       .eq(isUuid ? 'id' : 'case_id', id)
       .single();
 
     if (incError || !incident) {
       return NextResponse.json({ error: 'Incident not found' }, { status: 404 });
+    }
+
+    // Cross-college tenant isolation
+    if (userProfile.role !== 'SUPER_ADMIN' && userProfile.college_id && incident.college_id && userProfile.college_id !== incident.college_id) {
+      return NextResponse.json(
+        { error: 'Forbidden: Cannot escalate incidents belonging to another campus.' },
+        { status: 403 }
+      );
     }
 
     if (incident.status === 'RESOLVED' || incident.status === 'CLOSED') {

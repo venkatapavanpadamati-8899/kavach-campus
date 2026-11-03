@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   ShieldAlert, Clock, Search, Filter, 
-  ArrowRight, UserX, Eye
+  ArrowRight, UserX, Eye, Building2
 } from 'lucide-react';
 
 interface IncidentItem {
@@ -24,9 +24,10 @@ interface IncidentItem {
 interface Props {
   initialIncidents: IncidentItem[];
   userRole: string;
+  collegeName?: string | null;
 }
 
-export default function ManagementIncidentsList({ initialIncidents, userRole }: Props) {
+export default function ManagementIncidentsList({ initialIncidents, userRole, collegeName }: Props) {
   const [incidents] = useState<IncidentItem[]>(initialIncidents);
   const [searchQuery, setSearchQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState('ALL');
@@ -95,6 +96,24 @@ export default function ManagementIncidentsList({ initialIncidents, userRole }: 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
+          {collegeName && (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 12px',
+              borderRadius: '16px',
+              background: 'rgba(59, 130, 246, 0.15)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              marginBottom: '10px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              color: '#93c5fd'
+            }}>
+              <Building2 size={14} color="#60a5fa" />
+              <span>{collegeName}</span>
+            </div>
+          )}
           <h1 style={{ fontSize: '2.2rem', margin: '0 0 6px 0', fontWeight: 700 }}>Management Incident Console</h1>
           <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
             Unified campus oversight, case assignment, escalation and audit tracking. Logged in as: <strong>{userRole}</strong>

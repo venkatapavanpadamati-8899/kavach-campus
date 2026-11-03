@@ -10,6 +10,14 @@ export default async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Defensive OAuth Recovery: If Supabase redirects to Site URL root (/) or login with ?code=,
+  // forward immediately to /api/auth/callback so the PKCE session exchange completes cleanly.
+  if ((pathname === '/' || pathname === '/login') && request.nextUrl.searchParams.has('code')) {
+    const callbackUrl = new URL('/api/auth/callback', request.url);
+    callbackUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(callbackUrl);
+  }
+
   // Dedicated Administrator and Super Admin login pages are public
   if (pathname === '/super-admin/login' || pathname === '/admin/login') {
     return supabaseResponse;
@@ -153,5 +161,5 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/student/:path*', '/staff/:path*', '/admin/:path*', '/management/:path*', '/super-admin/:path*', '/api/protected/:path*'],
+  matcher: ['/', '/login', '/student/:path*', '/staff/:path*', '/admin/:path*', '/management/:path*', '/super-admin/:path*', '/api/protected/:path*'],
 };

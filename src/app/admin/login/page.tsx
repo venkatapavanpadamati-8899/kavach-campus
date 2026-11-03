@@ -108,8 +108,8 @@ function CampusAdminLoginForm() {
         throw new Error('Access denied: You do not have verified campus administrator privileges.');
       }
 
-      // Set active college tenant branding if configured
-      if (profile.college_id) {
+      // Platform-wide administrators remain college-neutral; institution-specific staff bind tenant
+      if (profile.college_id && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
         const college = getCollegeById(profile.college_id);
         if (college) setActiveCollegeTenant(college);
       }

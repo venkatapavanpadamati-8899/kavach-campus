@@ -20,6 +20,7 @@ import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { getCollegeById } from '@/lib/colleges';
 import { getPageBackground, setActiveCollegeTenant } from '@/lib/college-branding';
 import { InteractiveSafetyCharacter } from '@/components/animations/InteractiveSafetyCharacter';
+import { getAuthCallbackUrl } from '@/lib/oauth';
 
 function formatAuthError(err: unknown): string {
   if (!err) return 'An unexpected error occurred during sign in. Please try again.';
@@ -139,19 +140,14 @@ function LoginForm() {
 
   const getSafeRedirectUrl = (role: string): string => {
     const redirectParam = searchParams.get('redirect') || searchParams.get('returnTo') || searchParams.get('next');
-    if (
-      redirectParam &&
-      redirectParam.startsWith('/') &&
-      !redirectParam.startsWith('//') &&
-      !redirectParam.includes('\\') &&
-      !redirectParam.includes(':')
-    ) {
-      return redirectParam;
-    }
+    let roleHome = '/unauthorized';
+    let roleRoot = '';
 
     switch (role) {
       case 'STUDENT':
-        return '/student';
+        roleHome = '/student';
+        roleRoot = '/student';
+        break;
       case 'STAFF':
       case 'COUNSELLOR':
       case 'COUNSELOR':
@@ -159,18 +155,38 @@ function LoginForm() {
       case 'SECURITY':
       case 'MENTOR':
       case 'WARDEN':
-        return '/staff';
+        roleHome = '/staff';
+        roleRoot = '/staff';
+        break;
       case 'HOD':
       case 'PRINCIPAL':
       case 'MANAGEMENT':
-        return '/management';
+        roleHome = '/management';
+        roleRoot = '/management';
+        break;
       case 'ADMIN':
-        return '/admin';
+        roleHome = '/admin';
+        roleRoot = '/admin';
+        break;
       case 'SUPER_ADMIN':
-        return '/super-admin';
-      default:
-        return '/student';
+        roleHome = '/super-admin';
+        roleRoot = '/super-admin';
+        break;
     }
+
+    if (
+      redirectParam &&
+      redirectParam.startsWith('/') &&
+      !redirectParam.startsWith('//') &&
+      !redirectParam.includes('\\') &&
+      !redirectParam.includes(':') &&
+      roleRoot &&
+      (redirectParam === roleRoot || redirectParam.startsWith(`${roleRoot}/`))
+    ) {
+      return redirectParam;
+    }
+
+    return roleHome;
   };
 
   // Smart auto-detection: if user types 10-digit number into email, guide to mobile OTP
@@ -248,26 +264,27 @@ function LoginForm() {
         throw new Error(data.error || 'Invalid OTP');
       }
 
-      setIsSuccess(true);
-
-      // If token_hash returned and browser client is active, verify session
-      if (data.token_hash && isSupabaseConfigured()) {
-        try {
-          await supabase.auth.verifyOtp({
-            token_hash: data.token_hash,
-            type: 'magiclink',
-          });
-        } catch {
-          // Non-fatal if session verification succeeds on server
-        }
+      if (!data.token_hash || !isSupabaseConfigured()) {
+        throw new Error('Mobile sign in could not establish a secure session. Please use email and password.');
       }
 
       const profile = data.user;
+      const { data: authData, error: authError } = await supabase.auth.verifyOtp({
+        token_hash: data.token_hash,
+        type: 'magiclink',
+      });
+      if (authError || !authData.user || authData.user.id !== profile?.id || !authData.session) {
+        throw authError || new Error('Mobile sign in could not establish a secure session. Please try again.');
+      }
+
+      setIsSuccess(true);
+
       if (!profile || !profile.isApproved) {
         if (profile?.role === 'STUDENT') {
           router.push('/student/verification-status?notice=verification_required');
           return;
         }
+        throw new Error('Unable to verify account permissions. Please sign in again or contact your administrator.');
       }
 
       const authenticatedCollege = profile?.collegeId ? getCollegeById(profile.collegeId) : null;
@@ -312,8 +329,8 @@ function LoginForm() {
           .single();
 
         if (profileError || !profile) {
-          router.push('/student');
-          return;
+          await supabase.auth.signOut();
+          throw new Error('Unable to verify your account permissions. Please try signing in again.');
         }
 
         // Unapproved student -> route directly to verification status page
@@ -326,10 +343,16 @@ function LoginForm() {
           throw new Error('Your staff/faculty account is pending administrator approval.');
         }
 
+        const roleDestination = getSafeRedirectUrl(profile.role);
+        if (roleDestination === '/unauthorized') {
+          await supabase.auth.signOut();
+          throw new Error('Your account has an unsupported role. Please contact your administrator.');
+        }
+
         const authenticatedCollege = profile.college_id ? getCollegeById(profile.college_id) : null;
         if (authenticatedCollege) setActiveCollegeTenant(authenticatedCollege);
 
-        router.push(getSafeRedirectUrl(profile.role));
+        router.replace(roleDestination);
       } else {
         // Magic Link
         const cleanEmail = email.trim().toLowerCase();
@@ -345,9 +368,7 @@ function LoginForm() {
           return;
         }
 
-        const callbackUrl = typeof window !== 'undefined' && window.location.origin
-          ? `${window.location.origin}/api/auth/callback`
-          : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback`;
+        const callbackUrl = getAuthCallbackUrl();
 
         const { error: magicError } = await supabase.auth.signInWithOtp({
           email: cleanEmail,
@@ -379,13 +400,7 @@ function LoginForm() {
         ? rawRedirect
         : null;
 
-      const baseCallback = typeof window !== 'undefined' && window.location.origin
-        ? `${window.location.origin}/api/auth/callback`
-        : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback`;
-
-      const callbackUrl = safeRedirect
-        ? `${baseCallback}?next=${encodeURIComponent(safeRedirect)}`
-        : baseCallback;
+      const callbackUrl = getAuthCallbackUrl(safeRedirect || undefined);
 
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',

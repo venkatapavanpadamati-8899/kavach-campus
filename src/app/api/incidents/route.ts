@@ -90,29 +90,34 @@ export async function POST(req: Request) {
       console.error('Incident reporter profile lookup failed:', callerProfileError);
       return NextResponse.json({ error: 'Unable to verify incident reporting permissions.' }, { status: 500 });
     }
-    if (!callerProfile || callerProfile.is_approved !== true) {
-      return NextResponse.json({ error: 'An approved account is required to file a non-emergency incident report.' }, { status: 403 });
-    }
 
-    if (callerProfile.role === 'STUDENT') {
-      const { data: studentProf, error: studentProfileError } = await supabase
-        .from('student_profiles')
-        .select('verification_status')
-        .eq('id', user.id)
-        .maybeSingle();
+    const isEmergency = category === 'EMERGENCY' || body.priority === 'CRITICAL' || body.isEmergency === true;
 
-      if (studentProfileError) {
-        console.error('Incident reporter student verification lookup failed:', studentProfileError);
-        return NextResponse.json({ error: 'Unable to verify student reporting permissions.' }, { status: 500 });
+    if (!isEmergency) {
+      if (!callerProfile || callerProfile.is_approved !== true) {
+        return NextResponse.json({ error: 'An approved account is required to file a non-emergency incident report.' }, { status: 403 });
       }
-      if (studentProf?.verification_status !== 'VERIFIED') {
-        return NextResponse.json(
-          {
-            error: 'Student ID verification required. Your account must be VERIFIED before filing non-emergency incident reports.',
-            verificationStatus: studentProf?.verification_status || 'NOT_SUBMITTED',
-          },
-          { status: 403 }
-        );
+
+      if (callerProfile.role === 'STUDENT') {
+        const { data: studentProf, error: studentProfileError } = await supabase
+          .from('student_profiles')
+          .select('verification_status')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (studentProfileError) {
+          console.error('Incident reporter student verification lookup failed:', studentProfileError);
+          return NextResponse.json({ error: 'Unable to verify student reporting permissions.' }, { status: 500 });
+        }
+        if (studentProf?.verification_status !== 'VERIFIED') {
+          return NextResponse.json(
+            {
+              error: 'Student ID verification required. Your account must be VERIFIED before filing non-emergency incident reports.',
+              verificationStatus: studentProf?.verification_status || 'NOT_SUBMITTED',
+            },
+            { status: 403 }
+          );
+        }
       }
     }
 
@@ -242,7 +247,7 @@ export async function POST(req: Request) {
         // Fallback to caller's client
       }
 
-      const assignedCampus = typeof callerProfile.college_id === 'string'
+      const assignedCampus = (callerProfile && typeof callerProfile.college_id === 'string')
         ? getCollegeById(callerProfile.college_id)
         : null;
       const authorizedCollegeIds = assignedCampus
@@ -449,11 +454,11 @@ export async function GET() {
     }
 
     // Role and Verification validation
-    let profile: { role: string } | null = null;
+    let profile: { role: string; college_id?: string | null } | null = null;
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, college_id')
         .eq('id', user.id)
         .single();
       profile = data;
@@ -479,7 +484,8 @@ export async function GET() {
       // Safe fallback when profile query is not available
     }
 
-    // Role-based defense-in-depth: students only see their own incidents
+    // Role-based defense-in-depth: students only see their own incidents;
+    // college management/staff only see their assigned college incidents
     let query = supabase
       .from('incidents')
       .select('*')
@@ -488,6 +494,8 @@ export async function GET() {
 
     if (profile?.role === 'STUDENT') {
       query = query.eq('student_id', user.id);
+    } else if (profile?.role !== 'SUPER_ADMIN' && profile?.role !== 'ADMIN' && profile?.college_id) {
+      query = query.eq('college_id', profile.college_id);
     }
 
     const { data: rawIncidents, error } = await query;

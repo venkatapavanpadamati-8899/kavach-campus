@@ -12,7 +12,7 @@ function StudentIncidentDetailContent() {
 
   const [incident, setIncident] = useState<Incident | null>(null);
   const [assignedResponder, setAssignedResponder] = useState<{ role: string; department: string } | null>(null);
-  const [evidenceList, setEvidenceList] = useState<{ id: string; file_name: string; file_size: number }[]>([]);
+  const [evidenceList, setEvidenceList] = useState<{ id: string; file_name: string; file_size: number; signedUrl?: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

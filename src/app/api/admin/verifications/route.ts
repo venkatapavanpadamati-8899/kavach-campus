@@ -68,11 +68,44 @@ export async function GET() {
     if (campusAliases) {
       userProfilesQuery = userProfilesQuery.in('college_id', campusAliases);
     }
-    const { data: userProfiles, error: userProfilesError } = await userProfilesQuery;
+    const { data: campusProfiles, error: userProfilesError } = await userProfilesQuery;
     if (userProfilesError) {
       console.error('Fetch user profiles error:', userProfilesError);
       return NextResponse.json({ error: 'Failed to retrieve verification records' }, { status: 500 });
     }
+    let userProfiles = campusProfiles || [];
+
+    if (campusAliases) {
+      const { data: claimedRecords, error: claimedRecordsError } = await adminSupabase
+        .from('student_profiles')
+        .select('id')
+        .in('claimed_college_id', campusAliases);
+      if (claimedRecordsError) {
+        console.error('Fetch claimed campus verification records error:', claimedRecordsError);
+        return NextResponse.json({ error: 'Failed to retrieve verification records' }, { status: 500 });
+      }
+
+      const claimedIds = (claimedRecords || []).map(record => record.id);
+      if (claimedIds.length) {
+        const { data: claimedProfiles, error: claimedProfilesError } = await adminSupabase
+          .from('profiles')
+          .select('id, full_name, college_email, student_id, department, is_approved, college_id')
+          .in('id', claimedIds);
+        if (claimedProfilesError) {
+          console.error('Fetch claimed student profiles error:', claimedProfilesError);
+          return NextResponse.json({ error: 'Failed to retrieve verification records' }, { status: 500 });
+        }
+
+        const visibleClaims = (claimedProfiles || []).filter(student =>
+          !student.college_id ||
+          student.college_id === 'PENDING_CAMPUS_VERIFICATION' ||
+          campusAliases.includes(student.college_id)
+        );
+        const profileIds = new Set(userProfiles.map(student => student.id));
+        userProfiles = [...userProfiles, ...visibleClaims.filter(student => !profileIds.has(student.id))];
+      }
+    }
+
     const studentIds = (userProfiles || []).map(profile => profile.id);
     if (!studentIds.length) {
       return NextResponse.json({ verifications: [] });
@@ -87,6 +120,7 @@ export async function GET() {
         admission_year,
         expected_graduation_year,
         id_card_url,
+        claimed_college_id,
         verification_status,
         verified_at,
         verified_by,
@@ -110,11 +144,23 @@ export async function GET() {
         let signedUrl: string | null = null;
 
         if (sp.id_card_url) {
-          // If id_card_url is a relative storage path (e.g. "usr-id/id-card.jpg")
-          const cleanPath = sp.id_card_url.replace(/^.*kavach-id-cards\//, '');
-          const { data: signedData } = await adminSupabase.storage
+          const prefix = 'kavach-id-cards/';
+          const storagePath = String(sp.id_card_url);
+          const cleanPath = storagePath.startsWith(prefix) ? storagePath.slice(prefix.length) : storagePath;
+          const pathSegments = cleanPath.split('/');
+          if (
+            pathSegments[0] !== sp.id ||
+            pathSegments.some(segment => !segment || segment === '.' || segment === '..')
+          ) {
+            throw new Error(`ID card storage path is not owned by student ${sp.id}`);
+          }
+          const { data: signedData, error: signedUrlError } = await adminSupabase.storage
             .from('kavach-id-cards')
             .createSignedUrl(cleanPath, 300); // 300 seconds = 5 minutes
+          if (signedUrlError) {
+            console.error('Create student ID signed URL failed:', signedUrlError);
+            throw signedUrlError;
+          }
 
           signedUrl = signedData?.signedUrl || null;
         }
@@ -129,6 +175,8 @@ export async function GET() {
           admissionYear: sp.admission_year,
           expectedGraduationYear: sp.expected_graduation_year,
           verificationStatus: sp.verification_status,
+          claimedCollege: getCollegeById(sp.claimed_college_id || '')?.name || null,
+          claimedCollegeId: sp.claimed_college_id || null,
           verifiedAt: sp.verified_at,
           verifiedBy: sp.verified_by,
           verificationNotes: sp.verification_notes,
@@ -224,20 +272,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    if (reviewerProfile.role !== 'SUPER_ADMIN') {
-      const reviewerCollege = getCampusAliases(reviewerProfile.college_id);
-      const targetCollege = getCampusAliases(targetProfile.college_id);
-      if (!reviewerCollege || !targetCollege || !reviewerCollege.some(id => targetCollege.includes(id))) {
-        return NextResponse.json(
-          { error: 'Cannot review students outside your assigned campus' },
-          { status: 403 }
-        );
-      }
-    }
-
     const { data: studentProfile, error: studentProfileError } = await adminSupabase
       .from('student_profiles')
-      .select('id')
+      .select('id, claimed_college_id')
       .eq('id', targetStudentId)
       .single();
     if (studentProfileError?.code !== 'PGRST116' && studentProfileError) {
@@ -245,6 +282,41 @@ export async function POST(req: Request) {
     }
     if (!studentProfile) {
       return NextResponse.json({ error: 'Student verification record not found' }, { status: 404 });
+    }
+
+    const claimedCollegeId = getCollegeById(studentProfile.claimed_college_id || '')?.id || null;
+    const targetHasVerifiedCollege = Boolean(
+      targetProfile.college_id &&
+      targetProfile.college_id !== 'PENDING_CAMPUS_VERIFICATION' &&
+      getCollegeById(targetProfile.college_id)
+    );
+    if (reviewerProfile.role !== 'SUPER_ADMIN') {
+      const reviewerCollege = getCampusAliases(reviewerProfile.college_id);
+      const targetCollege = getCampusAliases(targetProfile.college_id);
+      const canReviewClaim = Boolean(
+        !targetHasVerifiedCollege &&
+        reviewerCollege &&
+        claimedCollegeId &&
+        reviewerCollege.includes(claimedCollegeId)
+      );
+      const canReviewAssignedStudent = Boolean(
+        reviewerCollege &&
+        targetCollege &&
+        reviewerCollege.some(id => targetCollege.includes(id))
+      );
+      if (!canReviewClaim && !canReviewAssignedStudent) {
+        return NextResponse.json(
+          { error: 'Cannot review students outside your assigned campus' },
+          { status: 403 }
+        );
+      }
+    }
+
+    if (decision === 'VERIFIED' && !targetHasVerifiedCollege && !claimedCollegeId) {
+      return NextResponse.json(
+        { error: 'A verified college selection is required before approving this student.' },
+        { status: 400 }
+      );
     }
 
     // 1. Update student_profiles verification status
@@ -267,16 +339,25 @@ export async function POST(req: Request) {
     }
 
     // 2. Synchronize profiles.is_approved (only true when status is VERIFIED)
-    await adminSupabase
+    const profileUpdates: Record<string, unknown> = {
+      is_approved: decision === 'VERIFIED',
+      updated_at: new Date().toISOString(),
+    };
+    if (decision === 'VERIFIED' && !targetHasVerifiedCollege && claimedCollegeId) {
+      profileUpdates.college_id = claimedCollegeId;
+    }
+
+    const { error: profileUpdateError } = await adminSupabase
       .from('profiles')
-      .update({
-        is_approved: decision === 'VERIFIED',
-        updated_at: new Date().toISOString(),
-      })
+      .update(profileUpdates)
       .eq('id', targetStudentId);
+    if (profileUpdateError) {
+      console.error('Student account approval synchronization failed:', profileUpdateError);
+      return NextResponse.json({ error: 'Unable to update the student account after review.' }, { status: 500 });
+    }
 
     // 3. Immutable audit log record
-    await adminSupabase.from('audit_logs').insert({
+    const { error: auditError } = await adminSupabase.from('audit_logs').insert({
       id: crypto.randomUUID(),
       actor_id: user.id,
       action: 'STUDENT_VERIFICATION_DECISION',
@@ -287,8 +368,13 @@ export async function POST(req: Request) {
         decision,
         reason: reason || null,
         officialRosterConfirmed: Boolean(officialRosterConfirmed),
+        claimedCollegeId,
       },
     });
+    if (auditError) {
+      console.error('Failed to record student verification decision:', auditError);
+      return NextResponse.json({ error: 'The review was saved but could not be recorded in the audit log.' }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,

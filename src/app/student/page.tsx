@@ -21,7 +21,8 @@ import {
   Settings,
   ShieldCheck,
   CreditCard,
-  ArrowRight
+  ArrowRight,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 import { getCollegeById, CollegeTenant } from '@/lib/colleges';
@@ -413,7 +414,33 @@ export default function StudentDashboard() {
             </div>
           </Link>
 
-          {/* Button 4: Safe Walk */}
+          {/* Button 4: Safe Box */}
+          <Link href="/student/safe-box" style={{ textDecoration: 'none' }}>
+            <div
+              className="glass-panel"
+              style={{
+                padding: '20px',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                border: '1px solid rgba(234, 179, 8, 0.3)',
+                background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(234, 179, 8, 0.2)', color: '#eab308' }}>
+                <Lock size={24} />
+              </div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#fff' }}>Safe Box</h4>
+                <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>Personal evidence vault</span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Button 5: Safe Walk */}
           <Link href="/student/safe-walk" style={{ textDecoration: 'none' }}>
             <div 
               className="glass-panel" 

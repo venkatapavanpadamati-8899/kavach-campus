@@ -342,7 +342,7 @@ describe('Kavach Campus — Registration, ID Card Verification & Accommodation A
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 maybeSingle: vi.fn().mockResolvedValue({ data: { college_id: 'srkr-bhimavaram' } }),
-                single: vi.fn().mockResolvedValue({ data: { college_id: 'srkr-bhimavaram' } }),
+                single: vi.fn().mockResolvedValue({ data: { college_id: 'srkr-bhimavaram', role: 'STUDENT' } }),
               })),
             })),
             update: vi.fn(() => ({
@@ -402,7 +402,7 @@ describe('Kavach Campus — Registration, ID Card Verification & Accommodation A
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 maybeSingle: vi.fn().mockResolvedValue({ data: { college_id: 'vishnu-bhimavaram' } }),
-                single: vi.fn().mockResolvedValue({ data: { college_id: 'vishnu-bhimavaram' } }),
+                single: vi.fn().mockResolvedValue({ data: { college_id: 'vishnu-bhimavaram', role: 'STUDENT' } }),
               })),
             })),
             update: vi.fn(() => ({
@@ -463,7 +463,7 @@ describe('Kavach Campus — Registration, ID Card Verification & Accommodation A
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 maybeSingle: vi.fn().mockResolvedValue({ data: { college_id: 'srkr-bhimavaram' } }),
-                single: vi.fn().mockResolvedValue({ data: { college_id: 'srkr-bhimavaram' } }),
+                single: vi.fn().mockResolvedValue({ data: { college_id: 'srkr-bhimavaram', role: 'STUDENT' } }),
               })),
             })),
             update: vi.fn(() => ({
@@ -520,6 +520,7 @@ describe('Kavach Campus — Registration, ID Card Verification & Accommodation A
                     college_email: 'priya@srkr.edu.in',
                     student_id: '2101201088',
                     department: 'ECE',
+                    role: 'STUDENT',
                   },
                   error: null,
                 }),
@@ -634,6 +635,17 @@ describe('Kavach Campus — Registration, ID Card Verification & Accommodation A
           return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: {
+                    id: 'usr-student-01',
+                    full_name: 'Alice Student',
+                    department: 'CSE',
+                    college_id: 'srkr-bhimavaram',
+                    college_email: 'alice@srkr.edu.in',
+                    role: 'STUDENT',
+                  },
+                  error: null,
+                }),
                 neq: vi.fn().mockResolvedValue({
                   data: [{ id: 'usr-another-student', student_id: '2101201045' }],
                 }),

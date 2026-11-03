@@ -1,4 +1,5 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
@@ -9,16 +10,71 @@ export const dynamic = 'force-dynamic';
 export default async function StaffIncidentsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
-  let incidents: Incident[] = [];
-  if (user) {
-    // Only fetch incidents assigned to this staff member or unassigned ones in their zone (simplified for now)
-    const { data } = await supabase
-      .from('incidents')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (data) incidents = data;
+  if (!user) {
+    redirect('/login?redirect=/staff/incidents');
   }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role, college_id')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error('Staff incident profile lookup failed:', profileError);
+    throw new Error('Unable to verify access to staff incidents.');
+  }
+  if (!profile) {
+    redirect('/unauthorized');
+  }
+  if (profile.role === 'STUDENT') {
+    redirect('/student');
+  }
+
+  const platformAdmin = profile.role === 'ADMIN' || profile.role === 'SUPER_ADMIN';
+  const securityRoles = ['SECURITY'];
+  const staffRoles = [
+    'STAFF',
+    'MENTOR',
+    'COUNSELLOR',
+    'COUNSELOR',
+    'WOMENS_CELL',
+    'WARDEN',
+    'HOD',
+    'PRINCIPAL',
+    'MANAGEMENT',
+    'MANAGEMENT_ADMIN',
+    ...securityRoles,
+  ];
+  if (!platformAdmin && !staffRoles.includes(profile.role)) {
+    redirect('/unauthorized');
+  }
+
+  const collegeId = profile.college_id && profile.college_id !== 'PENDING_CAMPUS_VERIFICATION'
+    ? profile.college_id
+    : null;
+  if (!platformAdmin && !collegeId) {
+    redirect('/unauthorized');
+  }
+
+  let query = supabase
+    .from('incidents')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (!platformAdmin && collegeId) {
+    query = query.eq('college_id', collegeId);
+  }
+  if (!platformAdmin && !securityRoles.includes(profile.role)) {
+    query = query.or(`assigned_to.eq.${user.id},assigned_to.is.null`);
+  }
+
+  const { data, error: incidentsError } = await query;
+  if (incidentsError) {
+    console.error('Staff incident query failed:', incidentsError);
+    throw new Error('Unable to load staff incidents.');
+  }
+  const incidents: Incident[] = data || [];
 
   const getStatusColor = (status: string) => {
     switch(status) {

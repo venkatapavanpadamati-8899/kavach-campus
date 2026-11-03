@@ -73,7 +73,7 @@ describe('Batch 2: Student Safety Features & Dynamic APIs', () => {
               select: vi.fn().mockReturnThis(),
               eq: vi.fn().mockReturnThis(),
               single: vi.fn().mockResolvedValue({
-                data: { id: mockUser.id, full_name: 'Test Student', college_email: mockUser.email, role: 'STUDENT', phone: '+919999999999' },
+                data: { id: mockUser.id, full_name: 'Test Student', college_email: mockUser.email, role: 'STUDENT', phone: '+919999999999', profile_photo_path: null },
                 error: null
               })
             };
@@ -86,6 +86,13 @@ describe('Batch 2: Student Safety Features & Dynamic APIs', () => {
                 data: { id: mockUser.id, blood_group: 'B+', medical_conditions: 'Asthma', hostel_room: 'Block-A-102', verification_status: 'VERIFIED' },
                 error: null
               })
+            };
+          }
+          if (table === 'student_residences') {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
             };
           }
           return {};
@@ -117,6 +124,11 @@ describe('Batch 2: Student Safety Features & Dynamic APIs', () => {
         from: vi.fn().mockImplementation((table: string) => {
           if (table === 'profiles') {
             return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  single: vi.fn().mockResolvedValue({ data: { role: 'STUDENT' }, error: null }),
+                })),
+              })),
               update: mockProfileUpdate,
               eq: vi.fn().mockResolvedValue({ error: null })
             };

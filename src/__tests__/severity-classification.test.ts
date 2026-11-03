@@ -318,4 +318,117 @@ describe('Incident Severity Classification & Safety Logic (src/app/api/incidents
     expect(insertedIncident?.severity).toBe('MEDIUM'); // Safe fallback
     expect(insertedIncident?.category).toBe('GENERAL');
   });
+
+  it('rejects non-emergency reporting when student ID is unverified (403 Forbidden)', async () => {
+    // Override student_profiles lookup to return unverified status
+    const unverifiedSupabase = createMockSupabase();
+    unverifiedSupabase.from = vi.fn((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({ data: { role: 'STUDENT', is_approved: true }, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: { role: 'STUDENT', is_approved: true }, error: null }),
+            })),
+          })),
+        };
+      }
+      if (table === 'student_profiles') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({ data: { verification_status: 'PENDING_UPLOAD' }, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: { verification_status: 'PENDING_UPLOAD' }, error: null }),
+            })),
+          })),
+        };
+      }
+      return {
+        insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    }) as any;
+    vi.mocked(createClient).mockResolvedValueOnce(unverifiedSupabase as any);
+
+    const req = new Request('http://localhost:3000/api/incidents', {
+      method: 'POST',
+      body: JSON.stringify({ description: 'Noise disturbance in study room', category: 'GENERAL' }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.error).toContain('Student ID verification required');
+  });
+
+  it('bypasses student ID verification check for life-safety emergency incidents', async () => {
+    // Student is unverified or pending, but category is EMERGENCY
+    const unverifiedSupabase = createMockSupabase();
+    unverifiedSupabase.from = vi.fn((table: string) => {
+      if (table === 'incidents') {
+        return {
+          insert: vi.fn((payload: Record<string, unknown>) => {
+            insertedIncident = payload;
+            return {
+              select: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'inc-emergency-999', ...payload },
+                  error: null,
+                }),
+              })),
+            };
+          }),
+        };
+      }
+      if (table === 'ai_analyses') {
+        return {
+          insert: vi.fn((payload: Record<string, unknown>) => {
+            insertedAiAnalysis = payload;
+            return Promise.resolve({ data: null, error: null });
+          }),
+        };
+      }
+      if (table === 'profiles') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({ data: { role: 'STUDENT', is_approved: false }, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: { role: 'STUDENT', is_approved: false }, error: null }),
+            })),
+          })),
+        };
+      }
+      if (table === 'student_profiles') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({ data: { verification_status: 'PENDING_UPLOAD' }, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: { verification_status: 'PENDING_UPLOAD' }, error: null }),
+            })),
+          })),
+        };
+      }
+      return {
+        insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    }) as any;
+    vi.mocked(createClient).mockResolvedValueOnce(unverifiedSupabase as any);
+
+    vi.mocked(analyzeIncident).mockResolvedValue({
+      category: 'EMERGENCY',
+      severity: 'L4',
+      urgency: 'HIGH',
+      confidence: 0.95,
+      summary: 'Immediate assistance required',
+    });
+
+    const req = new Request('http://localhost:3000/api/incidents', {
+      method: 'POST',
+      body: JSON.stringify({ description: 'Immediate medical distress in hostel block', category: 'EMERGENCY' }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+    expect(insertedIncident?.category).toBe('EMERGENCY');
+    expect(insertedIncident?.severity).toBe('CRITICAL');
+  });
 });

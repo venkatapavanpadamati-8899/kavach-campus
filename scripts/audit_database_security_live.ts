@@ -7,9 +7,30 @@ dotenv.config({ path: path.join(process.cwd(), '.env.local') });
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const auditMode = process.env.KAVACH_DB_AUDIT_MODE;
+const expectedHost = process.env.KAVACH_DB_AUDIT_EXPECTED_HOST;
 
 if (!url || !serviceRoleKey || !anonKey) {
   console.error('Missing Supabase credentials in .env.local');
+  process.exit(1);
+}
+
+let supabaseHost: string;
+try {
+  supabaseHost = new URL(url).hostname;
+} catch {
+  console.error('Invalid Supabase URL; refusing to run the database audit.');
+  process.exit(1);
+}
+
+if (
+  auditMode !== 'isolated-test' ||
+  !expectedHost ||
+  supabaseHost !== expectedHost.trim().toLowerCase()
+) {
+  console.error(
+    'Refusing to run: this audit creates and deletes synthetic records. Set KAVACH_DB_AUDIT_MODE=isolated-test and KAVACH_DB_AUDIT_EXPECTED_HOST to the exact isolated test project hostname.'
+  );
   process.exit(1);
 }
 
@@ -19,7 +40,7 @@ const anonClient = createClient(url, anonKey);
 async function runDatabaseSecurityAudit() {
   console.log('================================================================');
   console.log('🔒 KAVACH CAMPUS — COMPREHENSIVE DATABASE SECURITY & RLS AUDIT');
-  console.log(`Target Supabase URL: ${url}`);
+  console.log('Target: explicitly configured isolated Supabase test project');
   console.log(`Audit Timestamp: ${new Date().toISOString()}`);
   console.log('================================================================\n');
 
@@ -280,9 +301,12 @@ async function runDatabaseSecurityAudit() {
   console.log('\n================================================================');
   console.log('AUDIT SUMMARY REPORT:');
   const allPassed = Object.values(auditResults).every(r => r.pass);
-  console.log(`Overall Security Status: ${allPassed ? '✅ 100% SECURE & ENFORCED' : '❌ VULNERABILITY DETECTED'}`);
+  console.log(
+    allPassed
+      ? 'Recorded assertions passed; this is not a comprehensive security certification.'
+      : 'One or more recorded assertions failed.'
+  );
   console.log('================================================================');
 }
 
 runDatabaseSecurityAudit().catch(console.error);
-

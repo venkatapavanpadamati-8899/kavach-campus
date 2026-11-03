@@ -6,6 +6,7 @@ import { Shield, Mail, Lock, User, Briefcase, Loader2, ArrowRight, Phone, Credit
 import { createClient } from '@/lib/supabase/client';
 import { validateStudentRegistrationNumber } from '@/lib/verification/id-card';
 import { InteractiveSafetyCharacter } from '@/components/animations/InteractiveSafetyCharacter';
+import { getAuthCallbackUrl } from '@/lib/oauth';
 
 // Comprehensive branch-to-department mapping across academic programs
 const BRANCH_DEPARTMENT_MAP: Record<string, string> = {
@@ -113,9 +114,7 @@ export default function RegisterPage() {
       setGoogleLoading(true);
       setError('');
       const supabase = createClient();
-      const callbackUrl = typeof window !== 'undefined' && window.location.origin
-        ? `${window.location.origin}/api/auth/callback`
-        : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback`;
+      const callbackUrl = getAuthCallbackUrl();
 
       const { error: oauthErr } = await supabase.auth.signInWithOAuth({
         provider: 'google',

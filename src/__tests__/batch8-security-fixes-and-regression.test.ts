@@ -531,6 +531,11 @@ describe('KAVACH CAMPUS — BATCH 8: Security Fixes and Regression Tests', () =>
         }
         if (table === 'profiles') {
           return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({ data: { role: 'STUDENT' }, error: null }),
+              })),
+            })),
             update: vi.fn().mockReturnValue({
               eq: vi.fn().mockResolvedValue({ error: null }),
             }),

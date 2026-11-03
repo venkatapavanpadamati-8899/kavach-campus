@@ -9,7 +9,21 @@ import {
   evaluateVerificationDecision,
   AdmissionType,
 } from '@/lib/verification/id-card';
-import { resolveCollegeIdFromEmail } from '@/lib/colleges';
+import { getCollegeById, resolveCollegeIdFromEmail } from '@/lib/colleges';
+
+function getOwnedIdCardStoragePath(value: string | null | undefined, userId: string): string | null {
+  const prefix = 'kavach-id-cards/';
+  if (!value) return null;
+  const path = value.startsWith(prefix) ? value.slice(prefix.length) : value;
+  const segments = path.split('/');
+  if (
+    segments[0] !== userId ||
+    segments.some(segment => !segment || segment === '.' || segment === '..')
+  ) {
+    return null;
+  }
+  return path;
+}
 
 export async function GET() {
   try {
@@ -22,17 +36,52 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, full_name, college_email, student_id, role, is_approved, department, college_id')
       .eq('id', user.id)
       .single();
+    if (profileError) {
+      console.error('Fetch verification profile failed:', profileError);
+      return NextResponse.json({ error: 'Unable to load your verification profile.' }, { status: 500 });
+    }
+    if (profile.role !== 'STUDENT') {
+      return NextResponse.json({ error: 'Student account required.' }, { status: 403 });
+    }
 
-    const { data: studentProfile } = await supabase
+    const { data: studentProfile, error: studentProfileError } = await supabase
       .from('student_profiles')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
+    if (studentProfileError) {
+      console.error('Fetch student verification record failed:', studentProfileError);
+      return NextResponse.json({ error: 'Unable to load your verification status.' }, { status: 500 });
+    }
+
+    const frontPath = getOwnedIdCardStoragePath(
+      studentProfile?.id_card_url || studentProfile?.ocr_extracted_data?.front_url,
+      user.id
+    );
+    const backPath = getOwnedIdCardStoragePath(studentProfile?.ocr_extracted_data?.back_url, user.id);
+    let idCardPreviewUrl: string | null = null;
+    let idCardBackPreviewUrl: string | null = null;
+    if (frontPath) {
+      const { data, error } = await supabase.storage.from('kavach-id-cards').createSignedUrl(frontPath, 300);
+      if (error) {
+        console.error('Sign student ID front URL failed:', error);
+        return NextResponse.json({ error: 'Unable to load your ID card preview.' }, { status: 500 });
+      }
+      idCardPreviewUrl = data.signedUrl;
+    }
+    if (backPath) {
+      const { data, error } = await supabase.storage.from('kavach-id-cards').createSignedUrl(backPath, 300);
+      if (error) {
+        console.error('Sign student ID back URL failed:', error);
+        return NextResponse.json({ error: 'Unable to load your ID card preview.' }, { status: 500 });
+      }
+      idCardBackPreviewUrl = data.signedUrl;
+    }
 
     return NextResponse.json({
       profile,
@@ -40,6 +89,10 @@ export async function GET() {
         verification_status: 'PENDING_UPLOAD',
         admission_type: 'REGULAR',
       },
+      idCardStoragePath: frontPath ? `kavach-id-cards/${frontPath}` : null,
+      idCardBackStoragePath: backPath ? `kavach-id-cards/${backPath}` : null,
+      idCardPreviewUrl,
+      idCardBackPreviewUrl,
     });
   } catch (error) {
     console.error('Fetch verification status error:', error);
@@ -63,7 +116,7 @@ export async function POST(req: Request) {
     let admissionYear = 2024;
     let expectedGraduationYear = 2028;
     let idCardUrl: string | null = null;
-    let ocrText = '';
+    let idCardBackUrl: string | null = null;
     let uploadedFileBuffer: Buffer | null = null;
     let uploadedFileMime = '';
     let uploadedFileName = '';
@@ -80,6 +133,9 @@ export async function POST(req: Request) {
     let incomingAddress = '';
     let incomingAccommodation = 'Day Scholar';
     let profilePhotoDataUrl = '';
+    let profilePhotoBuffer: Buffer | null = null;
+    let profilePhotoMime = '';
+    let incomingClaimedCollegeId = '';
 
     let uploadedBackFileBuffer: Buffer | null = null;
     let uploadedBackFileMime = '';
@@ -92,7 +148,9 @@ export async function POST(req: Request) {
       admissionType = ((formData.get('admissionType') as string) || 'REGULAR') as AdmissionType;
       admissionYear = Number(formData.get('admissionYear'));
       expectedGraduationYear = Number(formData.get('expectedGraduationYear'));
-      ocrText = (formData.get('ocrText') as string) || '';
+      incomingClaimedCollegeId = String(formData.get('claimedCollegeId') || formData.get('collegeId') || '');
+      idCardUrl = String(formData.get('idCardUrl') || '') || null;
+      idCardBackUrl = String(formData.get('idCardBackUrl') || '') || null;
 
       incomingFullName = (formData.get('fullName') as string) || '';
       incomingDepartment = (formData.get('department') as string) || '';
@@ -159,7 +217,27 @@ export async function POST(req: Request) {
       admissionYear = Number(body.admissionYear);
       expectedGraduationYear = Number(body.expectedGraduationYear);
       idCardUrl = body.idCardUrl || null;
-      ocrText = body.ocrText || '';
+      idCardBackUrl = body.idCardBackUrl || null;
+      incomingClaimedCollegeId = typeof body.claimedCollegeId === 'string'
+        ? body.claimedCollegeId
+        : (typeof body.collegeId === 'string' ? body.collegeId : '');
+    }
+
+    if (profilePhotoDataUrl) {
+      const photoMatch = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(profilePhotoDataUrl);
+      if (!photoMatch) {
+        return NextResponse.json({ error: 'Profile photo must be a JPEG, PNG, or WEBP image.' }, { status: 400 });
+      }
+
+      profilePhotoMime = photoMatch[1];
+      profilePhotoBuffer = Buffer.from(photoMatch[2], 'base64');
+      if (profilePhotoBuffer.length > 2 * 1024 * 1024) {
+        return NextResponse.json({ error: 'Profile photo must be no larger than 2MB.' }, { status: 400 });
+      }
+      const photoSignature = validateFileSignature(new Uint8Array(profilePhotoBuffer));
+      if (!photoSignature.valid || photoSignature.detectedMime !== profilePhotoMime) {
+        return NextResponse.json({ error: 'Profile photo content does not match its image format.' }, { status: 400 });
+      }
     }
 
     // 1. Validate Student ID format (7-10 alphanumeric characters)
@@ -193,13 +271,54 @@ export async function POST(req: Request) {
     }
 
     const adminSupabase = createAdminClient();
+    const { data: profile, error: profileError } = await adminSupabase
+      .from('profiles')
+      .select('id, full_name, department, college_id, college_email, role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Student ID verification profile lookup failed:', profileError);
+      return NextResponse.json({ error: 'Unable to verify your account. Please try again.' }, { status: 500 });
+    }
+    if (!profile) {
+      return NextResponse.json({ error: 'Account profile not found' }, { status: 404 });
+    }
+    if (profile.role !== 'STUDENT') {
+      return NextResponse.json({ error: 'Only student accounts can submit student ID verification.' }, { status: 403 });
+    }
+
+    const claimedCollege = getCollegeById(incomingClaimedCollegeId);
+    const profileCollegeId = typeof profile.college_id === 'string' &&
+      profile.college_id !== 'PENDING_CAMPUS_VERIFICATION' &&
+      getCollegeById(profile.college_id)
+      ? getCollegeById(profile.college_id)?.id || ''
+      : '';
+    const emailCollegeId = resolveCollegeIdFromEmail(profile.college_email);
+    const trustedCollegeId = profileCollegeId ||
+      (emailCollegeId !== 'PENDING_CAMPUS_VERIFICATION' ? emailCollegeId : '');
+
+    if (trustedCollegeId && claimedCollege && trustedCollegeId !== claimedCollege.id) {
+      return NextResponse.json(
+        { error: 'The selected college does not match your verified institutional email or account. Contact campus support if this is incorrect.' },
+        { status: 403 }
+      );
+    }
+    const collegeClaimForReview = trustedCollegeId || claimedCollege?.id || '';
+    if (!collegeClaimForReview) {
+      return NextResponse.json({ error: 'Select a college from the verified directory before submitting your ID card.' }, { status: 400 });
+    }
 
     // 3. Duplicate Student ID Check: Ensure no other student registered with this ID
-    const { data: existingProfiles } = await adminSupabase
+    const { data: existingProfiles, error: existingProfilesError } = await adminSupabase
       .from('profiles')
       .select('id, student_id')
       .eq('student_id', studentId.trim())
       .neq('id', user.id);
+    if (existingProfilesError) {
+      console.error('Duplicate student ID lookup failed:', existingProfilesError);
+      return NextResponse.json({ error: 'Unable to verify the student ID right now. Please try again.' }, { status: 500 });
+    }
 
     if (existingProfiles && existingProfiles.length > 0) {
       return NextResponse.json(
@@ -210,41 +329,46 @@ export async function POST(req: Request) {
 
     // The client may provide a claimed college for manual review, but it never
     // controls authorization or the persistent campus assignment.
-    const { data: profile } = await adminSupabase
-      .from('profiles')
-      .select('full_name, department, college_id, college_email')
-      .eq('id', user.id)
-      .single();
+    const fullName = profile.full_name || 'Student';
 
-    const fullName = profile?.full_name || 'Student';
-    const profileCollegeId = typeof profile?.college_id === 'string' &&
-      profile.college_id !== 'PENDING_CAMPUS_VERIFICATION'
-      ? profile.college_id
-      : '';
-    const emailCollegeId = resolveCollegeIdFromEmail(profile?.college_email);
-    const trustedCollegeId = profileCollegeId ||
-      (emailCollegeId !== 'PENDING_CAMPUS_VERIFICATION' ? emailCollegeId : '');
-
-    // 4. Evaluate decision based on OCR text, batch consistency, and ID match
+    // No OCR provider is configured. Client-supplied text is not evidence; keep
+    // the request in the manual-review queue until an authorized reviewer acts.
     const evaluatedDecision = evaluateVerificationDecision({
       fullName,
       studentId: studentId.trim(),
       admissionType: admissionType as AdmissionType,
       admissionYear: Number(admissionYear),
       expectedGraduationYear: Number(expectedGraduationYear),
-      ocrExtractedText: ocrText,
+      ocrExtractedText: '',
     });
     const decision = trustedCollegeId
       ? evaluatedDecision
       : {
-          status: 'PENDING_MANUAL_REVIEW' as const,
-          reason: 'Campus assignment requires administrator review before identity approval.',
-          isAutoApproved: false,
-        };
+        status: 'PENDING_MANUAL_REVIEW' as const,
+        reason: 'Campus assignment requires administrator review before identity approval.',
+        isAutoApproved: false,
+      };
 
     // 5. Upload files to private storage bucket if uploaded, or enforce user.id isolation
     let resolvedIdCardUrl = idCardUrl ? String(idCardUrl).trim() : null;
-    let resolvedIdCardBackUrl: string | null = null;
+    let resolvedIdCardBackUrl: string | null = idCardBackUrl;
+    if (!uploadedFileBuffer && !resolvedIdCardUrl) {
+      return NextResponse.json({ error: 'Upload your college ID card before submitting verification.' }, { status: 400 });
+    }
+    if (resolvedIdCardUrl) {
+      const ownedPath = getOwnedIdCardStoragePath(resolvedIdCardUrl, user.id);
+      if (!ownedPath) {
+        return NextResponse.json({ error: 'The saved ID card path is not owned by this account.' }, { status: 403 });
+      }
+      resolvedIdCardUrl = `kavach-id-cards/${ownedPath}`;
+    }
+    if (resolvedIdCardBackUrl) {
+      const ownedPath = getOwnedIdCardStoragePath(resolvedIdCardBackUrl, user.id);
+      if (!ownedPath) {
+        return NextResponse.json({ error: 'The saved back-side ID card path is not owned by this account.' }, { status: 403 });
+      }
+      resolvedIdCardBackUrl = `kavach-id-cards/${ownedPath}`;
+    }
 
     if (uploadedFileBuffer) {
       const cleanFileName = uploadedFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -266,9 +390,6 @@ export async function POST(req: Request) {
       }
 
       resolvedIdCardUrl = `kavach-id-cards/${storagePath}`;
-    } else if (resolvedIdCardUrl && !resolvedIdCardUrl.includes(user.id)) {
-      const rawFilename = resolvedIdCardUrl.replace(/^kavach-id-cards\/?/, '');
-      resolvedIdCardUrl = `kavach-id-cards/${user.id}/${rawFilename}`;
     }
 
     if (uploadedBackFileBuffer) {
@@ -293,9 +414,26 @@ export async function POST(req: Request) {
       resolvedIdCardBackUrl = `kavach-id-cards/${storagePath}`;
     }
 
+    let profilePhotoPath: string | null = null;
+    if (profilePhotoBuffer) {
+      const extension = profilePhotoMime === 'image/jpeg' ? 'jpg' : profilePhotoMime === 'image/png' ? 'png' : 'webp';
+      profilePhotoPath = `${user.id}/avatar-${Date.now()}.${extension}`;
+      const { error: photoUploadError } = await adminSupabase.storage
+        .from('kavach-profile-photos')
+        .upload(profilePhotoPath, profilePhotoBuffer, {
+          contentType: profilePhotoMime,
+          upsert: true,
+        });
+      if (photoUploadError) {
+        console.error('Profile photo upload failed:', photoUploadError);
+        return NextResponse.json({ error: 'Unable to save the profile photo. Please try again.' }, { status: 500 });
+      }
+    }
+
     // 6. Update student_profiles table
     const updates = {
       id: user.id,
+      claimed_college_id: collegeClaimForReview,
       admission_type: admissionType,
       admission_year: Number(admissionYear),
       expected_graduation_year: Number(expectedGraduationYear),
@@ -304,7 +442,9 @@ export async function POST(req: Request) {
       verification_notes: decision.reason,
       ocr_extracted_data: {
         front_url: resolvedIdCardUrl,
+        front_mime: uploadedFileMime || null,
         back_url: resolvedIdCardBackUrl,
+        back_mime: uploadedBackFileMime || null,
         dob: incomingDob || null,
         gender: incomingGender || null,
         parent_phone: incomingParentPhone || null,
@@ -332,6 +472,8 @@ export async function POST(req: Request) {
     const profileUpdates: Record<string, unknown> = {
       student_id: studentId.trim(),
       is_approved: decision.status === 'VERIFIED',
+      ...(decision.status === 'VERIFIED' && collegeClaimForReview ? { college_id: collegeClaimForReview } : {}),
+      ...(profilePhotoPath ? { profile_photo_path: profilePhotoPath } : {}),
     };
     // Never persist a client-supplied collegeId. Campus assignment is an
     // administrator/server decision, not an ID-upload form field.
@@ -351,26 +493,14 @@ export async function POST(req: Request) {
       profileUpdates.gender = incomingGender.trim();
     }
 
-    if (profilePhotoDataUrl && profilePhotoDataUrl.includes('base64,')) {
-      try {
-        const base64Data = profilePhotoDataUrl.split('base64,')[1];
-        const avatarBuffer = Buffer.from(base64Data, 'base64');
-        const avatarPath = `${user.id}/avatar.jpg`;
-        await adminSupabase.storage
-          .from('kavach-id-cards')
-          .upload(avatarPath, avatarBuffer, {
-            contentType: 'image/jpeg',
-            upsert: true,
-          });
-      } catch (err) {
-        console.warn('Extracted portrait photo upload ignored:', err);
-      }
-    }
-
-    await adminSupabase
+    const { error: profileUpdateError } = await adminSupabase
       .from('profiles')
       .update(profileUpdates)
       .eq('id', user.id);
+    if (profileUpdateError) {
+      console.error('Update profile after student verification failed:', profileUpdateError);
+      return NextResponse.json({ error: 'Unable to save profile verification details.' }, { status: 500 });
+    }
 
     // Persist to dedicated student_residences table
     // A residence cannot be safely assigned to a default campus. Defer this
@@ -403,7 +533,7 @@ export async function POST(req: Request) {
     }
 
     // 6. Record in immutable audit log
-    await adminSupabase.from('audit_logs').insert({
+    const { error: auditError } = await adminSupabase.from('audit_logs').insert({
       id: crypto.randomUUID(),
       actor_id: user.id,
       action: 'STUDENT_ID_VERIFICATION_EVALUATED',
@@ -417,6 +547,10 @@ export async function POST(req: Request) {
         reason: decision.reason,
       },
     });
+    if (auditError) {
+      console.error('Failed to record student verification audit event:', auditError);
+      return NextResponse.json({ error: 'Verification was saved but its audit record could not be written. Contact campus support.' }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,

@@ -74,23 +74,13 @@ export async function POST(req: Request) {
 
       if (profileError) {
         console.error('Mobile lookup error:', profileError);
-        // If PGRST116 (multiple accounts share the same phone number), fallback to the newest profile
-        if (
-          profileError.code === 'PGRST116' ||
-          profileError.message?.includes('PGRST116') ||
-          profileError.message?.includes('requires 1 row')
-        ) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('id, full_name, college_email, phone, role, is_approved')
-            .eq('phone', cleanPhone)
-            .order('created_at', { ascending: false })
-            .limit(1);
-          if (profiles && profiles.length > 0) {
-            profile = profiles[0];
-            profileError = null;
-          }
+        if (profileError.code === 'PGRST116' || profileError.message?.includes('requires 1 row')) {
+          return NextResponse.json(
+            { error: 'This mobile number is associated with multiple accounts. Please contact your campus administrator.' },
+            { status: 409 }
+          );
         }
+        return NextResponse.json({ error: 'Unable to look up this mobile account. Please try again later.' }, { status: 500 });
       }
 
       if (!profile) {
@@ -165,23 +155,13 @@ export async function POST(req: Request) {
 
       if (profileError) {
         console.error('Mobile lookup error:', profileError);
-        // If PGRST116 (multiple accounts share the same phone number), fallback to the newest profile
-        if (
-          profileError.code === 'PGRST116' ||
-          profileError.message?.includes('PGRST116') ||
-          profileError.message?.includes('requires 1 row')
-        ) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('id, full_name, college_email, phone, role, is_approved, college_id')
-            .eq('phone', cleanPhone)
-            .order('created_at', { ascending: false })
-            .limit(1);
-          if (profiles && profiles.length > 0) {
-            profile = profiles[0];
-            profileError = null;
-          }
+        if (profileError.code === 'PGRST116' || profileError.message?.includes('requires 1 row')) {
+          return NextResponse.json(
+            { error: 'This mobile number is associated with multiple accounts. Please contact your campus administrator.' },
+            { status: 409 }
+          );
         }
+        return NextResponse.json({ error: 'Unable to look up this mobile account. Please try again later.' }, { status: 500 });
       }
 
       if (profileError || !profile) {
@@ -212,19 +192,22 @@ export async function POST(req: Request) {
       }
 
       // 4. Generate authentication link/token for the user
-      let tokenHash: string | null = null;
-      let actionLink: string | null = null;
-      if (typeof supabase.auth?.admin?.generateLink === 'function') {
-        try {
-          const linkRes = await supabase.auth.admin.generateLink({
-            type: 'magiclink',
-            email: profile.college_email,
-          });
-          tokenHash = linkRes.data?.properties?.hashed_token || null;
-          actionLink = linkRes.data?.properties?.action_link || null;
-        } catch (err) {
-          console.error('generateLink error during mobile sign in:', err);
-        }
+      if (typeof supabase.auth?.admin?.generateLink !== 'function') {
+        return NextResponse.json({ error: 'Mobile sign in is temporarily unavailable. Please use email and password.' }, { status: 503 });
+      }
+      let linkRes;
+      try {
+        linkRes = await supabase.auth.admin.generateLink({
+          type: 'magiclink',
+          email: profile.college_email,
+        });
+      } catch (error) {
+        console.error('generateLink error during mobile sign in:', error);
+        return NextResponse.json({ error: 'Mobile sign in is temporarily unavailable. Please use email and password.' }, { status: 503 });
+      }
+      if (linkRes.error || !linkRes.data?.properties?.hashed_token) {
+        console.error('generateLink did not return a usable mobile sign-in token:', linkRes.error);
+        return NextResponse.json({ error: 'Mobile sign in is temporarily unavailable. Please use email and password.' }, { status: 503 });
       }
 
       const destination = getDestinationByRole(profile.role, profile.is_approved);
@@ -240,8 +223,7 @@ export async function POST(req: Request) {
           isApproved: profile.is_approved,
           collegeId: profile.college_id,
         },
-        token_hash: tokenHash,
-        action_link: actionLink,
+        token_hash: linkRes.data.properties.hashed_token,
         destination,
       });
     }

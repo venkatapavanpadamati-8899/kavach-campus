@@ -12,12 +12,16 @@ export async function GET() {
 
     const { data: profile, error: profError } = await supabase
       .from('profiles')
-      .select('id, full_name, college_email, student_id, role, department, year, phone')
+      .select('id, full_name, college_email, student_id, role, department, year, phone, profile_photo_path')
       .eq('id', user.id)
       .single();
 
     if (profError) {
       console.error('Fetch profile error:', profError);
+      return NextResponse.json({ error: 'Unable to load your profile.' }, { status: 500 });
+    }
+    if (profile.role !== 'STUDENT') {
+      return NextResponse.json({ error: 'Student account required.' }, { status: 403 });
     }
 
     const { data: studentProfile, error: spError } = await supabase
@@ -28,25 +32,39 @@ export async function GET() {
 
     if (spError && spError.code !== 'PGRST116') {
       console.error('Fetch student profile error:', spError);
+      return NextResponse.json({ error: 'Unable to load your student profile.' }, { status: 500 });
     }
 
-    let studentResidence = null;
-    try {
-      const { data: resData, error: resError } = await supabase
-        .from('student_residences')
-        .select('residence_type, hostel_name, room_number, pg_name, pg_address, guardian_contact_phone, updated_at')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (!resError && resData) {
-        studentResidence = resData;
+    let profilePhotoUrl: string | null = null;
+    if (profile.profile_photo_path) {
+      const { data: signedPhoto, error: photoError } = await supabase.storage
+        .from('kavach-profile-photos')
+        .createSignedUrl(profile.profile_photo_path, 300);
+      if (photoError) {
+        console.error('Sign profile photo URL failed:', photoError);
+        return NextResponse.json({ error: 'Unable to load your profile photo.' }, { status: 500 });
       }
-    } catch {
-      // Graceful fallback if student_residences table is staged
+      profilePhotoUrl = signedPhoto.signedUrl;
+    }
+
+    const { data: studentResidenceData, error: residenceError } = await supabase
+      .from('student_residences')
+      .select('residence_type, hostel_name, room_number, pg_name, pg_address, guardian_contact_phone, updated_at')
+      .eq('id', user.id)
+      .maybeSingle();
+    const studentResidence = studentResidenceData;
+    if (residenceError && residenceError.code !== 'PGRST205' && residenceError.code !== '42P01') {
+      console.error('Fetch student residence failed:', residenceError);
+      return NextResponse.json({ error: 'Unable to load your residence details.' }, { status: 500 });
+    }
+    if (residenceError) {
+      console.warn('student_residences is not available; profile uses legacy accommodation data.');
     }
 
     return NextResponse.json({
       success: true,
       profile: profile || null,
+      profilePhotoUrl,
       studentProfile: studentProfile || {
         id: user.id,
         verification_status: 'PENDING_UPLOAD',
@@ -137,6 +155,20 @@ export async function PUT(req: Request) {
         { error: 'Invalid blood group. Allowed: A+, A-, B+, B-, AB+, AB-, O+, O-' },
         { status: 400 }
       );
+    }
+
+    const profileQuery = supabase.from('profiles');
+    if (typeof profileQuery.select === 'function') {
+      const { data: profile, error: profileError } = await profileQuery
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Verify student profile update role failed:', profileError);
+      }
+      if (profile && profile.role !== 'STUDENT') {
+        return NextResponse.json({ error: 'Student account required.' }, { status: 403 });
+      }
     }
 
     // Build student_profiles update payload strictly omitting server-controlled verification columns

@@ -6,6 +6,7 @@ import {
   encodeOAuthState,
   parseOAuthState,
   isGoogleClientConfigured,
+  getAuthCallbackUrl,
 } from '@/lib/oauth';
 
 const mockSignInWithOAuth = vi.fn();
@@ -117,7 +118,49 @@ describe('OAuth Helper Utilities (src/lib/oauth.ts)', () => {
     it('returns true for a realistic Google Client ID', () => {
       expect(isGoogleClientConfigured('123456789012-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com')).toBe(true);
     });
+
+  describe('getAuthCallbackUrl', () => {
+    const originalEnv = process.env;
+
+    beforeEach(() => {
+      process.env = { ...originalEnv };
+      delete process.env.NEXT_PUBLIC_SITE_URL;
+      delete process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL;
+      delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+      delete process.env.VERCEL_URL;
+    });
+
+    it('falls back to http://localhost:3000/api/auth/callback when no site url or Vercel env exists', () => {
+      expect(getAuthCallbackUrl()).toBe('http://localhost:3000/api/auth/callback');
+    });
+
+    it('resolves NEXT_PUBLIC_SITE_URL and strips trailing slashes', () => {
+      process.env.NEXT_PUBLIC_SITE_URL = 'https://kavach-campus.vercel.app/';
+      expect(getAuthCallbackUrl()).toBe('https://kavach-campus.vercel.app/api/auth/callback');
+    });
+
+    it('resolves VERCEL_PROJECT_PRODUCTION_URL when NEXT_PUBLIC_SITE_URL is not set', () => {
+      process.env.VERCEL_PROJECT_PRODUCTION_URL = 'kavach-campus.vercel.app';
+      expect(getAuthCallbackUrl()).toBe('https://kavach-campus.vercel.app/api/auth/callback');
+    });
+
+    it('resolves VERCEL_URL as fallback deployment domain', () => {
+      process.env.VERCEL_URL = 'kavach-campus-preview-abc.vercel.app';
+      expect(getAuthCallbackUrl()).toBe('https://kavach-campus-preview-abc.vercel.app/api/auth/callback');
+    });
+
+    it('appends sanitized next parameter when path is safe and non-default', () => {
+      process.env.NEXT_PUBLIC_SITE_URL = 'https://kavach-campus.vercel.app';
+      expect(getAuthCallbackUrl('/student/sos')).toBe('https://kavach-campus.vercel.app/api/auth/callback?next=%2Fstudent%2Fsos');
+    });
+
+    it('ignores malicious open-redirect next parameter', () => {
+      process.env.NEXT_PUBLIC_SITE_URL = 'https://kavach-campus.vercel.app';
+      expect(getAuthCallbackUrl('https://evil.com/steal')).toBe('https://kavach-campus.vercel.app/api/auth/callback');
+    });
   });
+
+});
 });
 
 describe('GET /api/auth/google Route Handler', () => {

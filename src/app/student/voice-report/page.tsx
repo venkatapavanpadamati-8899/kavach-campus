@@ -30,6 +30,7 @@ export default function VoiceReportPage() {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [caseId, setCaseId] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -37,6 +38,14 @@ export default function VoiceReportPage() {
 
   useEffect(() => {
     setActiveTenant(getActiveCollegeTenant());
+    fetch('/api/student/profile')
+      .then(r => r.json())
+      .then(d => {
+        if (d?.studentProfile?.verification_status) {
+          setVerificationStatus(d.studentProfile.verification_status);
+        }
+      })
+      .catch(() => {});
     return () => {
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
@@ -203,6 +212,45 @@ export default function VoiceReportPage() {
           Confidential voice reporting for {activeTenant.shortName}. Speak freely—your audio report will be routed to authorized responders.
         </p>
       </div>
+
+      {verificationStatus && verificationStatus !== 'VERIFIED' && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background: 'rgba(245, 158, 11, 0.1)',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+            <AlertCircle size={22} color="#f59e0b" style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 600, color: '#f59e0b', fontSize: '0.95rem' }}>
+                Student ID Verification: {verificationStatus.replace(/_/g, ' ')}
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                Voice reports require a verified student account. In life-threatening emergencies, use{' '}
+                <a href="/student/sos" style={{ color: '#ef4444', textDecoration: 'underline', fontWeight: 600 }}>
+                  SOS Emergency
+                </a>.
+              </div>
+            </div>
+          </div>
+          <a href="/student/profile" style={{ textDecoration: 'none' }}>
+            <button className="btn-secondary" style={{ fontSize: '0.85rem', padding: '8px 14px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Verify ID Card <ArrowRight size={14} />
+            </button>
+          </a>
+        </motion.div>
+      )}
 
       {feedback && (
         <motion.div

@@ -249,6 +249,17 @@ describe('Kavach Campus — 11-Field Registration, 15-Field Profile & Management
           return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: {
+                    id: 'usr-student-1',
+                    full_name: 'Student One',
+                    department: 'CSE',
+                    college_id: 'srkr-bhimavaram',
+                    college_email: 'student1@srkr.edu.in',
+                    role: 'STUDENT',
+                  },
+                  error: null,
+                }),
                 neq: vi.fn().mockResolvedValue({
                   data: [{ id: 'usr-student-2', student_id: '2101201045' }],
                 }),

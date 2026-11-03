@@ -20,7 +20,7 @@ export async function GET(
     // 1. Fetch parent incident to enforce authorization
     const { data: incident, error: incError } = await supabase
       .from('incidents')
-      .select('id, case_id, student_id, assigned_to')
+      .select('id, case_id, student_id, assigned_to, college_id')
       .eq(isUuid ? 'id' : 'case_id', id)
       .single();
 
@@ -31,9 +31,17 @@ export async function GET(
     // 2. Role verification
     const { data: userProfile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, college_id')
       .eq('id', user.id)
       .single();
+
+    // Cross-college tenant isolation
+    if (userProfile?.role !== 'SUPER_ADMIN' && userProfile?.college_id && incident.college_id && userProfile.college_id !== incident.college_id) {
+      return NextResponse.json(
+        { error: 'Forbidden: You are not authorized to access evidence from another campus.' },
+        { status: 403 }
+      );
+    }
 
     const isStudentOwner = incident.student_id === user.id;
     const isAssignedResponder = incident.assigned_to === user.id;
@@ -125,7 +133,7 @@ export async function POST(
     // 1. Fetch parent incident to enforce binding and authorization
     const { data: incident, error: incError } = await supabase
       .from('incidents')
-      .select('id, case_id, student_id, assigned_to')
+      .select('id, case_id, student_id, assigned_to, college_id')
       .eq(isUuid ? 'id' : 'case_id', id)
       .single();
 
@@ -136,9 +144,17 @@ export async function POST(
     // 2. Verify caller authorization
     const { data: userProfile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, college_id')
       .eq('id', user.id)
       .single();
+
+    // Cross-college tenant isolation
+    if (userProfile?.role !== 'SUPER_ADMIN' && userProfile?.college_id && incident.college_id && userProfile.college_id !== incident.college_id) {
+      return NextResponse.json(
+        { error: 'Forbidden: You are not authorized to upload evidence to another campus incident.' },
+        { status: 403 }
+      );
+    }
 
     const isStudentOwner = incident.student_id === user.id;
     const isAssignedResponder = incident.assigned_to === user.id;

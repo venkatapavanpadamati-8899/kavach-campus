@@ -79,19 +79,16 @@ export default function StudentProfilePage() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('kavach_student_profile_photo');
-      if (saved) setProfilePhotoUrl(saved);
-    }
-  }, []);
-
-  useEffect(() => {
     setActiveTenant(getActiveCollegeTenant());
     async function fetchProfile() {
       try {
         const res = await fetch('/api/student/profile');
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to load profile details.');
+        }
+        setProfilePhotoUrl(data.profilePhotoUrl || null);
         if (res.ok) {
-          const data = await res.json();
           if (data.success) {
             const rawType = data.residence?.residence_type
               || (data.studentProfile?.hostel_room?.toLowerCase().includes('day scholar')

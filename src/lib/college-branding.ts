@@ -45,81 +45,81 @@ export interface CollegeBranding {
   animationTheme?: AnimationThemeConfig;
 }
 
-// High-fidelity, optimized campus visual assets with dark readability gradients
+// High-fidelity, optimized campus visual assets with crystal-clear luminous gradients
 const SRKR_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
   login: {
     imageUrl: '/images/colleges/srkr/login.jpg',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.82) 0%, rgba(10, 10, 12, 0.94) 100%)',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'SRKR Engineering College — Main Campus Gateway & Academic Edifice'
   },
   register: {
-    imageUrl: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.65) 0%, rgba(10, 10, 15, 0.78) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'SRKR Technology & Sciences Quad — Student Admissions Wing'
   },
   verify_otp: {
-    imageUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.48) 0%, rgba(10, 15, 30, 0.72) 100%)',
     caption: 'SRKR Central Verification & Credential Registry'
   },
   student_dashboard: {
     imageUrl: '/images/colleges/srkr/student-dashboard.jpg',
-    overlay: 'linear-gradient(180deg, rgba(13, 26, 27, 0.85) 0%, rgba(10, 10, 12, 0.94) 100%)',
+    overlay: 'linear-gradient(180deg, rgba(13, 26, 27, 0.35) 0%, rgba(10, 15, 30, 0.62) 100%)',
     caption: 'SRKR Campus Landscape & Student Innovation Promenade'
   },
   identity_verification: {
-    imageUrl: 'https://images.unsplash.com/photo-1519452635265-7b1fbfd1e4e0?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(20, 20, 35, 0.86) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(20, 20, 35, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'SRKR Administrative Secretariat & Student Records Center'
   },
   file_report: {
-    imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(24, 24, 37, 0.87) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(24, 24, 37, 0.42) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'SRKR Campus Security Corridor & Student Safety Desk'
   },
   voice_report: {
-    imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(19, 21, 36, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(19, 21, 36, 0.42) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'SRKR Confidential Counseling & Voice Telemetry Wing'
   },
   sos: {
-    imageUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'radial-gradient(circle at center, rgba(185, 28, 28, 0.28) 0%, rgba(10, 10, 12, 0.96) 80%)',
+    imageUrl: '/images/sos_emergency_bg.jpg',
+    overlay: 'radial-gradient(circle at center, rgba(185, 28, 28, 0.28) 0%, rgba(10, 15, 30, 0.75) 85%)',
     caption: 'SRKR Quick Response & Emergency Perimeter'
   },
   safe_walk: {
-    imageUrl: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(13, 148, 136, 0.2) 0%, rgba(10, 10, 12, 0.94) 100%)',
+    imageUrl: '/images/student_safewalk_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(13, 148, 136, 0.20) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'SRKR Illuminated Night Walkways & Campus Patrol Path'
   },
   my_cases: {
-    imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(30, 41, 59, 0.85) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(30, 41, 59, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'SRKR Institutional Grievance & Case Redressal Cell'
   },
   trusted_contacts: {
-    imageUrl: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(23, 25, 35, 0.86) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(23, 25, 35, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'SRKR Student Guardian Network & Emergency Contacts'
   },
   settings: {
-    imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'SRKR Security Systems & Personal Preferences Tower'
   },
   staff_dashboard: {
-    imageUrl: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(20, 20, 35, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(20, 20, 35, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'SRKR Faculty Secretariat & Departmental Response Cell'
   },
   admin_dashboard: {
-    imageUrl: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'SRKR Campus Command & Security Operations Center'
   },
   management_dashboard: {
-    imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'SRKR Governing Body & Institutional Analytics Suite'
   }
 };
@@ -127,77 +127,77 @@ const SRKR_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
 const VISHNU_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
   login: {
     imageUrl: '/images/colleges/vishnu/login.jpg',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.84) 0%, rgba(10, 10, 12, 0.94) 100%)',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'Vishnu Institute of Technology — Main Academic Campus & Tech Dome'
   },
   register: {
-    imageUrl: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.65) 0%, rgba(10, 10, 15, 0.78) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Vishnu Institute of Technology — Dr. B.V. Raju Knowledge Enclave'
   },
   verify_otp: {
-    imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.48) 0%, rgba(10, 15, 30, 0.72) 100%)',
     caption: 'Vishnu Institute of Technology — Identity Verification Portal'
   },
   student_dashboard: {
     imageUrl: '/images/colleges/vishnu/student-dashboard.jpg',
-    overlay: 'linear-gradient(180deg, rgba(12, 28, 48, 0.85) 0%, rgba(10, 10, 12, 0.94) 100%)',
+    overlay: 'linear-gradient(180deg, rgba(12, 28, 48, 0.35) 0%, rgba(10, 15, 30, 0.62) 100%)',
     caption: 'Vishnu Institute of Technology — Central Academic Lawn & Innovation Plaza'
   },
   identity_verification: {
-    imageUrl: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.87) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Vishnu Institute of Technology — Academic Senate & Registrar Bureau'
   },
   file_report: {
-    imageUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(18, 25, 45, 0.86) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(18, 25, 45, 0.42) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'Vishnu Institute of Technology — Campus Safety & Redressal Center'
   },
   voice_report: {
-    imageUrl: 'https://images.unsplash.com/photo-1590650516494-0c8e4a4dd67e?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(20, 27, 45, 0.87) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(20, 27, 45, 0.42) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'Vishnu Institute of Technology — Confidential Audio Telemetry'
   },
   sos: {
-    imageUrl: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'radial-gradient(circle at center, rgba(225, 29, 72, 0.3) 0%, rgba(10, 10, 12, 0.96) 80%)',
+    imageUrl: '/images/sos_emergency_bg.jpg',
+    overlay: 'radial-gradient(circle at center, rgba(225, 29, 72, 0.28) 0%, rgba(10, 15, 30, 0.75) 85%)',
     caption: 'Vishnu Emergency Dispatch & Security Operations Wing'
   },
   safe_walk: {
-    imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(14, 116, 144, 0.22) 0%, rgba(10, 10, 12, 0.94) 100%)',
+    imageUrl: '/images/student_safewalk_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(14, 116, 144, 0.20) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'Vishnu Campus Pathway & Smart Surveillance Avenue'
   },
   my_cases: {
-    imageUrl: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.87) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Vishnu Student Case Tracking & Ombudsman Bureau'
   },
   trusted_contacts: {
-    imageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(16, 24, 40, 0.87) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(16, 24, 40, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Vishnu Trusted Parent & Faculty Mentor Network'
   },
   settings: {
-    imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Vishnu Technology Administration & Security Configuration'
   },
   staff_dashboard: {
-    imageUrl: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Vishnu Faculty & First Responder Dispatch Matrix'
   },
   admin_dashboard: {
-    imageUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Vishnu Central Campus Command & Control Tower'
   },
   management_dashboard: {
-    imageUrl: 'https://images.unsplash.com/photo-1497215842964-222b430dc094?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Vishnu Executive Board & Institutional Quality Council'
   }
 };
@@ -205,78 +205,78 @@ const VISHNU_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
 // Generic fallback for any other registered or searched college
 const DEFAULT_FALLBACK_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
   login: {
-    imageUrl: 'https://images.unsplash.com/photo-1564981797816-1043664bf78d?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.85) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.42) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'Engineering Campus — Main Entrance Gate'
   },
   register: {
-    imageUrl: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.65) 0%, rgba(10, 10, 15, 0.78) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Engineering Sciences & Admissions Quad'
   },
   verify_otp: {
-    imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.48) 0%, rgba(10, 15, 30, 0.72) 100%)',
     caption: 'Campus Credential & Security Registry'
   },
   student_dashboard: {
-    imageUrl: 'https://images.unsplash.com/photo-1519452575417-564c1401ecc0?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(13, 26, 27, 0.85) 0%, rgba(10, 10, 12, 0.94) 100%)',
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(13, 26, 27, 0.35) 0%, rgba(10, 15, 30, 0.62) 100%)',
     caption: 'Campus Academic Lawn & Student Services'
   },
   identity_verification: {
-    imageUrl: 'https://images.unsplash.com/photo-1492538368677-f6e0afe31dcc?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.87) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Administration Building & Academic Records'
   },
   file_report: {
-    imageUrl: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.87) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.42) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'Campus Walkway & Safety Desk'
   },
   voice_report: {
-    imageUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.42) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'Campus Guidance & Confidential Support'
   },
   sos: {
-    imageUrl: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'radial-gradient(circle at center, rgba(185, 28, 28, 0.28) 0%, rgba(10, 10, 12, 0.96) 80%)',
+    imageUrl: '/images/sos_emergency_bg.jpg',
+    overlay: 'radial-gradient(circle at center, rgba(185, 28, 28, 0.28) 0%, rgba(10, 15, 30, 0.75) 85%)',
     caption: 'Emergency Security Perimeter'
   },
   safe_walk: {
-    imageUrl: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(13, 148, 136, 0.2) 0%, rgba(10, 10, 12, 0.94) 100%)',
+    imageUrl: '/images/student_safewalk_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(13, 148, 136, 0.20) 0%, rgba(10, 15, 30, 0.68) 100%)',
     caption: 'Illuminated Night Walkway'
   },
   my_cases: {
-    imageUrl: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.87) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Campus Grievance & Records Cell'
   },
   trusted_contacts: {
-    imageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.87) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Student Support Network'
   },
   settings: {
-    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.88) 0%, rgba(10, 10, 12, 0.95) 100%)',
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Security Settings & Preferences'
   },
   staff_dashboard: {
-    imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Faculty & Responder Control Room'
   },
   admin_dashboard: {
-    imageUrl: 'https://images.unsplash.com/photo-1551836022-b06985bceb24?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Campus Control Tower'
   },
   management_dashboard: {
-    imageUrl: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1920&q=80',
-    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.88) 0%, rgba(10, 10, 12, 0.96) 100%)',
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
     caption: 'Executive Management Council'
   }
 };

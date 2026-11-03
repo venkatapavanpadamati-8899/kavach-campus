@@ -3,12 +3,12 @@
 **Audit Date:** November 01, 2026  
 **Repository Directory:** `D:\Kavach Campus`  
 **Vitest Version:** 5.0.3  
-**Next.js Version:** 16.4.3 (Webpack production build)
+**Next.js Version:** 16.4.3 (Turbopack production build; `--experimental-app-only`)
 **TypeScript Version:** 6.0.3  
 **ESLint Version:** 10.13.0  
 **Latest Local Quality Gate Status:** **PASS** for tests, TypeScript, lint, production build, production audit, and diff check. Production deployment, live database behavior, physical GPS, and visible push remain unverified.
 
-> **Latest follow-up evidence (2026-11-01):** This section supersedes the older counts and Turbopack build output below. Tests were executed with JSON reporting to count skips explicitly. No secrets or exact device coordinates are recorded here.
+> **Latest follow-up evidence (2026-11-01T20:45+05:30):** The exact reported severity timeout test passed in isolation, its entire file passed 12/12, and the full suite passed 51/51 with 672 passed, 0 failed, and 0 skipped. The configured Turbopack build generated all 68 routes. No secrets or exact device coordinates are recorded here.
 
 ---
 
@@ -16,17 +16,19 @@
 
 | Command | Exit Code | Duration | Output Summary |
 | :--- | :---: | :---: | :--- |
-| `npm test -- --reporter=json --outputFile=<temporary file>` | **`0`** | Latest run | **51 / 51 suites; 672 passed, 0 failed, 0 skipped.** JSON output was deleted after counting. |
+| `npm test -- src/__tests__/severity-classification.test.ts -t "handles normal/low-risk input preserving AI suggested priority L1 -> LOW"` | **`0`** | 1.94s | Reported case passed; 1 passed, 11 skipped. |
+| `npm test -- src/__tests__/severity-classification.test.ts` | **`0`** | 1.20s | All 12 tests in the severity classification file passed. |
+| `npm test` | **`0`** | 12.06s | **51 / 51 suites; 672 passed, 0 failed, 0 skipped.** |
 | `npx tsc --noEmit` | **`0`** | Latest run | Clean exit; no type errors reported. |
 | `npm run lint` | **`0`** | Latest run | Clean exit; no ESLint errors or warnings reported. |
-| `npm run build` (`next build --webpack`) | **`0`** | Latest run | Compiled and generated **68 routes**. The previous experimental app-only mode failed on a missing static manifest; Webpack is now the configured build mode. |
+| `npm run build` (`next build --experimental-app-only`) | **`0`** | Latest run | Compiled with Turbopack and generated **68 routes**. `prebuild` cleanup was removed so a build cannot recursively delete `.next` before Next.js acquires its build lock. |
 | `npm audit --omit=dev` | **`0`** | Latest run | `found 0 vulnerabilities` across production dependencies. |
 | `git diff --check` | **`0`** | Latest run | Clean exit; no whitespace errors. |
 | `npm run start -- --hostname 127.0.0.1 --port 3100` + safe `curl.exe` probes | **`0`** | Latest run | After server readiness: `/` 200, `/login` 200, `/student` 307, unauthenticated `POST /api/sos` 401. Server stopped after the probes. |
 
 These are local checks only; they do not prove the Vercel deployment contains the current source.
 
-At this follow-up, local HEAD was `f9d7353a0d15fa6541a5115bdd1cdcc544e1ce2b` on `main`. The worktree contained uncommitted package, report, evidence, and AI evaluation test changes; deployment commit identity was not established.
+At this follow-up, local `HEAD` and `origin/main` were `57835c86b86bbf3d38e3de813d7c7638c1c46835` on `main`. The worktree contains uncommitted changes to `package.json`, `scripts/audit_database_security_live.ts`, and verification reports. Read-only Vercel listing reports production deployment(s) READY on commit `57835c8`; no deployment command was run in this audit.
 
 ---
 

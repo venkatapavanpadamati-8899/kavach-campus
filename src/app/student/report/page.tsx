@@ -45,9 +45,18 @@ function FileReportForm() {
 
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string; caseId?: string } | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
 
   useEffect(() => {
     setActiveTenant(getActiveCollegeTenant());
+    fetch('/api/student/profile')
+      .then(r => r.json())
+      .then(d => {
+        if (d?.studentProfile?.verification_status) {
+          setVerificationStatus(d.studentProfile.verification_status);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const detectLocation = () => {
@@ -206,6 +215,46 @@ function FileReportForm() {
           </button>
         </Link>
       </div>
+
+      {verificationStatus && verificationStatus !== 'VERIFIED' && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background: 'rgba(245, 158, 11, 0.1)',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+            <AlertCircle size={22} color="#f59e0b" style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 600, color: '#f59e0b', fontSize: '0.95rem' }}>
+                Student ID Verification: {verificationStatus.replace(/_/g, ' ')}
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                Routine incident reports require verified student status. For immediate emergencies, use{' '}
+                <Link href="/student/sos" style={{ color: '#ef4444', textDecoration: 'underline', fontWeight: 600 }}>
+                  SOS Emergency
+                </Link>{' '}
+                or set Category to EMERGENCY.
+              </div>
+            </div>
+          </div>
+          <Link href="/student/profile" style={{ textDecoration: 'none' }}>
+            <button className="btn-secondary" style={{ fontSize: '0.85rem', padding: '8px 14px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Verify ID Card <ArrowRight size={14} />
+            </button>
+          </Link>
+        </motion.div>
+      )}
 
       {feedback && (
         <motion.div

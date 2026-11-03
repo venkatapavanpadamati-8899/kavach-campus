@@ -5,51 +5,84 @@ on:
     # Runs every 5 minutes to satisfy the life-safety response interval
     - cron: '*/5 * * * *'
   workflow_dispatch:
-    # Allows manual immediate trigger from GitHub Actions tab for testing
+    # Manual dispatch validates configuration only; it never contacts live cron endpoints.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: safe-walk-escalation-scheduler
+  cancel-in-progress: false
 
 jobs:
   run-escalation-checks:
     runs-on: ubuntu-latest
+    env:
+      RAW_PROJECT_URL: ${{ secrets.VERCEL_PROJECT_URL || vars.VERCEL_PROJECT_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
     steps:
-      - name: Trigger Safe Walk Timeout Check
+      - name: Validate Scheduler Configuration
         run: |
-          if [ -z "${{ secrets.VERCEL_PROJECT_URL }}" ] || [ -z "${{ secrets.CRON_SECRET }}" ]; then
-            echo "::error::CRITICAL LIFE-SAFETY ALERT: VERCEL_PROJECT_URL or CRON_SECRET is not configured in repository secrets."
+          CONFIG_ERROR=0
+          if [ -z "$RAW_PROJECT_URL" ]; then
+            echo "::error::CRITICAL CONFIGURATION MISSING: VERCEL_PROJECT_URL is not set. Add VERCEL_PROJECT_URL to GitHub Repository Secrets or Variables (e.g., https://kavach-campus.vercel.app)."
+            CONFIG_ERROR=1
+          fi
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRITICAL SECURITY SECRET MISSING: CRON_SECRET is not configured. Add CRON_SECRET to GitHub Repository Secrets matching the CRON_SECRET environment variable in Vercel."
+            CONFIG_ERROR=1
+          fi
+          if [ "$CONFIG_ERROR" -ne 0 ]; then
+            echo "::error::CRITICAL LIFE-SAFETY ALERT: Scheduler cannot run without required target URL and authorization secret."
             exit 1
           fi
-          
-          RESPONSE=$(curl -s -S --connect-timeout 10 --max-time 30 -w "\n%{http_code}" -X POST "${{ secrets.VERCEL_PROJECT_URL }}/api/cron/safe-walk-timeout" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+
+          if ! TARGET_URL="$(node -e '
+            try {
+              const url = new URL(process.argv[1]);
+              if (url.protocol !== "https:" || !url.hostname || url.username || url.password ||
+                  url.pathname !== "/" || url.search || url.hash) process.exit(1);
+              process.stdout.write(url.origin);
+            } catch {
+              process.exit(1);
+            }
+          ' "$RAW_PROJECT_URL")"; then
+            echo "::error::INVALID CONFIGURATION: VERCEL_PROJECT_URL must be an HTTPS origin without a path, query, or credentials."
+            exit 1
+          fi
+          printf 'TARGET_URL=%s\n' "$TARGET_URL" >> "$GITHUB_ENV"
+
+          # Mask CRON_SECRET to ensure it never leaks to logs
+          echo "::add-mask::$CRON_SECRET"
+          echo "Configuration validated successfully: Target URL is configured and CRON_SECRET is present."
+
+      - name: Dry Run Manual Dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "Manual dispatch is a configuration-only dry run; no scheduler endpoint was called."
+
+      - name: Trigger Safe Walk Timeout Check
+        if: github.event_name == 'schedule'
+        run: |
+          HTTP_STATUS=$(curl -s -S --output /dev/null --connect-timeout 10 --max-time 30 -w "%{http_code}" -X POST "${TARGET_URL}/api/cron/safe-walk-timeout" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
             -H "Content-Type: application/json")
-          
-          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
-          
+
           echo "Safe Walk Timeout Response HTTP Status: $HTTP_STATUS"
-          echo "Response Body: $BODY"
-          
+
           if [ "$HTTP_STATUS" -ne 200 ]; then
             echo "::error::Safe walk timeout endpoint returned unexpected status: $HTTP_STATUS"
             exit 1
           fi
 
       - name: Trigger Staff Escalation Check
+        if: github.event_name == 'schedule'
         run: |
-          if [ -z "${{ secrets.VERCEL_PROJECT_URL }}" ] || [ -z "${{ secrets.CRON_SECRET }}" ]; then
-            echo "::error::CRITICAL LIFE-SAFETY ALERT: VERCEL_PROJECT_URL or CRON_SECRET is not configured in repository secrets."
-            exit 1
-          fi
-          
-          RESPONSE=$(curl -s -S --connect-timeout 10 --max-time 30 -w "\n%{http_code}" -X POST "${{ secrets.VERCEL_PROJECT_URL }}/api/cron/escalate" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          HTTP_STATUS=$(curl -s -S --output /dev/null --connect-timeout 10 --max-time 30 -w "%{http_code}" -X POST "${TARGET_URL}/api/cron/escalate" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
             -H "Content-Type: application/json")
-          
-          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
-          
+
           echo "Staff Escalation Response HTTP Status: $HTTP_STATUS"
-          echo "Response Body: $BODY"
-          
+
           if [ "$HTTP_STATUS" -ne 200 ]; then
             echo "::error::Escalation endpoint returned unexpected status: $HTTP_STATUS"
             exit 1

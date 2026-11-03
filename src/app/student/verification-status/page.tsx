@@ -3,14 +3,17 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, UploadCloud, CheckCircle, AlertCircle, XCircle, Clock, Loader2, ArrowRight, Camera } from 'lucide-react';
 import Link from 'next/link';
-import { INDIAN_ENGINEERING_COLLEGES } from '@/lib/colleges';
+import { getCollegeById, type CollegeTenant } from '@/lib/colleges';
 
 export default function StudentVerificationStatusPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [userId, setUserId] = useState<string>('');
   const [status, setStatus] = useState<string>('PENDING_UPLOAD');
   const [statusMessage, setStatusMessage] = useState<string>('');
+  const [collegeSearch, setCollegeSearch] = useState('');
+  const [collegeResults, setCollegeResults] = useState<CollegeTenant[]>([]);
+  const [collegeSearchLoading, setCollegeSearchLoading] = useState(false);
+  const [collegeSearchError, setCollegeSearchError] = useState('');
 
   const [formData, setFormData] = useState({
     // 1-7. Personal Details (7 fields)
@@ -40,12 +43,16 @@ export default function StudentVerificationStatusPage() {
   // 13-15. Verification & Image Details (3 fields)
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [docPreviewUrl, setDocPreviewUrl] = useState<string | null>(null);
+  const [docPreviewSourceUrl, setDocPreviewSourceUrl] = useState<string | null>(null);
+  const [docPreviewMime, setDocPreviewMime] = useState<string | null>(null);
   const [backFile, setBackFile] = useState<File | null>(null);
   const [backPreviewUrl, setBackPreviewUrl] = useState<string | null>(null);
+  const [backPreviewSourceUrl, setBackPreviewSourceUrl] = useState<string | null>(null);
+  const [backPreviewMime, setBackPreviewMime] = useState<string | null>(null);
   const [customPhotoFile, setCustomPhotoFile] = useState<File | null>(null);
   const [customPhotoPreview, setCustomPhotoPreview] = useState<string | null>(null);
   const [extractedPhotoUrl, setExtractedPhotoUrl] = useState<string | null>(null);
-  const [photoConfirmed, setPhotoConfirmed] = useState<boolean>(true);
+  const [photoConfirmed, setPhotoConfirmed] = useState<boolean>(false);
   const [formError, setFormError] = useState('');
 
   // 15-Field Completion Tracker
@@ -87,17 +94,22 @@ export default function StudentVerificationStatusPage() {
         const res = await fetch('/api/student/verify-id');
         if (res.ok) {
           const data = await res.json();
-          if (data.profile?.id) {
-            setUserId(data.profile.id);
-          }
           if (data.studentProfile?.verification_status) {
             setStatus(data.studentProfile.verification_status);
             setStatusMessage(data.studentProfile.verification_notes || '');
           }
+          if (data.idCardStoragePath) setDocPreviewUrl(data.idCardStoragePath);
+          if (data.idCardPreviewUrl) setDocPreviewSourceUrl(data.idCardPreviewUrl);
+          if (data.idCardBackStoragePath) setBackPreviewUrl(data.idCardBackStoragePath);
+          if (data.idCardBackPreviewUrl) setBackPreviewSourceUrl(data.idCardBackPreviewUrl);
           if (data.studentProfile?.ocr_extracted_data) {
             const ocr = data.studentProfile.ocr_extracted_data;
-            if (ocr.front_url) setDocPreviewUrl(ocr.front_url);
-            if (ocr.back_url) setBackPreviewUrl(ocr.back_url);
+            setDocPreviewMime(ocr.front_mime || null);
+            setBackPreviewMime(ocr.back_mime || null);
+            if (ocr.claimed_college_id) {
+              const claimedCollege = getCollegeById(ocr.claimed_college_id);
+              if (claimedCollege) setCollegeSearch(claimedCollege.name);
+            }
             setFormData(prev => ({
               ...prev,
               dob: ocr.dob || prev.dob,
@@ -118,10 +130,13 @@ export default function StudentVerificationStatusPage() {
             department: data.profile?.department || prev.department,
             collegeEmail: data.profile?.college_email || prev.collegeEmail,
             personalPhone: data.profile?.phone || prev.personalPhone,
-            collegeId: (data.profile?.college_id && data.profile.college_id !== 'PENDING_CAMPUS_VERIFICATION')
-              ? data.profile.college_id
-              : '',
+            collegeId: (data.studentProfile?.claimed_college_id
+              || (data.profile?.college_id && data.profile.college_id !== 'PENDING_CAMPUS_VERIFICATION'
+                ? data.profile.college_id
+                : '')),
           }));
+          const currentCollege = getCollegeById(data.profile?.college_id || '');
+          if (currentCollege) setCollegeSearch(currentCollege.name);
         }
       } catch (err) {
         console.error('Failed to load status:', err);
@@ -131,6 +146,53 @@ export default function StudentVerificationStatusPage() {
     }
     loadStatus();
   }, []);
+
+  useEffect(() => {
+    const query = collegeSearch.trim();
+    const selectedCollege = getCollegeById(formData.collegeId);
+    if (selectedCollege?.name === query) {
+      setCollegeResults([]);
+      setCollegeSearchError('');
+      setCollegeSearchLoading(false);
+      return;
+    }
+    if (!query || /^\d+$/.test(query) && query.length !== 6) {
+      setCollegeResults([]);
+      setCollegeSearchError('');
+      setCollegeSearchLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setCollegeSearchLoading(true);
+      setCollegeSearchError('');
+      try {
+        const parameter = /^\d{6}$/.test(query)
+          ? `pincode=${encodeURIComponent(query)}`
+          : `query=${encodeURIComponent(query)}`;
+        const response = await fetch(`/api/colleges/search?${parameter}`, {
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'College search is unavailable. Please try again.');
+        }
+        setCollegeResults(Array.isArray(data.colleges) ? data.colleges : []);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        setCollegeResults([]);
+        setCollegeSearchError(error instanceof Error ? error.message : 'College search is unavailable. Please try again.');
+      } finally {
+        if (!controller.signal.aborted) setCollegeSearchLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [collegeSearch, formData.collegeId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,7 +204,12 @@ export default function StudentVerificationStatusPage() {
       return;
     }
 
-    if (!selectedFile && !docPreviewUrl && !formData.idCardName) {
+    if (!getCollegeById(formData.collegeId)) {
+      setFormError('Select a college from the search results before submitting your verification.');
+      return;
+    }
+
+    if (!selectedFile && !docPreviewUrl) {
       setFormError('Please select your College ID card Front document (JPEG, PNG, WEBP, or PDF, max 5MB)');
       return;
     }
@@ -153,7 +220,7 @@ export default function StudentVerificationStatusPage() {
       formPayload.append('studentId', formData.studentId.trim());
       // This is a claimed campus for review only. The server must derive the
       // authorized college from the authenticated profile, never this value.
-      formPayload.append('collegeId', formData.collegeId);
+      formPayload.append('claimedCollegeId', formData.collegeId);
       formPayload.append('fullName', formData.fullName.trim());
       formPayload.append('department', formData.department);
       formPayload.append('branch', formData.branch);
@@ -172,7 +239,7 @@ export default function StudentVerificationStatusPage() {
       formPayload.append('admissionType', formData.admissionType);
       formPayload.append('admissionYear', formData.admissionYear);
       formPayload.append('expectedGraduationYear', formData.expectedGraduationYear);
-      formPayload.append('ocrText', `STUDENT ID: ${formData.studentId.trim()} COLLEGE ID CARD B.TECH ${formData.department} ${formData.branch} ${formData.section}`);
+      formPayload.append('claimedCollegeId', formData.collegeId);
       
       const activePhoto = customPhotoPreview || (photoConfirmed ? extractedPhotoUrl : null);
       if (activePhoto) {
@@ -182,15 +249,14 @@ export default function StudentVerificationStatusPage() {
       if (selectedFile) {
         formPayload.append('fileFront', selectedFile);
         formPayload.append('file', selectedFile); // backwards compatibility
-      } else {
-        const storagePath = userId
-          ? `kavach-id-cards/${userId}/${formData.studentId.trim()}-card.jpg`
-          : `kavach-id-cards/${formData.studentId.trim()}-card.jpg`;
-        formPayload.append('idCardUrl', storagePath);
+      } else if (docPreviewUrl) {
+        formPayload.append('idCardUrl', docPreviewUrl);
       }
 
       if (backFile) {
         formPayload.append('fileBack', backFile);
+      } else if (backPreviewUrl) {
+        formPayload.append('idCardBackUrl', backPreviewUrl);
       }
 
       const res = await fetch('/api/student/verify-id', {
@@ -265,7 +331,7 @@ export default function StudentVerificationStatusPage() {
             <UploadCloud size={24} />
             <div>
               <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>ID Card Upload Required</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Upload your official 10-digit ID card to unlock student safety services.</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Upload your official college ID card and submit your student details for campus review.</div>
             </div>
           </div>
         );
@@ -279,7 +345,7 @@ export default function StudentVerificationStatusPage() {
           <Shield size={36} color="var(--accent-purple)" />
         </div>
         <h1 style={{ fontSize: '2.2rem', marginBottom: '8px' }}>Student Identity Verification</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>10-Digit ID &amp; Academic Batch Verification (B.Tech Regular 4-Year / Lateral Entry 3-Year)</p>
+        <p style={{ color: 'var(--text-secondary)' }}>Your college and ID card are reviewed by an authorized campus administrator before dashboard access.</p>
       </div>
 
       <div style={{ marginBottom: '24px' }}>
@@ -458,18 +524,86 @@ export default function StudentVerificationStatusPage() {
                 <label style={{ display: 'block', fontSize: '0.82rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
                   College claimed for verification *
                 </label>
-                <select
+                <input
+                  type="search"
                   className="input-field"
-                  style={{ background: '#1e1b4b', color: '#fff' }}
-                  value={formData.collegeId}
-                  onChange={e => setFormData({ ...formData, collegeId: e.target.value })}
+                  value={collegeSearch}
+                  onChange={e => {
+                    setCollegeSearch(e.target.value);
+                    setFormData(prev => ({ ...prev, collegeId: '' }));
+                  }}
+                  placeholder="Search college name or enter its 6-digit PIN code"
+                  aria-label="Search college by name or six-digit PIN code"
                   required
-                >
-                  <option value="" disabled>Select college for administrator review</option>
-                  {INDIAN_ENGINEERING_COLLEGES.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.shortName})</option>
+                />
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#94a3b8', alignSelf: 'center' }}>Quick PIN / Campus:</span>
+                  {[
+                    { label: '534204 (SRKR)', query: '534204' },
+                    { label: '534202 (Vishnu)', query: '534202' },
+                    { label: '500032 (Hyderabad)', query: '500032' },
+                    { label: '600036 (Chennai)', query: '600036' },
+                  ].map(quick => (
+                    <button
+                      key={quick.query}
+                      type="button"
+                      onClick={() => {
+                        setCollegeSearch(quick.query);
+                        setFormData(prev => ({ ...prev, collegeId: '' }));
+                      }}
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        color: '#c4b5fd',
+                        fontSize: '0.72rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {quick.label}
+                    </button>
                   ))}
-                </select>
+                </div>
+                {collegeSearchLoading && <p role="status" style={{ color: 'var(--text-secondary)', margin: '8px 0' }}>Searching colleges…</p>}
+                {collegeSearchError && <p role="alert" style={{ color: 'var(--accent-red)', margin: '8px 0' }}>{collegeSearchError}</p>}
+                {collegeSearch.trim() && /^\d+$/.test(collegeSearch.trim()) && collegeSearch.trim().length !== 6 && (
+                  <p style={{ color: 'var(--text-secondary)', margin: '8px 0' }}>Enter all 6 digits of the PIN code to search by location.</p>
+                )}
+                {collegeResults.length > 0 && (
+                  <div role="listbox" aria-label="College search results" style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
+                    {collegeResults.map(college => (
+                      <button
+                        key={college.id}
+                        type="button"
+                        role="option"
+                        aria-selected={formData.collegeId === college.id}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, collegeId: college.id }));
+                          setCollegeSearch(college.name);
+                          setCollegeResults([]);
+                        }}
+                        className={formData.collegeId === college.id ? 'btn-primary' : 'btn-secondary'}
+                        style={{ textAlign: 'left', padding: '10px 12px' }}
+                      >
+                        <strong>{college.name}</strong>
+                        <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.8 }}>
+                          {college.city}, {college.state} · PIN {college.pincode}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {collegeSearch.trim() && !collegeSearchLoading && !collegeSearchError && !collegeResults.length && !formData.collegeId && (
+                  <p style={{ color: 'var(--text-secondary)', margin: '8px 0' }}>
+                    No matching college found. Contact campus support to request a new institution; unlisted colleges must be verified before activation.
+                  </p>
+                )}
+                {formData.collegeId && (
+                  <p role="status" style={{ color: 'var(--accent-green)', margin: '8px 0' }}>
+                    Selected: {getCollegeById(formData.collegeId)?.name}. This is a claim for manual review, not an active campus assignment.
+                  </p>
+                )}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
@@ -629,6 +763,9 @@ export default function StudentVerificationStatusPage() {
               <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '14px', color: '#a78bfa' }}>
                 Section C: ID Card Images &amp; Profile Photograph (3 Details)
               </h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem', margin: '0 0 14px' }}>
+                Automatic ID-card OCR is not configured. Your uploaded document and typed details are sent for manual campus review; extracted text is never treated as proof of identity.
+              </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 {/* 13. ID Card Front Image */}
@@ -653,12 +790,14 @@ export default function StudentVerificationStatusPage() {
                             return;
                           }
                           setSelectedFile(file);
+                          setDocPreviewMime(file.type);
                           setFormData(prev => ({ ...prev, idCardName: file.name }));
                           if (file.type.startsWith('image/')) {
                             const reader = new FileReader();
                             reader.onload = ev => {
                               const res = ev.target?.result as string;
                               setDocPreviewUrl(res);
+                              setDocPreviewSourceUrl(res);
                               const img = new Image();
                               img.onload = () => {
                                 try {
@@ -673,7 +812,11 @@ export default function StudentVerificationStatusPage() {
                                     const cropW = isLandscape ? img.width * 0.34 : img.width * 0.6;
                                     const cropH = img.height * 0.48;
                                     ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, 180, 220);
-                                    setExtractedPhotoUrl(canvas.toDataURL('image/jpeg', 0.85));
+                                    const photoData = canvas.toDataURL('image/jpeg', 0.85);
+                                    setExtractedPhotoUrl(photoData);
+                                    if (typeof window !== 'undefined') {
+                                      localStorage.setItem('kavach_student_profile_photo', photoData);
+                                    }
                                   }
                                 } catch (err) {
                                   console.warn('Portrait extraction error:', err);
@@ -689,12 +832,18 @@ export default function StudentVerificationStatusPage() {
                     />
                     {docPreviewUrl && (
                       <div style={{ marginTop: '10px' }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={docPreviewUrl}
-                          alt="Front Preview"
-                          style={{ width: '100%', maxHeight: '110px', objectFit: 'contain', borderRadius: '6px', background: '#0a0a0f' }}
-                        />
+                        {docPreviewMime?.startsWith('image/') ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={docPreviewSourceUrl || docPreviewUrl}
+                            alt="Front Preview"
+                            style={{ width: '100%', maxHeight: '110px', objectFit: 'contain', borderRadius: '6px', background: '#0a0a0f' }}
+                          />
+                        ) : (
+                          <a href={docPreviewSourceUrl || docPreviewUrl} target="_blank" rel="noreferrer">
+                            Open saved front ID document
+                          </a>
+                        )}
                         <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '4px' }}>✓ Front ID Ready</div>
                       </div>
                     )}
@@ -723,10 +872,13 @@ export default function StudentVerificationStatusPage() {
                             return;
                           }
                           setBackFile(file);
+                          setBackPreviewMime(file.type);
                           if (file.type.startsWith('image/')) {
                             const reader = new FileReader();
                             reader.onload = ev => {
-                              setBackPreviewUrl(ev.target?.result as string);
+                              const result = ev.target?.result as string;
+                              setBackPreviewUrl(result);
+                              setBackPreviewSourceUrl(result);
                             };
                             reader.readAsDataURL(file);
                           }
@@ -736,12 +888,18 @@ export default function StudentVerificationStatusPage() {
                     />
                     {backPreviewUrl && (
                       <div style={{ marginTop: '10px' }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={backPreviewUrl}
-                          alt="Back Preview"
-                          style={{ width: '100%', maxHeight: '110px', objectFit: 'contain', borderRadius: '6px', background: '#0a0a0f' }}
-                        />
+                        {backPreviewMime?.startsWith('image/') ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={backPreviewSourceUrl || backPreviewUrl}
+                            alt="Back Preview"
+                            style={{ width: '100%', maxHeight: '110px', objectFit: 'contain', borderRadius: '6px', background: '#0a0a0f' }}
+                          />
+                        ) : (
+                          <a href={backPreviewSourceUrl || backPreviewUrl} target="_blank" rel="noreferrer">
+                            Open saved back ID document
+                          </a>
+                        )}
                         <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '4px' }}>✓ Back ID Ready</div>
                       </div>
                     )}

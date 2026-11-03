@@ -114,3 +114,34 @@ export function constructGoogleAuthUrl(options: GoogleAuthUrlOptions): string {
 
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
+
+/**
+ * Resolves the absolute callback URL for OAuth authentication.
+ * Uses window.location.origin in browser environments, or configured site/Vercel URLs in SSR.
+ */
+export function getAuthCallbackUrl(nextPath?: string): string {
+  let origin: string;
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    origin = window.location.origin;
+  } else if (process.env.NEXT_PUBLIC_SITE_URL) {
+    origin = process.env.NEXT_PUBLIC_SITE_URL;
+  } else if (process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL) {
+    origin = `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`;
+  } else if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    origin = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  } else if (process.env.VERCEL_URL) {
+    origin = `https://${process.env.VERCEL_URL}`;
+  } else {
+    origin = 'http://localhost:3000';
+  }
+
+  origin = origin.replace(/\/+$/, '');
+  const baseCallback = `${origin}/api/auth/callback`;
+
+  if (!nextPath) return baseCallback;
+  const safeNext = sanitizeRedirectUrl(nextPath, '');
+  if (safeNext && safeNext !== '/student') {
+    return `${baseCallback}?next=${encodeURIComponent(safeNext)}`;
+  }
+  return baseCallback;
+}
