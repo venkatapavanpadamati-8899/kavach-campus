@@ -71,4 +71,10 @@ describe('Staff Hierarchy & Role Management', () => {
     expect(security?.level).toBe(16);
     expect(security?.category).toBe('SAFETY');
   });
+
+  it('keeps /admin/campus/register publicly accessible in the proxy middleware contract', () => {
+    const fs = require('node:fs');
+    const proxySource = fs.readFileSync('src/proxy.ts', 'utf8');
+    expect(proxySource).toContain("pathname === '/admin/campus/register'");
+  });
 });

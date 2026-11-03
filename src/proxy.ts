@@ -26,8 +26,8 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/super-admin/login', request.url));
   }
 
-  // Dedicated Administrator and Super Admin login pages are public
-  if (pathname === '/super-admin/login' || pathname === '/admin/login') {
+  // Dedicated Administrator, Super Admin login, and Campus Admin registration pages are public
+  if (pathname === '/super-admin/login' || pathname === '/admin/login' || pathname === '/admin/campus/register') {
     return supabaseResponse;
   }
 
