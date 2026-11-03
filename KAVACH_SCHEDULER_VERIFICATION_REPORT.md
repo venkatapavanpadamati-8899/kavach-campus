@@ -64,3 +64,4 @@ To achieve 100% green runs on GitHub Actions:
 3. Open Vercel Project -> **Settings** -> **Environment Variables**.
    - Add `CRON_SECRET` with the exact same secret value for Production, Preview, and Development.
 4. Redeploy Vercel and trigger **Run workflow** in GitHub Actions.
+

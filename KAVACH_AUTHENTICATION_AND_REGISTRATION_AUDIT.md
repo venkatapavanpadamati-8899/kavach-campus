@@ -49,3 +49,4 @@
 - **Google OAuth:** Integrated via `/api/auth/google` with PKCE authorization code callback at `/api/auth/callback`.
 - **Password Reset:** Implemented via `/forgot-password`, `/api/auth/forgot-password`, and `/reset-password` with secure token validation.
 - **Logout:** Handled via `/api/auth/logout`, clearing server session cookies and invalidating tokens.
+

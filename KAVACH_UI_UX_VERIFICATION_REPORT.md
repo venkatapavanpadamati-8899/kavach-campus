@@ -31,3 +31,4 @@
 - **Per-Page Imagery:** Unique campus background images assigned per route (`student_dashboard`, `sos`, `voice_report`, `file_report`, `safe_walk`, `my_cases`, `trusted_contacts`, `identity_verification`, `settings`).
 - **Overlay Protection:** All background images feature an optimized SVG/linear gradient overlay (`linear-gradient(135deg, rgba(2, 44, 34, 0.94) 0%, rgba(3, 7, 18, 0.92) 100%)`) ensuring that background photographs never reduce the readability of UI cards, charts, or text.
 - **Fail-Safe Fallbacks:** Offline and missing image fallbacks configured through CSS solid backdrop gradients.
+

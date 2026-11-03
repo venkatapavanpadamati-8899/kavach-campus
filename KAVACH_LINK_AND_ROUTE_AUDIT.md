@@ -77,3 +77,4 @@
 - All sidebar navigation buttons link to existing App Router pages without broken links or 404 errors.
 - Sign Out button dispatches to `/api/auth/logout`, clears session cookies, and redirects safely to `/login`.
 - Registration submit button transitions to `/verify-otp` with loading feedback and duplicate-click protection.
+
