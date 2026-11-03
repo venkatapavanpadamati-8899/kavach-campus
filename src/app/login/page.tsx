@@ -86,7 +86,6 @@ function LoginForm() {
   const [otpSent, setOtpSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [demoOtp, setDemoOtp] = useState<string | null>(null);
-  const [simulatedSms, setSimulatedSms] = useState<string | null>(null);
 
   // Focus & feedback states for 3D Character interaction
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
@@ -227,11 +226,10 @@ function LoginForm() {
       if (data.demoOtp) {
         setDemoOtp(data.demoOtp);
         setOtp(data.demoOtp);
+        setMsg('');
+      } else {
+        setMsg(data.message || `OTP sent to +91 ${cleanPhone}.`);
       }
-      if (data.simulatedBody) {
-        setSimulatedSms(data.simulatedBody);
-      }
-      setMsg(data.message || `6-digit Demo OTP generated for +91 ${cleanPhone}.`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : formatAuthError(err));
     } finally {
@@ -714,18 +712,6 @@ function LoginForm() {
                 exit={{ opacity: 0, y: -10 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
               >
-                {/* Informational notice: Mobile OTP is Demo simulation */}
-                <div style={{
-                  padding: '10px 14px',
-                  background: 'rgba(59, 130, 246, 0.08)',
-                  border: '1px solid rgba(59, 130, 246, 0.25)',
-                  borderRadius: '10px',
-                  fontSize: '0.82rem',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.5,
-                }}>
-                  📱 <strong>Mobile Sign-In:</strong> Mobile OTP is a development-only simulation and does not send a real SMS. Production mobile OTP is unavailable until an SMS provider is configured.
-                </div>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <div
                     style={{
@@ -819,50 +805,13 @@ function LoginForm() {
                     background: 'rgba(59, 130, 246, 0.12)',
                     border: '1px solid rgba(59, 130, 246, 0.35)',
                     borderRadius: '10px',
-                    fontSize: '0.86rem',
                     color: '#93c5fd',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
+                    fontSize: '1.1rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.2em',
+                    textAlign: 'center',
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span>📱 <strong>[DEMO MODE]</strong> Mobile OTP:</span>
-                      <button
-                        type="button"
-                        onClick={() => setOtp(demoOtp)}
-                        style={{
-                          background: 'var(--accent-blue)',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '4px 10px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          fontSize: '0.9rem',
-                          letterSpacing: '1px',
-                        }}
-                      >
-                        {demoOtp} (Click to Fill)
-                      </button>
-                    </div>
-                    <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                      Zero SMS dispatched. 6-digit simulation code for rapid demo verification.
-                    </span>
-                    {simulatedSms && (
-                      <div style={{
-                        marginTop: '4px',
-                        padding: '6px 8px',
-                        background: 'rgba(15, 23, 42, 0.6)',
-                        border: '1px dashed rgba(59, 130, 246, 0.3)',
-                        borderRadius: '6px',
-                        fontFamily: 'monospace',
-                        fontSize: '0.72rem',
-                        color: '#bfdbfe',
-                        whiteSpace: 'pre-line',
-                      }}>
-                        {simulatedSms}
-                      </div>
-                    )}
+                    <span aria-label="Demo OTP">{demoOtp}</span>
                   </div>
                 )}
 

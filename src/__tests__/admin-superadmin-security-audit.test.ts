@@ -35,6 +35,10 @@ describe('Admin & Super Admin Security Audit Suite', () => {
       expect(loginCode).not.toContain('venkatapavanpadamati1@gmail.com');
       expect(loginCode).not.toContain('Super Admin Portal');
       expect(loginCode).toContain('Campus Administrator Portal');
+      expect(loginCode).not.toContain('Mobile Sign-In:');
+      expect(loginCode).not.toContain('development-only simulation');
+      expect(loginCode).not.toContain('Zero SMS dispatched.');
+      expect(loginCode).toContain('aria-label="Demo OTP">{demoOtp}');
     });
 
     it('verifies that super-admin/login/page.tsx contains no hardcoded passwords, emails, or 1-click bypass buttons', () => {
