@@ -380,7 +380,7 @@ describe('Kavach Campus — Release Blocker Audit Behavioral Test Suite', () => 
       });
 
       const formData = new FormData();
-      const validFile = new File(['valid-image-bytes'], 'valid.png', { type: 'image/png' });
+      const validFile = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00])], 'valid.png', { type: 'image/png' });
       formData.append('file', validFile);
 
       const req = new Request('http://localhost:3000/api/incidents/inc-legit-uuid/evidence', {

@@ -15,6 +15,17 @@ const mockSupabase = {
   },
 };
 
+function configureFrom(tableMocks: Record<string, unknown>) {
+  const studentProfileQuery = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue({ data: { role: 'STUDENT' }, error: null }),
+  };
+  mockFrom.mockImplementation((table: string) => (
+    table === 'profiles' ? studentProfileQuery : tableMocks[table]
+  ));
+}
+
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mockSupabase)),
 }));
@@ -62,7 +73,17 @@ describe('Safe Box API (/api/student/safe-box)', () => {
         eq: vi.fn().mockReturnThis(),
         order: vi.fn().mockResolvedValue({ data: mockEvidenceList, error: null }),
       };
-      mockFrom.mockReturnValue(queryMock);
+      configureFrom({
+        evidence: queryMock,
+        safe_box_private_notes: {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockResolvedValue({
+            data: [{ evidence_id: 'ev-1', private_note: 'Owner-only context' }],
+            error: null,
+          }),
+        },
+      });
 
       mockStorageFrom.mockReturnValue({
         createSignedUrl: vi.fn().mockResolvedValue({
@@ -78,6 +99,25 @@ describe('Safe Box API (/api/student/safe-box)', () => {
       expect(json.count).toBe(1);
       expect(json.items[0].id).toBe('ev-1');
       expect(json.items[0].signedUrl).toContain('photo.jpg?token=abc');
+      expect(json.items[0].notes).toBe('Owner-only context');
+    });
+
+    it('denies access when the authenticated account is not a student', async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: studentUser }, error: null });
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'profiles') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn().mockResolvedValue({ data: { role: 'STAFF' }, error: null }),
+          };
+        }
+        return {};
+      });
+
+      const res = await GET();
+      expect(res.status).toBe(403);
+      expect(mockFrom).toHaveBeenCalledTimes(1);
     });
 
     it('returns 500 when database query fails', async () => {
@@ -88,7 +128,7 @@ describe('Safe Box API (/api/student/safe-box)', () => {
         eq: vi.fn().mockReturnThis(),
         order: vi.fn().mockResolvedValue({ data: null, error: new Error('DB connection error') }),
       };
-      mockFrom.mockReturnValue(queryMock);
+      configureFrom({ evidence: queryMock });
 
       const res = await GET();
       expect(res.status).toBe(500);
@@ -147,13 +187,49 @@ describe('Safe Box API (/api/student/safe-box)', () => {
       const res = await POST(req);
       expect(res.status).toBe(400);
       const json = await res.json();
-      expect(json.error).toContain('Unsupported format');
+      expect(json.error).toContain('Unsupported file type');
+    });
+
+    it('rejects file content that does not match the declared MIME type', async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: studentUser }, error: null });
+
+      const file = new File(['not a PNG'], 'evidence.png', { type: 'image/png' });
+      const formData = new FormData();
+      formData.set('file', file);
+      const req = new Request('http://localhost/api/student/safe-box', { method: 'POST', body: formData });
+
+      const res = await POST(req);
+      expect(res.status).toBe(400);
+      expect(mockStorageFrom).not.toHaveBeenCalled();
+    });
+
+    it('rejects a case reference that is not owned by the authenticated student', async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: studentUser }, error: null });
+
+      const caseLookup = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+      configureFrom({ incidents: caseLookup });
+
+      const file = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], 'evidence.png', { type: 'image/png' });
+      const formData = new FormData();
+      formData.set('file', file);
+      formData.set('caseId', 'CASE-OTHER-STUDENT');
+      const req = new Request('http://localhost/api/student/safe-box', { method: 'POST', body: formData });
+
+      const res = await POST(req);
+      expect(res.status).toBe(404);
+      expect(mockStorageFrom).not.toHaveBeenCalled();
+      expect(caseLookup.eq).toHaveBeenNthCalledWith(1, 'case_id', 'CASE-OTHER-STUDENT');
+      expect(caseLookup.eq).toHaveBeenNthCalledWith(2, 'student_id', studentUser.id);
     });
 
     it('successfully uploads valid evidence file and records in database', async () => {
       mockGetUser.mockResolvedValueOnce({ data: { user: studentUser }, error: null });
 
-      const file = new File(['valid photo content'], 'evidence.png', { type: 'image/png' });
+      const file = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], 'evidence.png', { type: 'image/png' });
       const formData = new FormData();
       formData.set('file', file);
       formData.set('notes', 'Suspicious person outside campus hostel');
@@ -168,7 +244,7 @@ describe('Safe Box API (/api/student/safe-box)', () => {
 
       const mockDbRow = {
         id: 'ev-new-uuid',
-        case_id: 'SAFEBOX-USR-STUD',
+        case_id: null,
         type: 'IMAGE',
         file_path: 'usr-student-123/evidence.png',
         file_name: 'evidence.png',
@@ -183,7 +259,11 @@ describe('Safe Box API (/api/student/safe-box)', () => {
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: mockDbRow, error: null }),
       };
-      mockFrom.mockReturnValue(insertMock);
+      const privateNoteInsert = vi.fn().mockResolvedValue({ error: null });
+      configureFrom({
+        evidence: insertMock,
+        safe_box_private_notes: { insert: privateNoteInsert },
+      });
 
       const req = new Request('http://localhost/api/student/safe-box', { method: 'POST', body: formData });
       const res = await POST(req);
@@ -193,6 +273,12 @@ describe('Safe Box API (/api/student/safe-box)', () => {
       expect(json.item.fileName).toBe('evidence.png');
       expect(json.item.type).toBe('IMAGE');
       expect(json.item.notes).toBe('Suspicious person outside campus hostel');
+      expect(json.item.caseId).toBeNull();
+      expect(privateNoteInsert).toHaveBeenCalledWith({
+        evidence_id: 'ev-new-uuid',
+        owner_id: studentUser.id,
+        private_note: 'Suspicious person outside campus hostel',
+      });
     });
   });
 
@@ -223,7 +309,7 @@ describe('Safe Box API (/api/student/safe-box)', () => {
         eq: vi.fn().mockReturnThis(),
         maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       };
-      mockFrom.mockReturnValue(queryMock);
+      configureFrom({ evidence: queryMock });
 
       const req = new Request('http://localhost/api/student/safe-box?id=ev-nonexistent', { method: 'DELETE' });
       const res = await DELETE(req);
@@ -245,7 +331,7 @@ describe('Safe Box API (/api/student/safe-box)', () => {
         maybeSingle: vi.fn().mockResolvedValue({ data: existingRecord, error: null }),
         delete: vi.fn().mockReturnThis(),
       };
-      mockFrom.mockReturnValue(selectMock);
+      configureFrom({ evidence: selectMock });
 
       const removeMock = vi.fn().mockResolvedValue({ error: null });
       mockStorageFrom.mockReturnValue({

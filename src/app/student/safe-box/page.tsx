@@ -31,6 +31,7 @@ interface SafeBoxItem {
   fileSize: number;
   mimeType: string;
   type?: string;
+  notes?: string | null;
   uploadedBy: string;
   createdAt: string;
   signedUrl: string | null;
@@ -386,7 +387,9 @@ export default function SafeBoxPage() {
                     className="input-field"
                     placeholder="e.g. Taken near main library steps at 4:30 PM"
                     value={privateNotes}
+                    maxLength={2000}
                     onChange={(e) => setPrivateNotes(e.target.value)}
+                    aria-label="Private Note / Context (Optional)"
                     style={{ width: '100%', padding: '8px 12px', fontSize: '0.85rem' }}
                   />
                 </div>
@@ -564,6 +567,11 @@ export default function SafeBoxPage() {
                     <span>{Math.round(item.fileSize / 1024)} KB</span>
                     <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                   </div>
+                  {item.notes && (
+                    <p style={{ margin: '10px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>
+                      Private note: {item.notes}
+                    </p>
+                  )}
 
                   {item.caseId && (
                     <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', background: 'rgba(59, 130, 246, 0.15)', color: 'var(--accent-blue)', fontSize: '0.75rem', fontWeight: 600 }}>

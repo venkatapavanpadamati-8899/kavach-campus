@@ -39,12 +39,13 @@ describe('India-Wide Engineering Colleges Directory & Pincode Lookup', () => {
   });
 
   it('supports partial prefix matching for pincodes', () => {
-    // Prefix '534' matches all three West Godavari campuses in the directory.
+    // Prefix '534' matches all four West Godavari campuses in the directory.
     const wgCols = searchColleges({ pincode: '534' });
-    expect(wgCols.length).toBe(3);
+    expect(wgCols.length).toBe(4);
     expect(wgCols.map((c) => c.shortName)).toContain('SRKR Engineering College');
     expect(wgCols.map((c) => c.shortName)).toContain('Vishnu Institute of Technology');
     expect(wgCols.map((c) => c.shortName)).toContain('DNR College of Engg');
+    expect(wgCols.map((c) => c.shortName)).toContain('Swarnandhra College of Engg');
   });
 
   it('searches colleges by name or city (case-insensitive)', () => {

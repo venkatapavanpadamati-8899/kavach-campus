@@ -184,11 +184,11 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
         animate={{ x: 0 }}
         style={{
           width: '270px',
-          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(9, 14, 26, 0.98) 100%)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderRight: '1px solid rgba(255, 255, 255, 0.10)',
-          boxShadow: '4px 0 24px rgba(0, 0, 0, 0.45)',
+          background: 'linear-gradient(180deg, #0b1329 0%, #0c1a36 45%, #071021 100%)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
+          borderRight: '1px solid rgba(56, 189, 248, 0.18)',
+          boxShadow: 'inset -1px 0 0 rgba(56, 189, 248, 0.12), 6px 0 32px rgba(2, 6, 23, 0.70)',
           display: 'flex',
           flexDirection: 'column',
           padding: '22px 14px',
@@ -269,13 +269,13 @@ function DashboardLayoutContent({ children, role }: { children: React.ReactNode,
                   display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px',
                   borderRadius: '10px', cursor: 'pointer',
                   background: isActive
-                    ? 'linear-gradient(90deg, rgba(99, 102, 241, 0.22) 0%, rgba(59, 130, 246, 0.12) 100%)'
+                    ? 'linear-gradient(90deg, rgba(37, 99, 235, 0.28) 0%, rgba(56, 189, 248, 0.14) 100%)'
                     : 'transparent',
                   border: isActive
-                    ? '1px solid rgba(129, 140, 248, 0.35)'
+                    ? '1px solid rgba(56, 189, 248, 0.45)'
                     : '1px solid transparent',
-                  color: isActive ? '#ffffff' : '#94a3b8',
-                  boxShadow: isActive ? '0 2px 10px rgba(99, 102, 241, 0.15)' : 'none',
+                  color: isActive ? '#f8fafc' : '#94a3b8',
+                  boxShadow: isActive ? '0 4px 14px rgba(37, 99, 235, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   fontSize: '0.92rem'
                 }}>

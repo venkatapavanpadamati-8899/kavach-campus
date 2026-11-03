@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { validateUploadSignature } from '@/lib/verification/upload-file';
 
 export async function GET(
   req: Request,
@@ -77,9 +78,12 @@ export async function GET(
         try {
           const rawPath = ev.file_path || '';
           const cleanPath = rawPath.replace(/^.*kavach-evidence\//, '');
-          const { data: signedData } = await supabase.storage
+          const { data: signedData, error: signedUrlError } = await supabase.storage
             .from('kavach-evidence')
             .createSignedUrl(cleanPath, 900);
+          if (signedUrlError) {
+            console.error('Incident evidence signed URL generation failed:', signedUrlError);
+          }
 
           return {
             id: ev.id,
@@ -91,7 +95,8 @@ export async function GET(
             createdAt: ev.created_at,
             signedUrl: signedData?.signedUrl || null,
           };
-        } catch {
+        } catch (error) {
+          console.error('Incident evidence signed URL generation failed unexpectedly:', error);
           return {
             id: ev.id,
             caseId: ev.case_id,
@@ -108,6 +113,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, evidence: evidenceWithUrls }, { status: 200 });
   } catch (error: unknown) {
+    console.error('Incident evidence handler failed:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal Server Error' },
       { status: 500 }
@@ -170,11 +176,12 @@ export async function POST(
 
     // 3. Process multipart form data
     const formData = await req.formData();
-    const file = formData.get('file') as File | null;
+    const fileValue = formData.get('file');
 
-    if (!file) {
+    if (!(fileValue instanceof File)) {
       return NextResponse.json({ error: 'Evidence file is required' }, { status: 400 });
     }
+    const file = fileValue;
 
     // 4. Validate file size (max 25MB)
     const MAX_FILE_SIZE = 25 * 1024 * 1024;
@@ -182,27 +189,15 @@ export async function POST(
       return NextResponse.json({ error: 'File size exceeds maximum allowed 25MB limit' }, { status: 400 });
     }
 
-    // 5. Validate MIME type
-    const ALLOWED_MIME_TYPES = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/gif',
-      'video/mp4',
-      'video/quicktime',
-      'video/webm',
-      'audio/webm',
-      'audio/ogg',
-      'audio/mpeg',
-      'audio/mp4',
-      'application/pdf'
-    ];
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    const signatureCheck = validateUploadSignature(new Uint8Array(fileBuffer), file.type);
+    if (!signatureCheck.valid || !signatureCheck.mimeType) {
       return NextResponse.json(
-        { error: 'Unsupported file type. Allowed: JPEG, PNG, WEBP, GIF, MP4, MOV, WEBM, WEBM/OGG/MP3/M4A audio, PDF' },
+        { error: signatureCheck.error || 'Unsupported or invalid file content.' },
         { status: 400 }
       );
     }
+    const mimeType = signatureCheck.mimeType;
 
     // 6. Generate secure storage path bound to parent incident
     const rawName = file.name || 'evidence';
@@ -210,15 +205,14 @@ export async function POST(
     const storagePath = `${incident.case_id}/${Date.now()}-${crypto.randomUUID().substring(0, 8)}-${cleanFileName}`;
 
     // Upload to Supabase Storage
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
-    
     // Check if service-role is configured for storage operations
     let storageClient = supabase;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     if (serviceRoleKey && serviceRoleKey.length > 30 && !serviceRoleKey.includes('placeholder')) {
       try {
         storageClient = createAdminClient();
-      } catch {
+      } catch (error) {
+        console.error('Incident evidence admin storage client initialization failed; using the authenticated client:', error);
         storageClient = supabase;
       }
     }
@@ -226,7 +220,7 @@ export async function POST(
     const { error: uploadError } = await storageClient.storage
       .from('kavach-evidence')
       .upload(storagePath, fileBuffer, {
-        contentType: file.type,
+        contentType: mimeType,
         upsert: false
       });
 
@@ -239,9 +233,9 @@ export async function POST(
 
     // 7. Insert evidence record into public.evidence table
     let evidenceType = 'DOCUMENT';
-    if (file.type.startsWith('image/')) evidenceType = 'IMAGE';
-    else if (file.type.startsWith('video/')) evidenceType = 'VIDEO';
-    else if (file.type.startsWith('audio/')) evidenceType = 'AUDIO';
+    if (mimeType.startsWith('image/')) evidenceType = 'IMAGE';
+    else if (mimeType.startsWith('video/')) evidenceType = 'VIDEO';
+    else if (mimeType.startsWith('audio/')) evidenceType = 'AUDIO';
 
     const evidenceId = crypto.randomUUID();
     const { data: evidenceRecord, error: dbError } = await supabase
@@ -253,7 +247,7 @@ export async function POST(
         file_path: storagePath,
         file_name: cleanFileName,
         file_size: file.size,
-        mime_type: file.type,
+        mime_type: mimeType,
         uploaded_by: user.id
       })
       .select()
@@ -263,7 +257,17 @@ export async function POST(
       // Storage and metadata are separate services. Remove the newly uploaded
       // object if its database record cannot be created, avoiding orphaned
       // evidence that is not visible in the case timeline.
-      await storageClient.storage.from('kavach-evidence').remove([storagePath]).catch(() => undefined);
+      console.error('Incident evidence metadata insert failed:', dbError);
+      try {
+        const { error: cleanupError } = await storageClient.storage
+          .from('kavach-evidence')
+          .remove([storagePath]);
+        if (cleanupError) {
+          console.error('Incident evidence storage cleanup after database failure failed:', cleanupError);
+        }
+      } catch (cleanupError) {
+        console.error('Incident evidence storage cleanup after database failure threw:', cleanupError);
+      }
       return NextResponse.json(
         { error: 'Failed to record evidence metadata' },
         { status: 500 }
@@ -271,18 +275,24 @@ export async function POST(
     }
 
     // 8. Generate short-lived signed URL
-    const { data: signedData } = await supabase.storage
+    const { data: signedData, error: signedUrlError } = await supabase.storage
       .from('kavach-evidence')
       .createSignedUrl(storagePath, 900);
+    if (signedUrlError) {
+      console.error('Incident evidence signed URL generation failed:', signedUrlError);
+    }
 
     // 9. Audit log
-    await supabase.from('audit_logs').insert({
+    const { error: auditLogError } = await supabase.from('audit_logs').insert({
       actor_id: user.id,
       action: 'EVIDENCE_UPLOADED',
       entity_type: 'evidence',
       entity_id: evidenceRecord.id,
       metadata: { case_id: incident.case_id, file_name: cleanFileName, file_size: file.size }
     });
+    if (auditLogError) {
+      console.error('Incident evidence audit log insert failed:', auditLogError);
+    }
 
     return NextResponse.json(
       {
@@ -293,7 +303,7 @@ export async function POST(
           fileName: cleanFileName,
           filePath: storagePath,
           fileSize: file.size,
-          mimeType: file.type,
+          mimeType,
           signedUrl: signedData?.signedUrl || null,
           createdAt: evidenceRecord.created_at
         }
@@ -302,6 +312,7 @@ export async function POST(
     );
 
   } catch (error: unknown) {
+    console.error('Incident evidence upload handler failed:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal Server Error' },
       { status: 500 }

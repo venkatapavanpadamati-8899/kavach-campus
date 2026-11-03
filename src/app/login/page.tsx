@@ -724,7 +724,7 @@ function LoginForm() {
                   color: 'var(--text-secondary)',
                   lineHeight: 1.5,
                 }}>
-                  📱 <strong>Mobile Sign-In:</strong> Enter your registered 10-digit mobile number to receive a 6-digit Demo OTP. (Real OTP is delivered via verified SMTP for email accounts).
+                  📱 <strong>Mobile Sign-In:</strong> Mobile OTP is a development-only simulation and does not send a real SMS. Production mobile OTP is unavailable until an SMS provider is configured.
                 </div>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <div

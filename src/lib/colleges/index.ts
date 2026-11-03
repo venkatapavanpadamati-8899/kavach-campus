@@ -199,6 +199,56 @@ export const INDIAN_ENGINEERING_COLLEGES: CollegeTenant[] = [
     naacGrade: 'A+'
   },
   {
+    id: 'swarnandhra-narsapur',
+    name: 'Swarnandhra College of Engineering and Technology (Autonomous)',
+    shortName: 'Swarnandhra College of Engg',
+    slug: 'swarnandhra-narsapur',
+    pincode: '534280',
+    city: 'Narsapur',
+    district: 'West Godavari',
+    state: 'Andhra Pradesh',
+    coordinates: {
+      lat: 16.4358,
+      lng: 81.6917
+    },
+    geofenceRadiusMeters: 800,
+    domain: 'swarnandhra.ac.in',
+    emergencyHelpline: '+91-8814-240588',
+    womensCellHelpline: '+91-8814-240590',
+    securityControlRoom: '+91-8814-240580',
+    ambulanceContact: '+91-8814-240599',
+    primaryColor: '#0284c7',
+    secondaryColor: '#f59e0b',
+    campusBuildings: ['Main Administrative Block', 'Mechanical Sciences Wing', 'ECE & EEE Complex', 'Girls Hostel', 'Central Library'],
+    isAutonomous: true,
+    naacGrade: 'A'
+  },
+  {
+    id: 'aditya-surampalem',
+    name: 'Aditya Engineering College (Autonomous)',
+    shortName: 'Aditya Engineering College',
+    slug: 'aditya-surampalem',
+    pincode: '533437',
+    city: 'Surampalem',
+    district: 'Kakinada',
+    state: 'Andhra Pradesh',
+    coordinates: {
+      lat: 17.0898,
+      lng: 82.0664
+    },
+    geofenceRadiusMeters: 1000,
+    domain: 'aec.edu.in',
+    emergencyHelpline: '+91-884-2326202',
+    womensCellHelpline: '+91-884-2326210',
+    securityControlRoom: '+91-884-2326200',
+    ambulanceContact: '+91-884-2326299',
+    primaryColor: '#dc2626',
+    secondaryColor: '#ea580c',
+    campusBuildings: ['Cotton Bhavan (Admin)', 'Bill Gates Bhavan (CSE)', 'Visvesvaraya Bhavan', 'Girls Hostel Wing', 'Sports Arena'],
+    isAutonomous: true,
+    naacGrade: 'A++'
+  },
+  {
     id: 'iiit-hyderabad',
     name: 'International Institute of Information Technology, Hyderabad',
     shortName: 'IIIT Hyderabad',

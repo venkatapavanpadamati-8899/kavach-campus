@@ -398,6 +398,50 @@ export const COLLEGE_BRANDINGS: Record<string, CollegeBranding> = {
     secondaryColor: '#f59e0b',
     accentGradient: 'linear-gradient(135deg, #2563eb 0%, #f59e0b 100%)',
     pageBackgrounds: VISHNU_BACKGROUNDS
+  },
+  'dnr-bhimavaram': {
+    id: 'dnr-bhimavaram',
+    name: 'DNR College of Engineering and Technology',
+    shortName: 'DNR College of Engg',
+    tagline: 'Pioneering Technical Education & Student Wellbeing',
+    logoSvg: DEFAULT_LOGO_SVG,
+    primaryColor: '#2563eb',
+    secondaryColor: '#059669',
+    accentGradient: 'linear-gradient(135deg, #2563eb 0%, #059669 100%)',
+    pageBackgrounds: DEFAULT_FALLBACK_BACKGROUNDS
+  },
+  'swarnandhra-narsapur': {
+    id: 'swarnandhra-narsapur',
+    name: 'Swarnandhra College of Engineering and Technology (Autonomous)',
+    shortName: 'Swarnandhra College of Engg',
+    tagline: 'Empowering Engineers in a Secure Campus Ecosystem',
+    logoSvg: DEFAULT_LOGO_SVG,
+    primaryColor: '#0284c7',
+    secondaryColor: '#f59e0b',
+    accentGradient: 'linear-gradient(135deg, #0284c7 0%, #f59e0b 100%)',
+    pageBackgrounds: DEFAULT_FALLBACK_BACKGROUNDS
+  },
+  'aditya-surampalem': {
+    id: 'aditya-surampalem',
+    name: 'Aditya Engineering College (Autonomous)',
+    shortName: 'Aditya Engineering College',
+    tagline: 'Technical Innovation with 24/7 Student Safety',
+    logoSvg: DEFAULT_LOGO_SVG,
+    primaryColor: '#dc2626',
+    secondaryColor: '#ea580c',
+    accentGradient: 'linear-gradient(135deg, #dc2626 0%, #ea580c 100%)',
+    pageBackgrounds: DEFAULT_FALLBACK_BACKGROUNDS
+  },
+  'jntuk-kakinada': {
+    id: 'jntuk-kakinada',
+    name: 'Jawaharlal Nehru Technological University College of Engineering Kakinada',
+    shortName: 'JNTUK Kakinada',
+    tagline: 'Premier State Technological University Campus Safety',
+    logoSvg: DEFAULT_LOGO_SVG,
+    primaryColor: '#1d4ed8',
+    secondaryColor: '#9333ea',
+    accentGradient: 'linear-gradient(135deg, #1d4ed8 0%, #9333ea 100%)',
+    pageBackgrounds: DEFAULT_FALLBACK_BACKGROUNDS
   }
 };
 
@@ -414,12 +458,24 @@ export function getCollegeBranding(collegeIdOrSlug?: string | null): CollegeBran
       return COLLEGE_BRANDINGS[normalized];
     }
     
-    // Fuzzy matching for SRKR and Vishnu variations
+    // Fuzzy matching for colleges
     if (normalized.includes('srkr') || normalized.includes('sagi rama')) {
       return COLLEGE_BRANDINGS['srkr-bhimavaram'];
     }
     if (normalized.includes('vishnu') || normalized.includes('vit')) {
       return COLLEGE_BRANDINGS['vit-bhimavaram'];
+    }
+    if (normalized.includes('dnr')) {
+      return COLLEGE_BRANDINGS['dnr-bhimavaram'];
+    }
+    if (normalized.includes('swarnandhra')) {
+      return COLLEGE_BRANDINGS['swarnandhra-narsapur'];
+    }
+    if (normalized.includes('aditya') || normalized.includes('aec')) {
+      return COLLEGE_BRANDINGS['aditya-surampalem'];
+    }
+    if (normalized.includes('jntuk') || normalized.includes('jntu')) {
+      return COLLEGE_BRANDINGS['jntuk-kakinada'];
     }
 
     // Match from registered colleges

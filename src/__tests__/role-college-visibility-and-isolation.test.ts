@@ -253,6 +253,13 @@ describe('Role-Based College Visibility & Cross-Campus Isolation Rules', () => {
       const mockClient = {
         auth: { getUser: vi.fn().mockResolvedValue({ data: { user: studentA }, error: null }) },
         from: vi.fn((table: string) => {
+          if (table === 'profiles') {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              maybeSingle: vi.fn().mockResolvedValue({ data: { role: 'STUDENT' }, error: null }),
+            };
+          }
           if (table === 'evidence') {
             return {
               select: vi.fn().mockReturnThis(),
