@@ -46,14 +46,24 @@ export default function AdminUsersPage() {
     let isMounted = true;
     async function loadData() {
       try {
-        const supabase = createClient();
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
+        // Fetch server-filtered profiles based on caller role & departmental scope
+        const uRes = await fetch('/api/admin/users');
+        if (uRes.ok) {
+          const uData = await uRes.json();
+          if (isMounted && uData.profiles) {
+            setProfiles(uData.profiles);
+          }
+        } else {
+          // Fallback to client query if endpoint returns non-200 in legacy sessions
+          const supabase = createClient();
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-        if (isMounted && data) {
-          setProfiles(data);
+          if (isMounted && data) {
+            setProfiles(data);
+          }
         }
 
         // Fetch ID card verification records

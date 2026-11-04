@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCollegeById } from '@/lib/colleges';
+import { canUserApproveRole, isStaffRole, ApprovalUser } from '@/lib/staff-roles';
 
 export async function POST(req: Request) {
   try {
@@ -12,10 +13,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check caller role
+    // Check caller profile
     const { data: callerProfile } = await supabase
       .from('profiles')
-      .select('role, is_approved, college_id')
+      .select('id, role, is_approved, college_id, department, can_manage_staff')
       .eq('id', user.id)
       .single();
 
@@ -23,14 +24,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const callerRole = callerProfile.role;
-    const isSuperAdmin = callerRole === 'SUPER_ADMIN';
-    const profileExtras = callerProfile as unknown as Record<string, unknown>;
-    const isManagementAdmin = ['MANAGEMENT', 'MANAGEMENT_ADMIN', 'PRINCIPAL'].includes(callerRole) || Boolean(profileExtras?.can_manage_staff);
-    const isMonitoringOnly = isSuperAdmin || profileExtras?.can_manage_staff === false;
-    const isAdmin = callerRole === 'ADMIN' || isSuperAdmin || isManagementAdmin;
+    const callerRole = (callerProfile.role || '').toUpperCase().trim();
+    const allowedManagementRoles = [
+      'SUPER_ADMIN',
+      'CAMPUS_ADMIN',
+      'ADMIN',
+      'MANAGEMENT',
+      'MANAGEMENT_ADMIN',
+      'PRINCIPAL',
+      'DIRECTOR',
+      'DEAN',
+      'PROVOST',
+      'VICE_PRINCIPAL',
+      'HOD',
+    ];
 
-    if (!isAdmin) {
+    if (!allowedManagementRoles.includes(callerRole)) {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
     }
 
@@ -55,71 +64,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Cannot assign SUPER_ADMIN role via standard approval' }, { status: 400 });
     }
 
-    const allowedRoles = [
-      'STUDENT',
-      'STAFF',
-      'COUNSELLOR',
-      'COUNSELOR',
-      'WOMENS_CELL',
-      'HOD',
-      'SECURITY',
-      'PRINCIPAL',
-      'PROVOST',
-      'VICE_PRINCIPAL',
-      'DEAN',
-      'PROFESSOR',
-      'ASSOCIATE_PROFESSOR',
-      'ASSISTANT_PROFESSOR',
-      'JUNIOR_PROFESSOR',
-      'LECTURER',
-      'TEACHER',
-      'ADMINISTRATIVE_OFFICER',
-      'NON_TEACHING_STAFF',
-      'CAMPUS_ADMIN',
-      'ADMIN',
-      'MENTOR',
-      'WARDEN',
-      'MANAGEMENT',
-    ];
-    if (requestedRole != null && !allowedRoles.includes(requestedRole)) {
-      return NextResponse.json({ error: 'Requested role is invalid' }, { status: 400 });
-    }
-
-    // Staff access governance: Management Admin, Campus Admin or Principal is responsible for granting staff access.
-    // Normal Admin and Super Admin are monitoring-only roles by default.
-    const staffRoles = [
-      'STAFF',
-      'COUNSELLOR',
-      'COUNSELOR',
-      'WOMENS_CELL',
-      'HOD',
-      'SECURITY',
-      'PRINCIPAL',
-      'PROVOST',
-      'VICE_PRINCIPAL',
-      'DEAN',
-      'PROFESSOR',
-      'ASSOCIATE_PROFESSOR',
-      'ASSISTANT_PROFESSOR',
-      'JUNIOR_PROFESSOR',
-      'LECTURER',
-      'TEACHER',
-      'ADMINISTRATIVE_OFFICER',
-      'NON_TEACHING_STAFF',
-      'MENTOR',
-      'WARDEN'
-    ];
-    const isStaffRole = requestedRole != null && staffRoles.includes(requestedRole);
-    if (isStaffRole && !isManagementAdmin && isMonitoringOnly) {
+    // Monitoring-only check for admins explicitly restricted via can_manage_staff = false
+    const profileExtras = callerProfile as unknown as Record<string, unknown>;
+    const isTargetStaff = requestedRole != null ? isStaffRole(requestedRole) : false;
+    if (isTargetStaff && profileExtras?.can_manage_staff === false) {
       return NextResponse.json(
         { error: 'Normal Admin and Super Admin are monitoring-only roles by default. Management Admin authorization required to grant staff access.' },
         { status: 403 }
       );
-    }
-
-    // Only SUPER_ADMIN can approve an ADMIN or CAMPUS_ADMIN account
-    if ((requestedRole === 'ADMIN' || requestedRole === 'CAMPUS_ADMIN') && !isSuperAdmin) {
-      return NextResponse.json({ error: 'Super Admin authorization required to approve Admin accounts' }, { status: 403 });
     }
 
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -138,10 +90,10 @@ export async function POST(req: Request) {
 
     const adminSupabase = createAdminClient();
 
-    // Verify target user is not a SUPER_ADMIN unless caller is also a SUPER_ADMIN
+    // Verify target user exists
     const { data: targetProfile } = await adminSupabase
       .from('profiles')
-      .select('role, college_id')
+      .select('id, role, college_id, department, is_approved')
       .eq('id', targetUserId)
       .single();
 
@@ -149,10 +101,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
     }
 
-    if (targetProfile.role === 'SUPER_ADMIN' && !isSuperAdmin) {
-      return NextResponse.json({ error: 'Cannot modify a Super Admin account without Super Admin authorization' }, { status: 403 });
+    const effectiveTargetRole = requestedRole || targetProfile.role;
+
+    // Additional check if target's existing role is staff and caller has can_manage_staff = false
+    if (isStaffRole(effectiveTargetRole) && profileExtras?.can_manage_staff === false) {
+      return NextResponse.json(
+        { error: 'Normal Admin and Super Admin are monitoring-only roles by default. Management Admin authorization required to grant staff access.' },
+        { status: 403 }
+      );
     }
 
+    // Normalizing college IDs for institutional comparison
     const callerCollegeId = callerProfile.college_id
       ? (getCollegeById(callerProfile.college_id)?.id || callerProfile.college_id)
       : null;
@@ -160,15 +119,34 @@ export async function POST(req: Request) {
       ? (getCollegeById(targetProfile.college_id)?.id || targetProfile.college_id)
       : null;
 
-    if (!isSuperAdmin && (!callerCollegeId || callerCollegeId !== targetCollegeId)) {
+    const callerUserToCheck: ApprovalUser = {
+      id: user.id,
+      role: callerRole,
+      college_id: callerCollegeId,
+      department: callerProfile.department,
+      is_approved: callerProfile.is_approved,
+    };
+
+    const targetUserToCheck: ApprovalUser = {
+      id: targetProfile.id,
+      role: effectiveTargetRole,
+      college_id: targetCollegeId,
+      department: targetProfile.department,
+      is_approved: targetProfile.is_approved,
+    };
+
+    const authCheck = canUserApproveRole(callerUserToCheck, targetUserToCheck);
+    if (!authCheck.allowed) {
       return NextResponse.json(
-        { error: 'Cannot manage users outside your assigned campus' },
+        { error: authCheck.reason || 'Forbidden: Insufficient privileges to manage this user' },
         { status: 403 }
       );
     }
 
     if (action === 'APPROVE') {
-      const updates: { is_approved: boolean; role?: string } = { is_approved: true };
+      const updates: { is_approved: boolean; role?: string } = {
+        is_approved: true,
+      };
       if (requestedRole) {
         updates.role = requestedRole;
       }
@@ -188,7 +166,13 @@ export async function POST(req: Request) {
         action: 'APPROVE_USER_ROLE',
         entity_type: 'profiles',
         entity_id: targetUserId,
-        metadata: { approvedRole: requestedRole, approverRole: callerRole },
+        metadata: {
+          approvedRole: effectiveTargetRole,
+          approverRole: callerRole,
+          approverDepartment: callerProfile.department,
+          targetDepartment: targetProfile.department,
+          collegeId: targetCollegeId,
+        },
       });
 
       return NextResponse.json({ message: 'User approved successfully', success: true });
@@ -207,7 +191,13 @@ export async function POST(req: Request) {
         action: 'REJECT_USER_ROLE',
         entity_type: 'profiles',
         entity_id: targetUserId,
-        metadata: { rejectedRole: requestedRole, approverRole: callerRole },
+        metadata: {
+          rejectedRole: effectiveTargetRole,
+          approverRole: callerRole,
+          approverDepartment: callerProfile.department,
+          targetDepartment: targetProfile.department,
+          collegeId: targetCollegeId,
+        },
       });
 
       return NextResponse.json({ message: 'User request rejected', success: true });

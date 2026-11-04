@@ -16,7 +16,10 @@ export async function GET(request: Request) {
   // Resolve true origin (handling reverse proxies & HTTPS)
   const forwardedHost = request.headers.get('x-forwarded-host');
   const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
-  const origin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : requestUrl.origin;
+  let origin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : requestUrl.origin;
+  if (process.env.NODE_ENV === 'production' && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    origin = process.env.NEXT_PUBLIC_SITE_URL || 'https://kavach-campus.vercel.app';
+  }
 
   // 1. Handle incoming OAuth provider errors
   if (oauthError) {

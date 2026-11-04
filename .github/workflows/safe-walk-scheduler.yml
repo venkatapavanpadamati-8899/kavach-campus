@@ -38,13 +38,16 @@ jobs:
 
           # Enforce that CRON_SECRET is present in repository secrets
           if [ -z "$CRON_SECRET" ]; then
-            echo "::error title=Configuration Error: Missing Secret::CRON_SECRET is not configured in GitHub Repository Secrets. The life-safety scheduler cannot run without authentication. Add CRON_SECRET under Settings -> Secrets and variables -> Actions."
-            echo "FATAL: Life-safety scheduler cannot run without authentication secret CRON_SECRET."
-            exit 1
+            if [ "$IS_DRY_RUN" = "true" ]; then
+              echo "::warning title=Missing Secret in Dry Run::CRON_SECRET is not configured in GitHub Repository Secrets. Live execution will require CRON_SECRET under Settings -> Secrets and variables -> Actions."
+            else
+              echo "::error title=Configuration Error: Missing Secret::CRON_SECRET is not configured in GitHub Repository Secrets. The life-safety scheduler cannot run without authentication. Add CRON_SECRET under Settings -> Secrets and variables -> Actions."
+              echo "FATAL: Life-safety scheduler cannot run without authentication secret CRON_SECRET."
+              exit 1
+            fi
+          else
+            echo "::add-mask::$CRON_SECRET"
           fi
-
-          # Mask CRON_SECRET immediately before any command can accidentally expose it
-          echo "::add-mask::$CRON_SECRET"
 
           # Validate target URL as strict HTTPS origin
           if ! TARGET_URL="$(node -e '

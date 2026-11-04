@@ -131,6 +131,8 @@ export function getAuthCallbackUrl(nextPath?: string): string {
     origin = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
   } else if (process.env.VERCEL_URL) {
     origin = `https://${process.env.VERCEL_URL}`;
+  } else if (process.env.NODE_ENV === 'production') {
+    origin = 'https://kavach-campus.vercel.app';
   } else {
     origin = 'http://localhost:3000';
   }

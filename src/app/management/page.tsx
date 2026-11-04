@@ -10,7 +10,7 @@ export default function ManagementDashboard() {
   const [collegeInfo, setCollegeInfo] = useState<CollegeTenant | null>(null);
   const [data, setData] = useState({
     activeIncidents: '0',
-    avgResponseTime: '2m 14s',
+    avgResponseTime: '--',
     staffOnDuty: '0',
     criticalList: [] as Array<{ id: string; case_id: string; title: string; category: string }>,
     loading: true,
@@ -62,7 +62,7 @@ export default function ManagementDashboard() {
         if (!cancelled) {
           setData({
             activeIncidents: (activeCount ?? 0).toString(),
-            avgResponseTime: '< 3 mins',
+            avgResponseTime: '< 3m (SLA Target)',
             staffOnDuty: (dutyCount ?? 0).toString(),
             criticalList: criticals ?? [],
             loading: false,
