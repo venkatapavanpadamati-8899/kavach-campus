@@ -56,6 +56,7 @@ export async function GET() {
     }
 
     const noteByEvidenceId = new Map<string, string>();
+    let notesServiceAvailable = true;
     if (rawEvidence?.length) {
       const { data: privateNotes, error: notesError } = await supabase
         .from('safe_box_private_notes')
@@ -64,12 +65,13 @@ export async function GET() {
         .in('evidence_id', rawEvidence.map((item) => item.id));
 
       if (notesError) {
-        console.error('Safe box private note fetch error:', notesError);
-        return NextResponse.json({ error: 'Failed to retrieve private Safe Box notes' }, { status: 500 });
-      }
-
-      for (const note of privateNotes || []) {
-        noteByEvidenceId.set(note.evidence_id, note.private_note);
+        notesServiceAvailable = false;
+        // Resilient fallback if migration 016 (safe_box_private_notes) is pending on remote database
+        console.warn('Safe box private note fetch warning (migration 016 pending):', notesError.message);
+      } else {
+        for (const note of privateNotes || []) {
+          noteByEvidenceId.set(note.evidence_id, note.private_note);
+        }
       }
     }
 
@@ -116,7 +118,7 @@ export async function GET() {
       })
     );
 
-    return NextResponse.json({ success: true, count: items.length, items }, { status: 200 });
+    return NextResponse.json({ success: true, count: items.length, notesServiceAvailable, items }, { status: 200 });
   } catch (err: unknown) {
     console.error('Safe box handler error:', err);
     return NextResponse.json({ error: 'An unexpected error occurred while loading Safe Box' }, { status: 500 });
@@ -208,6 +210,24 @@ export async function POST(req: Request) {
     const cleanFileName = rawName.replace(/[^a-zA-Z0-9._-]/g, '_');
     const storagePath = `${user.id}/${Date.now()}-${crypto.randomUUID().substring(0, 8)}-${cleanFileName}`;
 
+    // Duplicate submission guard (5-second debounce for identical file)
+    const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString();
+    const { data: recentDuplicate } = await supabase
+      .from('evidence')
+      .select('id, file_name, created_at')
+      .eq('uploaded_by', user.id)
+      .eq('file_name', cleanFileName)
+      .eq('file_size', file.size)
+      .gte('created_at', fiveSecondsAgo)
+      .maybeSingle();
+
+    if (recentDuplicate) {
+      return NextResponse.json(
+        { error: 'Duplicate upload detected. Please wait a few seconds before retrying.' },
+        { status: 409 }
+      );
+    }
+
     // Storage client selection
     let storageClient = supabase;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -263,6 +283,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to record evidence in database' }, { status: 500 });
     }
 
+    let notePersisted = false;
+    let noteStatus: 'SAVED' | 'UNAVAILABLE' | 'NONE' = 'NONE';
+    let noteWarning: string | null = null;
+
     if (privateNote) {
       const { error: noteError } = await supabase.from('safe_box_private_notes').insert({
         evidence_id: record.id,
@@ -271,22 +295,33 @@ export async function POST(req: Request) {
       });
 
       if (noteError) {
-        console.error('Safe box private note save failed:', noteError);
-        const { error: cleanupError } = await supabase
-          .from('evidence')
-          .delete()
-          .eq('id', record.id)
-          .eq('uploaded_by', user.id);
-        if (cleanupError) {
-          console.error('Safe box evidence cleanup after note failure failed:', cleanupError);
+        const isTableMissing = noteError.code === '42P01' || (noteError.message && noteError.message.includes('does not exist'));
+        if (isTableMissing) {
+          notePersisted = false;
+          noteStatus = 'UNAVAILABLE';
+          noteWarning = 'Private note persistence is temporarily unavailable (migration 016 pending). Evidence file was securely saved without the note.';
+          console.warn('Safe box private note save skipped: migration 016 table safe_box_private_notes is pending');
+        } else {
+          console.error('Safe box private note save failed:', noteError);
+          const { error: cleanupError } = await supabase
+            .from('evidence')
+            .delete()
+            .eq('id', record.id)
+            .eq('uploaded_by', user.id);
+          if (cleanupError) {
+            console.error('Safe box evidence cleanup after note failure failed:', cleanupError);
+          }
+          const { error: storageCleanupError } = await storageClient.storage
+            .from('kavach-evidence')
+            .remove([storagePath]);
+          if (storageCleanupError) {
+            console.error('Safe box storage cleanup after note failure failed:', storageCleanupError);
+          }
+          return NextResponse.json({ error: 'Failed to save the private note; the upload was rolled back.' }, { status: 500 });
         }
-        const { error: storageCleanupError } = await storageClient.storage
-          .from('kavach-evidence')
-          .remove([storagePath]);
-        if (storageCleanupError) {
-          console.error('Safe box storage cleanup after note failure failed:', storageCleanupError);
-        }
-        return NextResponse.json({ error: 'Failed to save the private note; the upload was rolled back.' }, { status: 500 });
+      } else {
+        notePersisted = true;
+        noteStatus = 'SAVED';
       }
     }
 
@@ -298,10 +333,17 @@ export async function POST(req: Request) {
       console.error('Safe box preview URL generation failed:', signedUrlError);
     }
 
+    const message = noteStatus === 'UNAVAILABLE'
+      ? 'Evidence file secured in Safe Box, but private note could not be saved (notes service unavailable).'
+      : 'Evidence successfully secured in your Safe Box';
+
     return NextResponse.json(
       {
         success: true,
-        message: 'Evidence successfully secured in your Safe Box',
+        message,
+        noteSaved: notePersisted,
+        noteStatus,
+        ...(noteWarning ? { warning: noteWarning } : {}),
         item: {
           id: record.id,
           caseId: record.case_id,
@@ -309,7 +351,7 @@ export async function POST(req: Request) {
           fileSize: record.file_size,
           mimeType: record.mime_type,
           type: record.type,
-          notes: privateNote || null,
+          notes: notePersisted ? privateNote : null,
           createdAt: record.created_at,
           signedUrl: signedData?.signedUrl || null,
         },

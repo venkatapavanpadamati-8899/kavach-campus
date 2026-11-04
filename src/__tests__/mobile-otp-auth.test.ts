@@ -823,7 +823,7 @@ describe('Kavach Campus — Mobile Demo OTP Authentication & Email Separation Su
 
       expect(res.status).toBe(200);
       expect(json.success).toBe(true);
-      expect(json.accountExists).toBe(false);
+      expect(json.accountExists).toBeUndefined();
       expect(json.message).toContain('If an account exists with these matching credentials');
     });
   });

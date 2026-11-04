@@ -105,8 +105,8 @@ test.describe('Authentication & User Interface Flows', () => {
     expect(await regInput.getAttribute('placeholder')).toContain('Registration Number');
 
     // 3. Department and Academic Year selectors
-    const deptSelect = page.locator('select[name="department"]');
-    await expect(deptSelect).toBeVisible();
+    const deptElement = page.locator('input[name="department"], select[name="department"]');
+    await expect(deptElement).toBeVisible();
     const yearSelect = page.locator('select[name="academicYear"]');
     await expect(yearSelect).toBeVisible();
 
@@ -118,15 +118,21 @@ test.describe('Authentication & User Interface Flows', () => {
     await page.locator('input[name="name"]').fill('Test Student');
     await emailInputs.first().fill('test.student@srkr.edu.in');
     await page.locator('input[name="password"]').fill('ValidPassword123!');
+    const phoneInput = page.locator('input[name="phone"]');
+    if (await phoneInput.isVisible()) {
+      await phoneInput.fill('9876543210');
+    }
     await regInput.fill('12345'); // only 5 chars (< 8)
-    await deptSelect.selectOption({ index: 1 });
-    await yearSelect.selectOption('1st Year');
+    const consentBox = page.locator('input[type="checkbox"]');
+    if (await consentBox.isVisible()) {
+      await consentBox.check();
+    }
     await page.locator('button[type="submit"]').click();
     await page.waitForTimeout(500);
 
     // Verify error message for registration number
     const pageContent = await page.textContent('body');
-    expect(pageContent).toMatch(/8, 9, or 10 characters|Registration Number/i);
+    expect(pageContent).toMatch(/7 to 10|8, 9, or 10 characters|Registration Number/i);
   });
 
   test('Legacy .html URLs redirect smoothly to canonical routes without loops', async ({ page }) => {

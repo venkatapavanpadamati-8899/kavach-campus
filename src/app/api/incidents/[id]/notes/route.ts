@@ -20,7 +20,7 @@ export async function GET(
     // 2. Fetch incident to check authorization & tenant
     const { data: incident, error: incError } = await supabase
       .from('incidents')
-      .select('id, case_id, user_id, college_id')
+      .select('id, case_id, student_id, college_id')
       .eq(isUuid ? 'id' : 'case_id', id)
       .single();
 
@@ -42,7 +42,8 @@ export async function GET(
     ].includes(role);
 
     // If student, can only view notes if they created the incident
-    if (!isPrivileged && incident.user_id !== user.id) {
+    const incidentOwnerId = (incident as any).student_id || (incident as any).user_id;
+    if (!isPrivileged && incidentOwnerId !== user.id) {
       return NextResponse.json(
         { error: 'Forbidden: You do not have permission to view these notes.' },
         { status: 403 }
@@ -93,7 +94,7 @@ export async function POST(
     // 2. Authorize role: only staff, security, counsellors, or administrators can add official case notes
     const { data: userProfile } = await supabase
       .from('profiles')
-      .select('id, role, full_name')
+      .select('id, role, full_name, college_id')
       .eq('id', user.id)
       .single();
 
@@ -123,12 +124,20 @@ export async function POST(
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     const { data: incident, error: incError } = await supabase
       .from('incidents')
-      .select('id, case_id, status')
+      .select('id, case_id, status, college_id')
       .eq(isUuid ? 'id' : 'case_id', id)
       .single();
 
     if (incError || !incident) {
       return NextResponse.json({ error: 'Incident not found' }, { status: 404 });
+    }
+
+    // Cross-college tenant isolation
+    if (userProfile.role !== 'SUPER_ADMIN' && (userProfile as any).college_id && incident.college_id && (userProfile as any).college_id !== incident.college_id) {
+      return NextResponse.json(
+        { error: 'Forbidden: You cannot add notes to incidents from another campus.' },
+        { status: 403 }
+      );
     }
 
     // 4. Insert into case_actions timeline

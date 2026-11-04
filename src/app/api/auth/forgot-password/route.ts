@@ -62,15 +62,16 @@ export async function POST(req: Request) {
       .eq('college_email', email)
       .single();
 
-    // Return standard success response while indicating account existence
-    const genericSuccess = (accountExists = false) => NextResponse.json({
+    // Return standard generic success response (strictly anti-enumeration: never leak account existence)
+    const genericSuccess = () => NextResponse.json({
       success: true,
-      accountExists,
       message: 'If an account exists with these matching credentials, a verification OTP has been sent.',
     });
 
     if (!profile) {
-      return genericSuccess(false);
+      // Timing attack mitigation: run dummy bcrypt hash so response time matches real user path (~80ms)
+      await bcrypt.hash('dummy-entropy-for-timing-mitigation', 10).catch(() => {});
+      return genericSuccess();
     }
 
     // Verify submitted college matches profile college without leaking account existence
@@ -84,6 +85,7 @@ export async function POST(req: Request) {
          (normProfCollege.includes('vishnu') || normProfCollege.includes('vit')));
 
       if (!isCollegeMatch) {
+        await bcrypt.hash('dummy-entropy-for-timing-mitigation', 10).catch(() => {});
         return genericSuccess();
       }
     }
@@ -95,6 +97,7 @@ export async function POST(req: Request) {
       const studentIdMatch = normalizedInput === profile.student_id.toUpperCase();
       const collegeIdMatch = profile.college_id && normalizedInput === profile.college_id.toUpperCase();
       if (!rawRegNum || (!studentIdMatch && !collegeIdMatch)) {
+        await bcrypt.hash('dummy-entropy-for-timing-mitigation', 10).catch(() => {});
         return genericSuccess();
       }
     }
@@ -146,8 +149,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        accountExists: true,
-        message: 'If an account exists with this email, a verification OTP has been sent.',
+        message: 'If an account exists with these matching credentials, a verification OTP has been sent.',
         deliveryMethod: 'EMAIL_SMTP',
       });
     }
@@ -173,8 +175,7 @@ export async function POST(req: Request) {
 
     const response = NextResponse.json({
       success: true,
-      accountExists: true,
-      message: 'If an account exists with this email, a verification OTP has been sent.',
+      message: 'If an account exists with these matching credentials, a verification OTP has been sent.',
       email,
       clientToken,
       deliveryMethod: 'DEMO_SIMULATION',

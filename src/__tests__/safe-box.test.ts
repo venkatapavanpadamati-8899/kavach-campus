@@ -257,6 +257,9 @@ describe('Safe Box API (/api/student/safe-box)', () => {
       const insertMock = {
         insert: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
         single: vi.fn().mockResolvedValue({ data: mockDbRow, error: null }),
       };
       const privateNoteInsert = vi.fn().mockResolvedValue({ error: null });

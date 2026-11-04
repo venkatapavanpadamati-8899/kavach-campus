@@ -51,11 +51,6 @@ export default function ForgotPasswordPage() {
         throw new Error(data.error || 'Failed to request password reset');
       }
 
-      if (data.accountExists === false) {
-        setError('No registered account found with this email address. Please check your credentials or create a new account.');
-        return;
-      }
-
       setSuccess(true);
     } catch (err: unknown) {
       setError((err instanceof Error ? err.message : "An unexpected error occurred") || 'Failed to send reset link');

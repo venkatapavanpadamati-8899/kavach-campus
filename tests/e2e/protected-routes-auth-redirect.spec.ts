@@ -27,14 +27,14 @@ const protectedRoutes = [
   { path: '/management/incidents', expectedRedirect: '/login?redirect=%2Fmanagement%2Fincidents' },
   { path: '/management/incidents/test-id-1', expectedRedirect: '/login?redirect=%2Fmanagement%2Fincidents%2Ftest-id-1' },
 
-  // Admin Portal (7 routes)
-  { path: '/admin', expectedRedirect: '/login?redirect=%2Fadmin' },
-  { path: '/admin/ai', expectedRedirect: '/login?redirect=%2Fadmin%2Fai' },
-  { path: '/admin/campus', expectedRedirect: '/login?redirect=%2Fadmin%2Fcampus' },
-  { path: '/admin/incidents', expectedRedirect: '/login?redirect=%2Fadmin%2Fincidents' },
-  { path: '/admin/incidents/test-id-1', expectedRedirect: '/login?redirect=%2Fadmin%2Fincidents%2Ftest-id-1' },
-  { path: '/admin/system-audit', expectedRedirect: '/login?redirect=%2Fadmin%2Fsystem-audit' },
-  { path: '/admin/users', expectedRedirect: '/login?redirect=%2Fadmin%2Fusers' },
+  // Admin Portal (7 routes) — Securely routes to dedicated Campus Admin login portal
+  { path: '/admin', expectedRedirect: '/admin/login' },
+  { path: '/admin/ai', expectedRedirect: '/admin/login?redirect=%2Fadmin%2Fai' },
+  { path: '/admin/campus', expectedRedirect: '/admin/login?redirect=%2Fadmin%2Fcampus' },
+  { path: '/admin/incidents', expectedRedirect: '/admin/login?redirect=%2Fadmin%2Fincidents' },
+  { path: '/admin/incidents/test-id-1', expectedRedirect: '/admin/login?redirect=%2Fadmin%2Fincidents%2Ftest-id-1' },
+  { path: '/admin/system-audit', expectedRedirect: '/admin/login?redirect=%2Fadmin%2Fsystem-audit' },
+  { path: '/admin/users', expectedRedirect: '/admin/login?redirect=%2Fadmin%2Fusers' },
 
   // Super Admin Portal (2 routes)
   { path: '/super-admin', expectedRedirect: '/super-admin/login' },
