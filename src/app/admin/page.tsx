@@ -19,7 +19,7 @@ export default function AdminDashboard() {
         const supabase = createClient();
         const [{ count: userCount }, { count: guardCount }, { count: criticalCount }] = await Promise.all([
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
-          supabase.from('staff_profiles').select('*', { count: 'exact', head: true }).eq('is_on_duty', true),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['SECURITY', 'STAFF', 'WARDEN', 'CAMPUS_WATCH']).eq('is_active', true),
           supabase.from('incidents').select('*', { count: 'exact', head: true }).eq('severity', 'CRITICAL'),
         ]);
 

@@ -80,7 +80,9 @@ export async function GET() {
         .from('student_profiles')
         .select('id')
         .in('claimed_college_id', campusAliases);
-      if (claimedRecordsError) {
+      if (claimedRecordsError && (claimedRecordsError.code === '42703' || claimedRecordsError.code === 'PGRST204' || (claimedRecordsError.message && claimedRecordsError.message.includes('claimed_college_id')))) {
+        // Migration 017 pending on remote database; safely bypass claimed_college_id filter
+      } else if (claimedRecordsError) {
         console.error('Fetch claimed campus verification records error:', claimedRecordsError);
         return NextResponse.json({ error: 'Failed to retrieve verification records' }, { status: 500 });
       }
@@ -112,7 +114,8 @@ export async function GET() {
     }
 
     // Fetch student verification records
-    const { data: studentProfiles, error: fetchError } = await adminSupabase
+    let studentProfiles: any[] = [];
+    const { data: spDataList, error: fetchError } = await adminSupabase
       .from('student_profiles')
       .select(`
         id,
@@ -130,9 +133,33 @@ export async function GET() {
       .in('id', studentIds)
       .order('updated_at', { ascending: false });
 
-    if (fetchError) {
+    if (fetchError && (fetchError.code === '42703' || fetchError.code === 'PGRST204' || (fetchError.message && fetchError.message.includes('claimed_college_id')))) {
+      const { data: legacySpList, error: legacyFetchError } = await adminSupabase
+        .from('student_profiles')
+        .select(`
+          id,
+          admission_type,
+          admission_year,
+          expected_graduation_year,
+          id_card_url,
+          verification_status,
+          verified_at,
+          verified_by,
+          verification_notes,
+          updated_at
+        `)
+        .in('id', studentIds)
+        .order('updated_at', { ascending: false });
+      if (legacyFetchError) {
+        console.error('Fetch student profiles error:', legacyFetchError);
+        return NextResponse.json({ error: 'Failed to retrieve verification records' }, { status: 500 });
+      }
+      studentProfiles = legacySpList || [];
+    } else if (fetchError) {
       console.error('Fetch student profiles error:', fetchError);
       return NextResponse.json({ error: 'Failed to retrieve verification records' }, { status: 500 });
+    } else {
+      studentProfiles = spDataList || [];
     }
 
     const userProfileMap = new Map((userProfiles || []).map(p => [p.id, p]));
@@ -272,13 +299,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    const { data: studentProfile, error: studentProfileError } = await adminSupabase
+    let studentProfile: any = null;
+    const { data: spPostData, error: studentProfileError } = await adminSupabase
       .from('student_profiles')
       .select('id, claimed_college_id')
       .eq('id', targetStudentId)
       .single();
-    if (studentProfileError?.code !== 'PGRST116' && studentProfileError) {
+    if (studentProfileError && (studentProfileError.code === '42703' || studentProfileError.code === 'PGRST204' || (studentProfileError.message && studentProfileError.message.includes('claimed_college_id')))) {
+      const { data: fallbackSp } = await adminSupabase
+        .from('student_profiles')
+        .select('id')
+        .eq('id', targetStudentId)
+        .single();
+      studentProfile = fallbackSp;
+    } else if (studentProfileError?.code !== 'PGRST116' && studentProfileError) {
       throw studentProfileError;
+    } else {
+      studentProfile = spPostData;
     }
     if (!studentProfile) {
       return NextResponse.json({ error: 'Student verification record not found' }, { status: 404 });

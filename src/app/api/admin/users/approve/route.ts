@@ -14,11 +14,23 @@ export async function POST(req: Request) {
     }
 
     // Check caller profile
-    const { data: callerProfile } = await supabase
+    let callerProfile: any = null;
+    const { data: cpData, error: cpErr } = await supabase
       .from('profiles')
       .select('id, role, is_approved, college_id, department, can_manage_staff')
       .eq('id', user.id)
       .single();
+
+    if (cpErr && (cpErr.code === '42703' || cpErr.code === 'PGRST204' || (cpErr.message && cpErr.message.includes('can_manage_staff')))) {
+      const { data: fallbackCp } = await supabase
+        .from('profiles')
+        .select('id, role, is_approved, college_id, department')
+        .eq('id', user.id)
+        .single();
+      callerProfile = fallbackCp;
+    } else {
+      callerProfile = cpData;
+    }
 
     if (!callerProfile || !callerProfile.is_approved) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

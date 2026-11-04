@@ -6,6 +6,7 @@ import { randomInt } from 'node:crypto';
 import { resolveCollegeIdFromEmail } from '@/lib/colleges';
 import { isSmtpConfigured, isRealEmailDeliveryEnabled, sendEmailNotification } from '@/lib/notifications';
 import { validateStudentRegistrationNumber } from '@/lib/verification/id-card';
+import { isStaffRole } from '@/lib/staff-roles';
 
 export async function POST(req: Request) {
   try {
@@ -134,7 +135,7 @@ export async function POST(req: Request) {
       'WOMENS_CELL',
       'WARDEN'
     ];
-    const finalRole = (role && allowedStaffRoles.includes(role)) ? role : 'STUDENT';
+    const finalRole = (role && (allowedStaffRoles.includes(role) || isStaffRole(role))) ? role : 'STUDENT';
 
     if (finalRole === 'STUDENT' && rawGuardianPhone && !/^[6-9]\d{9}$/.test(normalizedGuardianPhone)) {
       return NextResponse.json(

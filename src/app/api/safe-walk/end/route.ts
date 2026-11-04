@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     // Parse the request body
     const body = await request.json().catch(() => ({}));
-    const walkId = body.walkId;
+    const walkId = body.walkId || body.safeWalkId;
 
     if (!walkId) {
       return NextResponse.json({ error: 'Safe Walk ID is required' }, { status: 400 });

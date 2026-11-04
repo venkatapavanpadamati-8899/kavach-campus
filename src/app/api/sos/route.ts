@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { sendPushNotification, sendSmsNotification, insertInAppNotification } from '@/lib/notifications';
 
 
@@ -143,6 +144,40 @@ export async function POST(req: Request) {
       }, { status: 200 });
     }
     
+    // Fetch caller college_id for institutional multi-tenant routing
+    let callerCollegeId: string | null = null;
+    try {
+      const profileResult = await supabase
+        .from('profiles')
+        .select('college_id')
+        .eq('id', user.id);
+      const profileData = Array.isArray(profileResult?.data)
+        ? profileResult.data[0]
+        : profileResult?.data;
+      if (typeof profileData?.college_id === 'string' && profileData.college_id.trim().length > 0) {
+        callerCollegeId = profileData.college_id;
+      }
+    } catch (profileError) {
+      console.error('SOS caller profile lookup failed:', profileError);
+    }
+
+    if (!callerCollegeId) {
+      const metaCampus = (user.user_metadata?.campus_id || user.user_metadata?.college_id) as string | undefined;
+      if (typeof metaCampus === 'string' && metaCampus.trim().length > 0) {
+        callerCollegeId = metaCampus.trim();
+      } else {
+        try {
+          const adminClient = createAdminClient();
+          const { data: adminProf } = await adminClient.from('profiles').select('college_id').eq('id', user.id).maybeSingle();
+          if (adminProf?.college_id) {
+            callerCollegeId = adminProf.college_id;
+          }
+        } catch {
+          // ignore admin fallback
+        }
+      }
+    }
+
     // 1. Create Incident
     const caseId = `SOS-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
@@ -155,7 +190,8 @@ export async function POST(req: Request) {
       severity: isControlledTest ? 'LOW' : 'CRITICAL',
       urgency: isControlledTest ? 'LOW' : 'HIGH',
       status: isControlledTest ? 'RESOLVED' : 'RECEIVED',
-      is_tracking_active: isControlledTest ? false : true
+      is_tracking_active: isControlledTest ? false : true,
+      ...(callerCollegeId ? { college_id: callerCollegeId } : {})
     };
 
     if (hasLocation) {
@@ -229,21 +265,6 @@ export async function POST(req: Request) {
     // Do not broadcast an alert across campuses. A failed or absent profile
     // lookup deliberately falls back to escalation without notifying an
     // unrelated campus's responders.
-    let callerCollegeId: string | null = null;
-    try {
-      const profileResult = await supabase
-        .from('profiles')
-        .select('college_id')
-        .eq('id', user.id);
-      const profileData = Array.isArray(profileResult?.data)
-        ? profileResult.data[0]
-        : profileResult?.data;
-      if (typeof profileData?.college_id === 'string' && profileData.college_id.trim().length > 0) {
-        callerCollegeId = profileData.college_id;
-      }
-    } catch (profileError) {
-      console.error('SOS caller profile lookup failed:', profileError);
-    }
 
     let staffList: Array<{ id: string; role: string }> | null = [];
     if (callerCollegeId) {

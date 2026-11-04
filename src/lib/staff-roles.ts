@@ -1,3 +1,16 @@
+export type StaffCategoryType =
+  | 'LEADERSHIP'
+  | 'FACULTY'
+  | 'ACADEMIC_SUPPORT'
+  | 'ADMINISTRATIVE'
+  | 'SAFETY'
+  | 'EXECUTIVE_LEADERSHIP'
+  | 'ACADEMIC_LEADERSHIP'
+  | 'TEACHING_FACULTY'
+  | 'STUDENT_SUPPORT'
+  | 'ADMINISTRATION'
+  | 'CAMPUS_OPERATIONS';
+
 export interface StaffRoleDefinition {
   id: string;
   code: string;
@@ -5,9 +18,22 @@ export interface StaffRoleDefinition {
   label: string;
   rank: number;
   level: number; // 1 is highest (Principal), 16 is lowest (Security Officer)
-  category: 'LEADERSHIP' | 'FACULTY' | 'ACADEMIC_SUPPORT' | 'ADMINISTRATIVE' | 'SAFETY';
+  category: StaffCategoryType;
   description: string;
   requiresApproval: boolean;
+}
+
+export interface StaffDesignationOption {
+  code: string;
+  title: string;
+  description?: string;
+}
+
+export interface StaffCategoryDefinition {
+  id: StaffCategoryType;
+  title: string;
+  description: string;
+  roles: StaffDesignationOption[];
 }
 
 /**
@@ -49,32 +75,178 @@ export const STAFF_HIERARCHY: StaffRoleDefinition[] = [
   { id: 'SECURITY', code: 'SECURITY', title: 'Security Officer / Campus Watch', label: 'Security Officer', rank: 16, level: 16, category: 'SAFETY', description: 'Gate Security, Perimeter Patrol & Rapid Response Staff', requiresApproval: true },
 ];
 
+export const STAFF_CATEGORY_CATALOG: StaffCategoryDefinition[] = [
+  {
+    id: 'EXECUTIVE_LEADERSHIP',
+    title: 'Category A: Executive Leadership',
+    description: 'Strategic campus leadership and oversight.',
+    roles: [
+      { code: 'PRINCIPAL', title: 'Principal' },
+      { code: 'PROVOST', title: 'Provost' },
+      { code: 'VICE_PRINCIPAL', title: 'Vice Principal' },
+    ],
+  },
+  {
+    id: 'ACADEMIC_LEADERSHIP',
+    title: 'Category B: Academic Leadership',
+    description: 'Academic governance and department leadership.',
+    roles: [
+      { code: 'DEAN_ACADEMICS', title: 'Dean – Academics' },
+      { code: 'DEAN_STUDENT_AFFAIRS', title: 'Dean – Student Affairs' },
+      { code: 'ASSOCIATE_DEAN', title: 'Associate Dean' },
+      { code: 'HOD', title: 'Head of Department (HOD)' },
+    ],
+  },
+  {
+    id: 'TEACHING_FACULTY',
+    title: 'Category C: Teaching Faculty',
+    description: 'Instructional and teaching staff roles.',
+    roles: [
+      { code: 'PROFESSOR', title: 'Professor' },
+      { code: 'ASSOCIATE_PROFESSOR', title: 'Associate Professor' },
+      { code: 'ASSISTANT_PROFESSOR', title: 'Assistant Professor' },
+      { code: 'JUNIOR_PROFESSOR', title: 'Junior Professor' },
+      { code: 'LECTURER', title: 'Lecturer' },
+      { code: 'TEACHER', title: 'Teacher / Instructor' },
+    ],
+  },
+  {
+    id: 'STUDENT_SUPPORT',
+    title: 'Category D: Student Support',
+    description: 'Student mentoring, counselling and wellbeing support.',
+    roles: [
+      { code: 'MENTOR', title: 'Mentor' },
+      { code: 'FACULTY_ADVISOR', title: 'Faculty Advisor' },
+      { code: 'STUDENT_COUNSELLOR', title: 'Student Counsellor' },
+      { code: 'PSYCHOLOGICAL_COUNSELLOR', title: 'Psychological Counsellor' },
+      { code: 'STUDENT_WELFARE_OFFICER', title: 'Student Welfare Officer' },
+    ],
+  },
+  {
+    id: 'ADMINISTRATION',
+    title: 'Category E: Administration',
+    description: 'Institutional administration and support services.',
+    roles: [
+      { code: 'ADMINISTRATIVE_OFFICER', title: 'Administrative Officer (AO)' },
+      { code: 'OFFICE_SUPERINTENDENT', title: 'Office Superintendent' },
+      { code: 'ADMINISTRATIVE_ASSISTANT', title: 'Administrative Assistant' },
+      { code: 'ACCOUNTS_OFFICER', title: 'Accounts Officer' },
+      { code: 'EXAMINATION_CELL_STAFF', title: 'Examination Cell Staff' },
+      { code: 'ADMISSION_OFFICER', title: 'Admission Officer' },
+    ],
+  },
+  {
+    id: 'CAMPUS_OPERATIONS',
+    title: 'Category F: Campus Operations',
+    description: 'Safety, support and operations coverage for the campus.',
+    roles: [
+      { code: 'SECURITY', title: 'Security Officer' },
+      { code: 'CAMPUS_WATCH', title: 'Campus Watch' },
+      { code: 'TECHNICAL_SUPPORT_STAFF', title: 'Technical Support Staff' },
+      { code: 'MAINTENANCE_STAFF', title: 'Maintenance Staff' },
+      { code: 'NON_TEACHING_STAFF', title: 'Non-Teaching Staff' },
+      { code: 'GENERAL_STAFF_MEMBER', title: 'General Staff Member' },
+    ],
+  },
+];
+
+export const STAFF_DESIGNATION_ALIASES: Record<string, string> = {
+  'DEAN ACADEMICS': 'DEAN_ACADEMICS',
+  'DEAN – ACADEMICS': 'DEAN_ACADEMICS',
+  'DEAN - ACADEMICS': 'DEAN_ACADEMICS',
+  'DEAN STUDENT AFFAIRS': 'DEAN_STUDENT_AFFAIRS',
+  'DEAN – STUDENT AFFAIRS': 'DEAN_STUDENT_AFFAIRS',
+  'DEAN - STUDENT AFFAIRS': 'DEAN_STUDENT_AFFAIRS',
+  'ASSOCIATE DEAN': 'ASSOCIATE_DEAN',
+  'FACULTY ADVISOR': 'FACULTY_ADVISOR',
+  'STUDENT COUNSELLOR': 'STUDENT_COUNSELLOR',
+  'STUDENT COUNSELOR': 'STUDENT_COUNSELLOR',
+  'PSYCHOLOGICAL COUNSELLOR': 'PSYCHOLOGICAL_COUNSELLOR',
+  'PSYCHOLOGICAL COUNSELOR': 'PSYCHOLOGICAL_COUNSELLOR',
+  'STUDENT WELFARE OFFICER': 'STUDENT_WELFARE_OFFICER',
+  'OFFICE SUPERINTENDENT': 'OFFICE_SUPERINTENDENT',
+  'ADMINISTRATIVE ASSISTANT': 'ADMINISTRATIVE_ASSISTANT',
+  'ACCOUNTS OFFICER': 'ACCOUNTS_OFFICER',
+  'EXAMINATION CELL STAFF': 'EXAMINATION_CELL_STAFF',
+  'ADMISSION OFFICER': 'ADMISSION_OFFICER',
+  'CAMPUS WATCH': 'CAMPUS_WATCH',
+  'TECHNICAL SUPPORT STAFF': 'TECHNICAL_SUPPORT_STAFF',
+  'MAINTENANCE STAFF': 'MAINTENANCE_STAFF',
+  'GENERAL STAFF MEMBER': 'GENERAL_STAFF_MEMBER',
+  'SECURITY OFFICER': 'SECURITY',
+  'CAMPUS WATCH OFFICER': 'CAMPUS_WATCH',
+};
+
 export function getStaffRoleByCode(code: string): StaffRoleDefinition | undefined {
   if (!code) return undefined;
-  const norm = code.toUpperCase().trim();
-  return STAFF_HIERARCHY.find(r => r.code === norm || r.id === norm || r.label.toUpperCase() === norm || r.title.toUpperCase() === norm);
+  const norm = code.toUpperCase().trim().replace(/[–—_-]+/g, ' ');
+  const aliasTarget = STAFF_DESIGNATION_ALIASES[norm.replace(/\s+/g, ' ').trim()] || STAFF_DESIGNATION_ALIASES[norm];
+
+  const candidate = aliasTarget ? aliasTarget : norm;
+
+  const direct = STAFF_HIERARCHY.find(r => r.code === candidate || r.id === candidate || r.label.toUpperCase() === candidate || r.title.toUpperCase() === candidate);
+  if (direct) return direct;
+
+  const additional = STAFF_CATEGORY_CATALOG.flatMap(category =>
+    category.roles.map(role => ({
+      ...role,
+      id: role.code,
+      label: role.title,
+      rank: 0,
+      level: 0,
+      category: category.id,
+      description: `${category.title}: ${role.title}`,
+      requiresApproval: true,
+    } as StaffRoleDefinition))
+  );
+
+  const matchedAdditional = additional.find(r =>
+    r.code === candidate || r.id === candidate || r.label.toUpperCase() === candidate || r.title.toUpperCase() === candidate
+  );
+
+  return matchedAdditional;
 }
 
 export function isStaffRole(role: string): boolean {
   if (!role || typeof role !== 'string') return false;
   const norm = role.toUpperCase().trim();
   if (norm === 'STUDENT' || norm === 'SUPER_ADMIN' || norm === 'SUPER ADMIN') return false;
-  return STAFF_HIERARCHY.some(r => r.code === norm || r.id === norm || r.label.toUpperCase() === norm || r.title.toUpperCase() === norm) ||
-    norm === 'STAFF' || norm === 'WOMENS_CELL' || norm === 'WARDEN' || norm === 'COUNSELLOR';
+
+  const aliasTarget = STAFF_DESIGNATION_ALIASES[norm.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()] || STAFF_DESIGNATION_ALIASES[norm];
+  const normalized = aliasTarget || norm;
+
+  const matchesHierarchy = STAFF_HIERARCHY.some(r => r.code === normalized || r.id === normalized || r.label.toUpperCase() === normalized || r.title.toUpperCase() === normalized);
+  if (matchesHierarchy) return true;
+
+  const matchesCatalog = STAFF_CATEGORY_CATALOG.some(category =>
+    category.roles.some(r => r.code === normalized || r.title.toUpperCase() === normalized)
+  );
+  if (matchesCatalog) return true;
+
+  return norm === 'STAFF' || norm === 'WOMENS_CELL' || norm === 'WARDEN' || norm === 'COUNSELLOR' ||
+    norm === 'FACULTY_ADVISOR' || norm === 'STUDENT_COUNSELLOR' || norm === 'PSYCHOLOGICAL_COUNSELLOR' ||
+    norm === 'STUDENT_WELFARE_OFFICER' || norm === 'GENERAL_STAFF_MEMBER' || norm === 'CAMPUS_WATCH' ||
+    norm === 'OFFICE_SUPERINTENDENT' || norm === 'ADMINISTRATIVE_ASSISTANT' || norm === 'ACCOUNTS_OFFICER';
 }
 
 export function isManagementRole(role: string): boolean {
   if (!role || typeof role !== 'string') return false;
-  const norm = role.toUpperCase().trim();
-  return norm === 'PRINCIPAL' ||
-    norm === 'PROVOST' ||
-    norm === 'VICE PRINCIPAL' ||
-    norm === 'VICE_PRINCIPAL' ||
-    norm === 'DEAN' ||
-    norm === 'HOD' ||
-    norm === 'HEAD OF DEPARTMENT (HOD)' ||
-    norm === 'MANAGEMENT' ||
-    norm === 'CAMPUS_ADMIN';
+  const norm = role.toUpperCase().trim().replace(/[–—_-]+/g, ' ');
+  const normalized = STAFF_DESIGNATION_ALIASES[norm.replace(/\s+/g, ' ').trim()] || norm.replace(/\s+/g, ' ').trim();
+
+  const adminAliases = ['CAMPUS_ADMIN', 'CAMPUS ADMIN', 'ADMIN', 'MANAGEMENT', 'MANAGEMENT_ADMIN', 'MANAGEMENT ADMIN'];
+  return normalized === 'PRINCIPAL' ||
+    normalized === 'PROVOST' ||
+    normalized === 'VICE PRINCIPAL' ||
+    normalized === 'VICE_PRINCIPAL' ||
+    normalized === 'DEAN' ||
+    normalized === 'DEAN_ACADEMICS' ||
+    normalized === 'DEAN_STUDENT_AFFAIRS' ||
+    normalized === 'ASSOCIATE_DEAN' ||
+    normalized === 'HOD' ||
+    normalized === 'HEAD OF DEPARTMENT (HOD)' ||
+    adminAliases.includes(normalized) ||
+    normalized === 'CAMPUS_ADMIN';
 }
 
 export interface ApprovalUser {
@@ -268,7 +440,7 @@ export function canUserApproveRole(
   }
 
   // 6. Target is Department Faculty / Staff
-  if (FACULTY_AND_STAFF_ROLES.includes(targetRole) || targetRole === 'STAFF') {
+  if (FACULTY_AND_STAFF_ROLES.includes(targetRole) || targetRole === 'STAFF' || isStaffRole(targetRole)) {
     // Campus Admin & Principal can approve any staff in their verified college
     if (['CAMPUS_ADMIN', 'ADMIN', 'MANAGEMENT', 'MANAGEMENT_ADMIN', 'PRINCIPAL', 'DIRECTOR'].includes(callerRole)) {
       return { allowed: true };

@@ -43,7 +43,7 @@ export default function ManagementDashboard() {
         }
 
         let incidentQuery = supabase.from('incidents').select('*', { count: 'exact', head: true }).neq('status', 'RESOLVED');
-        let dutyQuery = supabase.from('staff_profiles').select('*', { count: 'exact', head: true }).eq('is_on_duty', true);
+        let dutyQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['SECURITY', 'STAFF', 'WARDEN', 'CAMPUS_WATCH']).eq('is_active', true);
         let criticalQuery = supabase.from('incidents').select('id, case_id, title, category').eq('severity', 'CRITICAL').neq('status', 'RESOLVED').limit(5);
 
         // Strict cross-college data isolation: College management sees only their own college's incidents and staff

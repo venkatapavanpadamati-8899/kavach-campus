@@ -459,9 +459,17 @@ export async function POST(req: Request) {
       ...(decision.status === 'VERIFIED' ? { verified_at: new Date().toISOString() } : {}),
     };
 
-    const { error: upsertError } = await adminSupabase
+    let { error: upsertError } = await adminSupabase
       .from('student_profiles')
       .upsert(updates, { onConflict: 'id' });
+
+    if (upsertError && (upsertError.code === 'PGRST204' || upsertError.code === '42703' || (upsertError.message && upsertError.message.includes('claimed_college_id')))) {
+      const { claimed_college_id: _claimed_college_id, ...legacyUpdates } = updates as any;
+      const retryResult = await adminSupabase
+        .from('student_profiles')
+        .upsert(legacyUpdates, { onConflict: 'id' });
+      upsertError = retryResult.error;
+    }
 
     if (upsertError) {
       console.error('Upsert student profile error:', upsertError);

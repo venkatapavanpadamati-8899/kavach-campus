@@ -8,7 +8,7 @@ import { validateStudentRegistrationNumber } from '@/lib/verification/id-card';
 import { InteractiveSafetyCharacter } from '@/components/animations/InteractiveSafetyCharacter';
 import { getAuthCallbackUrl } from '@/lib/oauth';
 import { CollegeSearchInput } from '@/components/ui/CollegeSearchInput';
-import { STAFF_HIERARCHY } from '@/lib/staff-roles';
+import { STAFF_CATEGORY_CATALOG, STAFF_HIERARCHY } from '@/lib/staff-roles';
 import { CollegeTenant } from '@/lib/colleges';
 
 // Comprehensive branch-to-department mapping across academic programs
@@ -54,6 +54,8 @@ const BRANCH_DEPARTMENT_MAP: Record<string, string> = {
 export default function RegisterPage() {
   const router = useRouter();
   const [selectedCollege, setSelectedCollege] = useState<CollegeTenant | null>(null);
+  const [selectedStaffCategory, setSelectedStaffCategory] = useState<string>('');
+  const [staffDesignationSearch, setStaffDesignationSearch] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -66,7 +68,9 @@ export default function RegisterPage() {
     branch: 'CSE',
     department: 'Computer Science and Engineering',
     section: 'A',
-    academicYear: 'Year 1'
+    academicYear: 'Year 1',
+    staffCategory: '',
+    designation: ''
   });
   const [customDepartment, setCustomDepartment] = useState('');
   // Consent must be an affirmative action; never pre-select the agreement.
@@ -109,6 +113,28 @@ export default function RegisterPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const staffCatalog = STAFF_CATEGORY_CATALOG;
+  const normalizedDesignationSearch = staffDesignationSearch.trim().toLowerCase();
+  const visibleStaffRoles = selectedStaffCategory
+    ? staffCatalog.find(category => category.id === selectedStaffCategory)?.roles.filter(role => {
+        const haystack = `${role.title} ${role.code}`.toLowerCase();
+        return !normalizedDesignationSearch || haystack.includes(normalizedDesignationSearch);
+      }) || []
+    : staffCatalog.flatMap(category => category.roles.filter(role => {
+        const haystack = `${role.title} ${role.code}`.toLowerCase();
+        return !normalizedDesignationSearch || haystack.includes(normalizedDesignationSearch);
+      }));
+
+  const handleStaffCategoryChange = (categoryId: string) => {
+    setSelectedStaffCategory(categoryId);
+    setFormData(prev => ({ ...prev, staffCategory: categoryId, designation: '' }));
+  };
+
+  const handleStaffDesignationSelect = (roleCode: string, roleTitle: string) => {
+    setFormData(prev => ({ ...prev, role: 'STAFF', designation: roleCode, staffCategory: selectedStaffCategory }));
+    setStaffDesignationSearch(roleTitle);
   };
 
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -200,11 +226,18 @@ export default function RegisterPage() {
           setLoading(false);
           return;
         }
+        if (!formData.designation) {
+          setError('Please select a valid staff designation from the catalog.');
+          setLoading(false);
+          return;
+        }
       }
 
       const isPrivilegedSelfRole = ['ADMIN', 'SUPER_ADMIN', 'MANAGEMENT', 'PRINCIPAL', 'HOD', 'PROVOST', 'VICE_PRINCIPAL', 'DEAN'].includes(formData.role);
       const apiRole = isPrivilegedSelfRole ? 'STAFF' : formData.role;
-      const requestedDesignation = formData.role !== 'STUDENT' ? formData.role : undefined;
+      const requestedDesignation = formData.role !== 'STUDENT'
+        ? (formData.designation || formData.role || 'STAFF')
+        : undefined;
 
       const payload = {
         name: formData.name.trim(),
@@ -622,38 +655,113 @@ export default function RegisterPage() {
               </div>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div style={{ position: 'relative' }}>
-                <Briefcase size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
-                <select
-                  name="role"
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ position: 'relative' }}>
+                  <Briefcase size={18} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-muted)' }} />
+                  <select
+                    name="role"
+                    className="input-field"
+                    style={{ paddingLeft: '44px', appearance: 'none', background: 'rgba(16, 185, 129, 0.08)', color: '#ecfdf5' }}
+                    value={formData.role}
+                    onChange={(e) => {
+                      const nextRole = e.target.value;
+                      setFormData(prev => ({ ...prev, role: nextRole, designation: '' }));
+                      setSelectedStaffCategory('');
+                    }}
+                    required
+                  >
+                    <option value="STAFF" style={{ background: '#041f16' }}>General Staff Member</option>
+                    {STAFF_HIERARCHY.map((staffRole) => (
+                      <option key={staffRole.code} value={staffRole.code} style={{ background: '#041f16' }}>
+                        {staffRole.level}. {staffRole.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <input
+                  type="text"
+                  name="registrationNumber"
+                  placeholder="Staff ID (7-10 Chars)"
                   className="input-field"
-                  style={{ paddingLeft: '44px', appearance: 'none', background: 'rgba(16, 185, 129, 0.08)', color: '#ecfdf5' }}
-                  value={formData.role}
+                  value={formData.registrationNumber}
                   onChange={handleChange}
+                  minLength={7}
+                  maxLength={10}
+                  pattern="[A-Za-z0-9]{7,10}"
+                  title="Staff ID must be 7 to 10 alphanumeric characters"
                   required
-                >
-                  <option value="STAFF" style={{ background: '#041f16' }}>General Staff Member</option>
-                  {STAFF_HIERARCHY.map((staffRole) => (
-                    <option key={staffRole.code} value={staffRole.code} style={{ background: '#041f16' }}>
-                      {staffRole.level}. {staffRole.title}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
-              <input
-                type="text"
-                name="registrationNumber"
-                placeholder="Staff ID (7-10 Chars)"
-                className="input-field"
-                value={formData.registrationNumber}
-                onChange={handleChange}
-                minLength={7}
-                maxLength={10}
-                pattern="[A-Za-z0-9]{7,10}"
-                title="Staff ID must be 7 to 10 alphanumeric characters"
-                required
-              />
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ecfdf5' }}>Staff Category</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
+                  {staffCatalog.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => handleStaffCategoryChange(category.id)}
+                      style={{
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                        textAlign: 'left',
+                        border: selectedStaffCategory === category.id ? '1px solid rgba(56, 189, 248, 0.85)' : '1px solid rgba(255,255,255,0.08)',
+                        background: selectedStaffCategory === category.id ? 'rgba(56, 189, 248, 0.12)' : 'rgba(255,255,255,0.03)',
+                        color: '#ecfdf5',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: '0.8rem' }}>{category.title}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{category.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ecfdf5' }}>Designation</label>
+                <input
+                  type="text"
+                  value={staffDesignationSearch}
+                  onChange={(e) => setStaffDesignationSearch(e.target.value)}
+                  placeholder="Search designation..."
+                  className="input-field"
+                  style={{ background: 'rgba(255,255,255,0.04)', color: '#fff' }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(15,23,42,0.4)', padding: '8px' }}>
+                  {visibleStaffRoles.length === 0 ? (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', padding: '8px 4px' }}>No matching designation found. Try a different keyword.</div>
+                  ) : (
+                    visibleStaffRoles.map((role) => (
+                      <button
+                        key={role.code}
+                        type="button"
+                        onClick={() => handleStaffDesignationSelect(role.code, role.title)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: formData.designation === role.code ? '1px solid rgba(34,197,94,0.8)' : '1px solid rgba(255,255,255,0.05)',
+                          background: formData.designation === role.code ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.02)',
+                          color: '#ecfdf5',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '0.8rem' }}>{role.title}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{role.code}</div>
+                        </div>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Select</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

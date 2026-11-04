@@ -157,6 +157,17 @@ export async function POST(request: Request) {
       .select('id, status, expires_at')
       .single();
 
+    if (insertError && (insertError.code === '42703' || insertError.code === 'PGRST204' || (insertError.message && insertError.message.includes('college_id')))) {
+      delete insertPayload.college_id;
+      const retryResult = await supabase
+        .from('safe_walks')
+        .insert(insertPayload)
+        .select('id, status, expires_at')
+        .single();
+      newWalk = retryResult.data;
+      insertError = retryResult.error;
+    }
+
     // Fallback if remote schema lacks a DEFAULT generator on column "id"
     if (
       insertError &&

@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { isManagementRole, isStaffRole } from '@/lib/staff-roles';
 
 export default function DashboardRedirect() {
   const router = useRouter();
@@ -30,12 +31,12 @@ export default function DashboardRedirect() {
           router.replace('/admin');
           return;
         }
-        if (role && ['STAFF', 'COUNSELLOR', 'COUNSELOR', 'WOMENS_CELL', 'SECURITY', 'MENTOR', 'WARDEN'].includes(role)) {
-          router.replace('/staff');
+        if (role && isManagementRole(role)) {
+          router.replace('/management');
           return;
         }
-        if (role && ['HOD', 'PRINCIPAL', 'MANAGEMENT'].includes(role)) {
-          router.replace('/management');
+        if (role && isStaffRole(role)) {
+          router.replace('/staff');
           return;
         }
       } catch {

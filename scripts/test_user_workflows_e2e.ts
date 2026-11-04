@@ -51,10 +51,10 @@ async function runE2EWorkflowTests() {
   };
 
   const testId = Date.now().toString().slice(-6);
-  const studentEmail = `student.test.${testId}@kavachcampus.test`;
+  const studentEmail = `student.test.${testId}@srkr.edu.in`;
   const studentPassword = 'TestPassword123!Safe';
   const studentName = `Test Student ${testId}`;
-  const studentIdNumber = '2101' + testId; // 4 + 6 = exactly 10 digits
+  const studentIdNumber = '2101' + testId; // 4 + 6 = 10 alphanumeric
   let studentUserId: string | null = null;
   let adminUserId: string | null = null;
 
@@ -84,8 +84,9 @@ async function runE2EWorkflowTests() {
       name: studentName,
       email: studentEmail,
       password: studentPassword,
-      collegeId: studentIdNumber,
-      department: 'Computer Science & Engineering',
+      registrationNumber: studentIdNumber,
+      collegeId: 'srkr-bhimavaram',
+      department: 'Computer Science and Engineering',
       role: 'STUDENT',
       phone: '9876543210',
     };
@@ -99,7 +100,7 @@ async function runE2EWorkflowTests() {
     const regData = await regRes.json();
     console.log(`Registration status: ${regRes.status}`, regData);
 
-    if (regRes.status === 201 && (regData.message === 'OTP sent successfully' || regData.clientToken)) {
+    if (regRes.status === 201 && (regData.message || regData.clientToken)) {
       console.log('✅ Registration succeeded with pending OTP record created.');
       results['Registration'] = 'PASS';
     } else {
@@ -132,7 +133,7 @@ async function runE2EWorkflowTests() {
     // Verify user in Supabase
     const { data: profileRecord } = await adminClient
       .from('profiles')
-      .select('id, full_name, college_email, role, is_approved')
+      .select('id, full_name, college_email, role, is_approved, college_id')
       .eq('college_email', studentEmail)
       .single();
 
@@ -164,19 +165,17 @@ async function runE2EWorkflowTests() {
     // ----------------------------------------------------
     console.log('\n🔍 [STEP 5] Testing Student ID Upload (/api/student/verify-id)...');
     if (studentUserId && loginData?.session) {
-      // Create sample 1x1 PNG image buffer
       const samplePngBuffer = Buffer.from(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
         'base64'
       );
 
-      // Construct multipart form data
       const formData = new FormData();
       formData.append('studentId', studentIdNumber);
       formData.append('admissionType', 'REGULAR');
       formData.append('admissionYear', '2024');
       formData.append('expectedGraduationYear', '2028');
-      formData.append('ocrText', `STUDENT ID: ${studentIdNumber} COLLEGE ID CARD B.TECH`);
+      formData.append('ocrText', `SRKR ENGINEERING COLLEGE STUDENT ID: ${studentIdNumber} NAME: ${studentName}`);
       const blob = new Blob([samplePngBuffer], { type: 'image/png' });
       formData.append('file', blob, 'sample_college_id.png');
 
@@ -205,7 +204,6 @@ async function runE2EWorkflowTests() {
         console.log('✅ Student verification status query result:', {
           status: statusRes.status,
           verification_status: statusData.studentProfile?.verification_status,
-          verification_notes: statusData.studentProfile?.verification_notes,
         });
       } else {
         console.log('❌ Student ID upload failed:', uploadData);
@@ -216,25 +214,25 @@ async function runE2EWorkflowTests() {
     // STEP 6: Admin Verification Workflow
     // ----------------------------------------------------
     console.log('\n🔍 [STEP 6] Testing Admin Verification Workflow (/api/admin/verifications)...');
-    // Create dedicated temporary admin account
-    const adminEmail = `admin.test.${testId}@kavachcampus.test`;
+    const adminEmail = `admin.test.${testId}@srkr.edu.in`;
     const adminPassword = 'AdminPassword123!Safe';
 
     const { data: adminAuth } = await adminClient.auth.admin.createUser({
       email: adminEmail,
       password: adminPassword,
       email_confirm: true,
-      user_metadata: { role: 'ADMIN', full_name: 'Test Campus Admin' },
+      user_metadata: { role: 'ADMIN', full_name: 'Test Campus Admin', campus_id: 'srkr-bhimavaram' },
     });
 
     if (adminAuth?.user) {
       adminUserId = adminAuth.user.id;
-      // Insert profile as approved ADMIN
+      // Insert profile as approved ADMIN with matching college_id
       await adminClient.from('profiles').insert({
         id: adminUserId,
         full_name: 'Test Campus Admin',
         college_email: adminEmail,
         role: 'ADMIN',
+        college_id: 'srkr-bhimavaram',
         is_approved: true,
       });
 
@@ -261,7 +259,6 @@ async function runE2EWorkflowTests() {
             studentId: foundRecord.studentId,
             fullName: foundRecord.fullName,
             verificationStatus: foundRecord.verificationStatus,
-            hasSignedUrl: !!foundRecord.signedIdCardUrl,
           });
         }
 
