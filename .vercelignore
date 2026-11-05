@@ -17,3 +17,5 @@ dist
 supabase/.temp/
 supabase/.branches/
 tests/
+scripts/
+docs/

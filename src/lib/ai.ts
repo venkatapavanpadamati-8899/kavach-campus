@@ -23,6 +23,22 @@ function getAiClient() {
   return new GoogleGenAI({ apiKey });
 }
 
+async function withTimeout<T>(promise: Promise<T>, ms: number, errorMessage = 'AI timeout exceeded'): Promise<T> {
+  let timerId: NodeJS.Timeout | undefined;
+  // Guard against unhandled rejections if the underlying promise rejects after the timeout fires
+  promise.catch(() => {});
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timerId = setTimeout(() => reject(new Error(errorMessage)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timerId !== undefined) {
+      clearTimeout(timerId);
+    }
+  }
+}
+
 let lastConnectivityCheck: {
   timestamp: number;
   result: { connected: boolean; status: 'OPERATIONAL' | 'FALLBACK_RULES'; model: string; latencyMs?: number };
@@ -48,17 +64,15 @@ export async function checkGeminiConnectivity(): Promise<{
   try {
     const ai = getAiClient();
     const startTime = Date.now();
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('AI ping timeout')), 2500)
-    );
-    const resp = await Promise.race([
+    const resp = await withTimeout(
       ai.models.generateContent({
         model: 'gemini-flash-lite-latest',
         contents: 'Ping. Answer OK',
         config: { maxOutputTokens: 5 },
       }),
-      timeoutPromise,
-    ]);
+      2500,
+      'AI ping timeout'
+    );
     const latencyMs = Date.now() - startTime;
     if (resp && resp.text) {
       const res = { connected: true, status: 'OPERATIONAL' as const, model: 'gemini-flash-lite-latest', latencyMs };
@@ -82,21 +96,6 @@ export async function analyzeIncident(description: string): Promise<AiAnalysisRe
       urgency: 'LOW',
       confidence: 0,
       summary: 'Empty or invalid complaint text provided.',
-    };
-  }
-
-  // Fast check: if Gemini connectivity is not operational or in fallback, use instant rule engine
-  const conn = await checkGeminiConnectivity();
-  if (!conn.connected) {
-    return {
-      category: 'UNCLASSIFIED',
-      severity: 'L2',
-      urgency: 'MEDIUM',
-      confidence: 0,
-      summary: 'Automated rules fallback assessment applied.',
-      reasoning_summary: 'AI analysis bypassed due to connectivity fallback. Deterministic rules applied.',
-      recommended_roles: ['STAFF', 'CAMPUS_ADMIN'],
-      human_review_required: true,
     };
   }
 
@@ -134,13 +133,9 @@ ${sanitizedDescription}
 </complaint>
 `;
 
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('AI inference timeout')), 2500)
-    );
-
     let response;
     try {
-      response = await Promise.race([
+      response = await withTimeout(
         ai.models.generateContent({
           model: 'gemini-flash-lite-latest',
           contents: prompt,
@@ -148,10 +143,11 @@ ${sanitizedDescription}
             responseMimeType: 'application/json',
           },
         }),
-        timeoutPromise,
-      ]);
+        2500,
+        'AI inference timeout'
+      );
     } catch {
-      response = await Promise.race([
+      response = await withTimeout(
         ai.models.generateContent({
           model: 'gemini-3.5-flash-lite',
           contents: prompt,
@@ -159,8 +155,9 @@ ${sanitizedDescription}
             responseMimeType: 'application/json',
           },
         }),
-        timeoutPromise,
-      ]);
+        2500,
+        'AI fallback model timeout'
+      );
     }
 
     const text = response.text || '{}';
