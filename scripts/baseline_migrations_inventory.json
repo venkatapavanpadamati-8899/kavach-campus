@@ -1,0 +1,377 @@
+[
+  {
+    "file": "001_kavach_campus.sql",
+    "size": 12003,
+    "creates": [
+      "CREATE TABLE profiles (",
+      "CREATE TABLE user_otp_verifications (",
+      "CREATE TABLE campus_zones (",
+      "CREATE TABLE campus_buildings (",
+      "CREATE TABLE incidents (",
+      "CREATE TABLE incident_locations (",
+      "CREATE TABLE evidence (",
+      "CREATE TABLE ai_analyses (",
+      "CREATE TABLE safe_walks (",
+      "CREATE TABLE trusted_contacts (",
+      "CREATE TABLE audit_logs (",
+      "CREATE TABLE ai_configuration (",
+      "CREATE TABLE student_profiles (",
+      "CREATE TABLE staff_profiles (",
+      "CREATE TABLE incident_messages (",
+      "CREATE TABLE escalations (",
+      "CREATE TABLE notifications (",
+      "CREATE TABLE case_actions (",
+      "CREATE TABLE emergency_configuration ("
+    ],
+    "alters": [],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION update_updated_at_column()"
+    ],
+    "policiesCount": 17,
+    "sampleLines": [
+      "-- Kavach Campus Database Migration to Supabase\r",
+      "-- Full Schema\r",
+      "-- Enable UUID extension\r"
+    ]
+  },
+  {
+    "file": "001_kavach_campus_final.sql",
+    "size": 16849,
+    "creates": [
+      "CREATE TABLE IF NOT EXISTS profiles (",
+      "CREATE TABLE IF NOT EXISTS student_profiles (",
+      "CREATE TABLE IF NOT EXISTS staff_profiles (",
+      "CREATE TABLE IF NOT EXISTS user_otp_verifications (",
+      "CREATE TABLE IF NOT EXISTS campus_zones (",
+      "CREATE TABLE IF NOT EXISTS campus_buildings (",
+      "CREATE TABLE IF NOT EXISTS incidents (",
+      "CREATE TABLE IF NOT EXISTS incident_locations (",
+      "CREATE TABLE IF NOT EXISTS evidence (",
+      "CREATE TABLE IF NOT EXISTS ai_analyses (",
+      "CREATE TABLE IF NOT EXISTS escalations (",
+      "CREATE TABLE IF NOT EXISTS incident_messages (",
+      "CREATE TABLE IF NOT EXISTS case_actions (",
+      "CREATE TABLE IF NOT EXISTS notifications (",
+      "CREATE TABLE IF NOT EXISTS safe_walks (",
+      "CREATE TABLE IF NOT EXISTS trusted_contacts (",
+      "CREATE TABLE IF NOT EXISTS audit_logs (",
+      "CREATE TABLE IF NOT EXISTS ai_configuration (",
+      "CREATE TABLE IF NOT EXISTS emergency_configuration ("
+    ],
+    "alters": [],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION update_updated_at_column()"
+    ],
+    "policiesCount": 28,
+    "sampleLines": [
+      "-- Kavach Campus Database Migration to Supabase\r",
+      "-- Full Schema with Security Audit Fixes (V2)\r",
+      "-- 1. EXTENSIONS\r"
+    ]
+  },
+  {
+    "file": "002_kavach_campus_final_repair.sql",
+    "size": 20164,
+    "creates": [
+      "CREATE TABLE IF NOT EXISTS profiles (",
+      "CREATE TABLE IF NOT EXISTS student_profiles (",
+      "CREATE TABLE IF NOT EXISTS staff_profiles (",
+      "CREATE TABLE IF NOT EXISTS user_otp_verifications (",
+      "CREATE TABLE IF NOT EXISTS campus_zones (",
+      "CREATE TABLE IF NOT EXISTS campus_buildings (",
+      "CREATE TABLE IF NOT EXISTS incidents (",
+      "CREATE TABLE IF NOT EXISTS incident_locations (",
+      "CREATE TABLE IF NOT EXISTS evidence (",
+      "CREATE TABLE IF NOT EXISTS ai_analyses (",
+      "CREATE TABLE IF NOT EXISTS escalations (",
+      "CREATE TABLE IF NOT EXISTS incident_messages (",
+      "CREATE TABLE IF NOT EXISTS case_actions (",
+      "CREATE TABLE IF NOT EXISTS notifications (",
+      "CREATE TABLE IF NOT EXISTS safe_walks (",
+      "CREATE TABLE IF NOT EXISTS trusted_contacts (",
+      "CREATE TABLE IF NOT EXISTS audit_logs (",
+      "CREATE TABLE IF NOT EXISTS ai_configuration (",
+      "CREATE TABLE IF NOT EXISTS emergency_configuration ("
+    ],
+    "alters": [],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION update_updated_at_column()"
+    ],
+    "policiesCount": 31,
+    "sampleLines": [
+      "-- KAVACH CAMPUS DATABASE MIGRATION TO SUPABASE\r",
+      "-- FINAL REPAIR & SCHEMA MIGRATION\r",
+      "-- =====================================================================================\r"
+    ]
+  },
+  {
+    "file": "002_kavach_campus_schema_repair.sql",
+    "size": 4207,
+    "creates": [],
+    "alters": [
+      "ALTER TABLE safe_walks ADD COLUMN IF NOT EXISTS student_id UUID REFERENCES profiles(id) ON DELETE CASCADE;",
+      "ALTER TABLE trusted_contacts ADD COLUMN IF NOT EXISTS student_id UUID REFERENCES profiles(id) ON DELETE CASCADE;"
+    ],
+    "functions": [],
+    "policiesCount": 12,
+    "sampleLines": [
+      "-- 002_kavach_campus_schema_repair.sql\r",
+      "-- Fix schema drift, UUID vs TEXT types, and enforce STRICT Privacy.\r",
+      "-- 1. FIX EVIDENCE TABLE\r"
+    ]
+  },
+  {
+    "file": "003_kavach_campus_gps_tracking.sql",
+    "size": 2160,
+    "creates": [],
+    "alters": [
+      "ALTER TABLE incidents ADD COLUMN IF NOT EXISTS is_tracking_active BOOLEAN DEFAULT FALSE;",
+      "ALTER TABLE staff_profiles ADD COLUMN IF NOT EXISTS duty_zone_id UUID REFERENCES campus_zones(id);"
+    ],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION calculate_distance(lat1 float, lon1 float, lat2 float, lon2 float)"
+    ],
+    "policiesCount": 3,
+    "sampleLines": [
+      "-- 003_kavach_campus_gps_tracking.sql\r",
+      "-- Enable RLS on incident_locations\r",
+      "ALTER TABLE incident_locations ENABLE ROW LEVEL SECURITY;\r"
+    ]
+  },
+  {
+    "file": "004_kavach_campus_safe_walk_schema.sql",
+    "size": 1073,
+    "creates": [],
+    "alters": [
+      "ALTER TABLE safe_walks ADD COLUMN IF NOT EXISTS start_latitude DOUBLE PRECISION;",
+      "ALTER TABLE safe_walks ADD COLUMN IF NOT EXISTS start_longitude DOUBLE PRECISION;",
+      "ALTER TABLE safe_walks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;",
+      "ALTER TABLE safe_walks ADD COLUMN IF NOT EXISTS escalation_incident_id UUID REFERENCES incidents(id) ON DELETE SET NULL;",
+      "ALTER TABLE safe_walks ADD CONSTRAINT safe_walks_status_check"
+    ],
+    "functions": [],
+    "policiesCount": 0,
+    "sampleLines": [
+      "-- 004_kavach_campus_safe_walk_schema.sql\r",
+      "-- Add explicitly requested columns for tracking completion and escalation\r",
+      "ALTER TABLE safe_walks ADD COLUMN IF NOT EXISTS start_latitude DOUBLE PRECISION;\r"
+    ]
+  },
+  {
+    "file": "005_kavach_campus_rls_infinite_recursion_repair.sql",
+    "size": 8606,
+    "creates": [
+      "CREATE TABLE IF NOT EXISTS public.escalations ("
+    ],
+    "alters": [
+      "ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS type TEXT;"
+    ],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION public.get_user_role()",
+      "CREATE OR REPLACE FUNCTION public.is_staff()",
+      "CREATE OR REPLACE FUNCTION public.is_admin()",
+      "CREATE OR REPLACE FUNCTION public.is_security_or_admin()",
+      "CREATE OR REPLACE FUNCTION public.prevent_self_role_escalation()"
+    ],
+    "policiesCount": 16,
+    "sampleLines": [
+      "-- =====================================================================================\r",
+      "-- KAVACH CAMPUS: RLS INFINITE RECURSION REPAIR & ESCALATIONS TABLE PROVISIONING\r",
+      "-- =====================================================================================\r"
+    ]
+  },
+  {
+    "file": "006_provision_super_admin.sql",
+    "size": 2630,
+    "creates": [],
+    "alters": [],
+    "functions": [],
+    "policiesCount": 0,
+    "sampleLines": [
+      "-- ==============================================================================\r",
+      "-- KAVACH CAMPUS: MIGRATION 006 — SUPER ADMIN PROVISIONING SCRIPT\r",
+      "-- ==============================================================================\r"
+    ]
+  },
+  {
+    "file": "007_student_id_card_verification.sql",
+    "size": 3508,
+    "creates": [],
+    "alters": [],
+    "functions": [],
+    "policiesCount": 2,
+    "sampleLines": [
+      "-- ==============================================================================\r",
+      "-- KAVACH CAMPUS: MIGRATION 007 — STUDENT ID CARD & ACADEMIC BATCH VERIFICATION\r",
+      "-- ==============================================================================\r"
+    ]
+  },
+  {
+    "file": "008_kavach_campus_complete_production_alignment.sql",
+    "size": 11932,
+    "creates": [
+      "CREATE TABLE IF NOT EXISTS public.escalations ("
+    ],
+    "alters": [
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS auto_sos_enabled BOOLEAN DEFAULT TRUE;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS auto_sos_timeout_mins INT DEFAULT 5;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS start_latitude DOUBLE PRECISION;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS start_longitude DOUBLE PRECISION;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS last_latitude DOUBLE PRECISION;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS last_longitude DOUBLE PRECISION;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS last_location_at TIMESTAMPTZ;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS escalation_incident_id UUID REFERENCES public.incidents(id) ON DELETE SET NULL;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();",
+      "ALTER TABLE public.safe_walks ADD CONSTRAINT safe_walks_status_check"
+    ],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION public.get_user_role()",
+      "CREATE OR REPLACE FUNCTION public.is_staff()",
+      "CREATE OR REPLACE FUNCTION public.is_admin()",
+      "CREATE OR REPLACE FUNCTION public.is_security_or_admin()",
+      "CREATE OR REPLACE FUNCTION public.prevent_self_role_escalation()"
+    ],
+    "policiesCount": 6,
+    "sampleLines": [
+      "-- =====================================================================================\r",
+      "-- KAVACH CAMPUS: MIGRATION 008 — COMPLETE PRODUCTION ALIGNMENT & SECURITY HARMONIZATION\r",
+      "-- =====================================================================================\r"
+    ]
+  },
+  {
+    "file": "008_kavach_campus_schema_and_rls_alignment_safe.sql",
+    "size": 11233,
+    "creates": [
+      "CREATE TABLE IF NOT EXISTS public.escalations ("
+    ],
+    "alters": [
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS auto_sos_enabled BOOLEAN DEFAULT TRUE;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS auto_sos_timeout_mins INT DEFAULT 5;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS start_latitude DOUBLE PRECISION;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS start_longitude DOUBLE PRECISION;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS last_latitude DOUBLE PRECISION;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS last_longitude DOUBLE PRECISION;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS last_location_at TIMESTAMPTZ;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS escalation_incident_id UUID REFERENCES public.incidents(id) ON DELETE SET NULL;",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();",
+      "ALTER TABLE public.safe_walks ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();",
+      "ALTER TABLE public.safe_walks ADD CONSTRAINT safe_walks_status_check"
+    ],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION public.get_user_role()",
+      "CREATE OR REPLACE FUNCTION public.is_staff()",
+      "CREATE OR REPLACE FUNCTION public.is_admin()",
+      "CREATE OR REPLACE FUNCTION public.is_security_or_admin()",
+      "CREATE OR REPLACE FUNCTION public.prevent_self_role_escalation()"
+    ],
+    "policiesCount": 6,
+    "sampleLines": [
+      "-- =====================================================================================\r",
+      "-- KAVACH CAMPUS: MIGRATION 008 (SAFE DECOUPLED) — SCHEMA & RLS PRODUCTION ALIGNMENT\r",
+      "-- =====================================================================================\r"
+    ]
+  },
+  {
+    "file": "009_student_id_verification_resubmission.sql",
+    "size": 3398,
+    "creates": [],
+    "alters": [],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION public.prevent_student_self_verification()"
+    ],
+    "policiesCount": 2,
+    "sampleLines": [
+      "-- =====================================================================================\r",
+      "-- KAVACH CAMPUS: MIGRATION 009 — STUDENT ID VERIFICATION & RESUBMISSION ENHANCEMENT\r",
+      "-- =====================================================================================\r"
+    ]
+  },
+  {
+    "file": "010_service_role_and_audit_alignment.sql",
+    "size": 2357,
+    "creates": [],
+    "alters": [
+      "ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS actor_id UUID;",
+      "ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS entity_type TEXT;",
+      "ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS entity_id UUID;"
+    ],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION public.is_security_or_admin()",
+      "CREATE OR REPLACE FUNCTION public.prevent_student_self_verification()"
+    ],
+    "policiesCount": 0,
+    "sampleLines": [
+      "-- =============================================================================\r",
+      "-- KAVACH CAMPUS — MIGRATION 010: SERVICE ROLE & AUDIT LOG SCHEMA ALIGNMENT (HARDENED)\r",
+      "-- Target: Live Remote Supabase (polbnvszmvblwenfnqll)\r"
+    ]
+  },
+  {
+    "file": "011_staff_live_locations_and_consent.sql",
+    "size": 2673,
+    "creates": [
+      "CREATE TABLE IF NOT EXISTS public.staff_locations ("
+    ],
+    "alters": [],
+    "functions": [],
+    "policiesCount": 2,
+    "sampleLines": [
+      "-- =====================================================================================\r",
+      "-- KAVACH CAMPUS: MIGRATION 011 — STAFF LIVE LOCATIONS & LOCATION CONSENT SCHEMA\r",
+      "-- =====================================================================================\r"
+    ]
+  },
+  {
+    "file": "012_profiles_college_tenant.sql",
+    "size": 4009,
+    "creates": [],
+    "alters": [],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION public.get_user_college_id()"
+    ],
+    "policiesCount": 0,
+    "sampleLines": [
+      "-- =====================================================================================\r",
+      "-- KAVACH CAMPUS: MIGRATION 012 — MULTI-TENANT PROFILES, STORAGE & RLS ALIGNMENT\r",
+      "-- =====================================================================================\r"
+    ]
+  },
+  {
+    "file": "013_cross_college_rls_isolation.sql",
+    "size": 6611,
+    "creates": [],
+    "alters": [],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION public.trg_fn_assign_incident_college_id()"
+    ],
+    "policiesCount": 6,
+    "sampleLines": [
+      "-- =====================================================================================\r",
+      "-- KAVACH CAMPUS: MIGRATION 013 — CROSS-COLLEGE TENANT RLS ISOLATION & DATA PARTITIONING\r",
+      "-- =====================================================================================\r"
+    ]
+  },
+  {
+    "file": "014_cross_college_rls_hardening.sql",
+    "size": 23591,
+    "creates": [],
+    "alters": [],
+    "functions": [
+      "CREATE OR REPLACE FUNCTION public.sync_evidence_incident_reference()",
+      "CREATE OR REPLACE FUNCTION public.is_campus_staff()",
+      "CREATE OR REPLACE FUNCTION public.prevent_self_role_escalation()",
+      "CREATE OR REPLACE FUNCTION public.trg_fn_assign_incident_college_id()"
+    ],
+    "policiesCount": 25,
+    "sampleLines": [
+      "-- Corrective migration for the tenant-isolation policies introduced in migration 013.\r",
+      "-- Review and verify in staging before applying anywhere. This migration is not a\r",
+      "-- substitute for authenticated SRKR/Vishnu API tests.\r"
+    ]
+  }
+]

@@ -3,6 +3,14 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const protectedRoutes = ['/student', '/staff', '/admin', '/management', '/super-admin', '/api/protected'];
 
+function redirectWithCookies(url: URL | string, responseWithCookies: NextResponse): NextResponse {
+  const redirect = NextResponse.redirect(url);
+  responseWithCookies.cookies.getAll().forEach((c) => {
+    redirect.cookies.set(c.name, c.value, c);
+  });
+  return redirect;
+}
+
 export default async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -15,15 +23,15 @@ export default async function proxy(request: NextRequest) {
   if ((pathname === '/' || pathname === '/login') && request.nextUrl.searchParams.has('code')) {
     const callbackUrl = new URL('/api/auth/callback', request.url);
     callbackUrl.search = request.nextUrl.search;
-    return NextResponse.redirect(callbackUrl);
+    return redirectWithCookies(callbackUrl, supabaseResponse);
   }
 
   // Aliases for secure administrative logins
   if (pathname === '/secure-admin/login' || pathname === '/secure-admin') {
-    return NextResponse.redirect(new URL('/admin/login', request.url));
+    return redirectWithCookies(new URL('/admin/login', request.url), supabaseResponse);
   }
   if (pathname === '/secure-super-admin/login' || pathname === '/secure-super-admin') {
-    return NextResponse.redirect(new URL('/super-admin/login', request.url));
+    return redirectWithCookies(new URL('/super-admin/login', request.url), supabaseResponse);
   }
 
   // Dedicated Administrator, Super Admin login, and Campus Admin registration pages are public
@@ -42,6 +50,10 @@ export default async function proxy(request: NextRequest) {
     supabaseUrl,
     supabaseAnonKey,
     {
+      cookieOptions: {
+        path: '/',
+        sameSite: 'lax',
+      },
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -52,7 +64,11 @@ export default async function proxy(request: NextRequest) {
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              path: options?.path || '/',
+              sameSite: options?.sameSite || 'lax',
+            })
           );
         },
       },
@@ -75,20 +91,20 @@ export default async function proxy(request: NextRequest) {
       if (pathname !== '/super-admin' && pathname !== '/super-admin/login') {
         superAdminLogin.searchParams.set('redirect', pathname);
       }
-      return NextResponse.redirect(superAdminLogin);
+      return redirectWithCookies(superAdminLogin, supabaseResponse);
     }
     if (pathname.startsWith('/admin')) {
       const adminLogin = new URL('/admin/login', request.url);
       if (pathname !== '/admin' && pathname !== '/admin/login') {
         adminLogin.searchParams.set('redirect', pathname);
       }
-      return NextResponse.redirect(adminLogin);
+      return redirectWithCookies(adminLogin, supabaseResponse);
     }
     const loginUrl = new URL('/login', request.url);
     if (pathname !== '/' && pathname !== '/login') {
       loginUrl.searchParams.set('redirect', pathname);
     }
-    return NextResponse.redirect(loginUrl);
+    return redirectWithCookies(loginUrl, supabaseResponse);
   }
 
   const { data: profile } = await supabase
@@ -99,9 +115,9 @@ export default async function proxy(request: NextRequest) {
 
   if (!profile) {
     if (pathname.startsWith('/super-admin')) {
-      return NextResponse.redirect(new URL('/super-admin/login?error=profile_not_found', request.url));
+      return redirectWithCookies(new URL('/super-admin/login?error=profile_not_found', request.url), supabaseResponse);
     }
-    return NextResponse.redirect(new URL('/login?error=profile_not_found', request.url));
+    return redirectWithCookies(new URL('/login?error=profile_not_found', request.url), supabaseResponse);
   }
 
   const role = profile.role;
@@ -112,9 +128,9 @@ export default async function proxy(request: NextRequest) {
     const isStudentExempt = role === 'STUDENT' && (pathname === '/student/verification-status' || pathname.startsWith('/student/sos'));
     if (!isStudentExempt) {
       if (role === 'STUDENT') {
-        return NextResponse.redirect(new URL('/student/verification-status?notice=verification_required', request.url));
+        return redirectWithCookies(new URL('/student/verification-status?notice=verification_required', request.url), supabaseResponse);
       }
-      return NextResponse.redirect(new URL('/login?error=pending_approval', request.url));
+      return redirectWithCookies(new URL('/login?error=pending_approval', request.url), supabaseResponse);
     }
   }
 
@@ -124,24 +140,24 @@ export default async function proxy(request: NextRequest) {
   const isStaff = role === 'STAFF' || role === 'PROFESSOR' || role === 'ASSOCIATE_PROFESSOR' || role === 'ASSISTANT_PROFESSOR' || role === 'JUNIOR_PROFESSOR' || role === 'LECTURER' || role === 'TEACHER' || role === 'COUNSELLOR' || role === 'COUNSELOR' || role === 'WOMENS_CELL' || role === 'SECURITY' || role === 'WARDEN' || role === 'MENTOR' || role === 'ADMINISTRATIVE_OFFICER' || role === 'NON_TEACHING_STAFF' || isManagement;
 
   if (pathname.startsWith('/super-admin') && !isSuperAdmin) {
-    return NextResponse.redirect(new URL('/super-admin/login?error=unauthorized', request.url));
+    return redirectWithCookies(new URL('/super-admin/login?error=unauthorized', request.url), supabaseResponse);
   }
 
   if (pathname.startsWith('/admin') && !isAdmin) {
-    return NextResponse.redirect(new URL('/unauthorized', request.url));
+    return redirectWithCookies(new URL('/unauthorized', request.url), supabaseResponse);
   }
   
   if (pathname.startsWith('/management') && !isManagement) {
-    return NextResponse.redirect(new URL('/unauthorized', request.url));
+    return redirectWithCookies(new URL('/unauthorized', request.url), supabaseResponse);
   }
 
   if (pathname.startsWith('/staff') && !isStaff) {
-    return NextResponse.redirect(new URL('/unauthorized', request.url));
+    return redirectWithCookies(new URL('/unauthorized', request.url), supabaseResponse);
   }
 
   if (pathname.startsWith('/student')) {
     if (role !== 'STUDENT') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+      return redirectWithCookies(new URL('/unauthorized', request.url), supabaseResponse);
     }
 
     // Emergency SOS and Verification Status portal must remain accessible
@@ -154,7 +170,7 @@ export default async function proxy(request: NextRequest) {
         .single();
 
       if (!studentProf || studentProf.verification_status !== 'VERIFIED') {
-        return NextResponse.redirect(new URL('/student/verification-status?notice=verification_required', request.url));
+        return redirectWithCookies(new URL('/student/verification-status?notice=verification_required', request.url), supabaseResponse);
       }
     }
   }

@@ -10,13 +10,23 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: profile, error: profError } = await supabase
+    let { data: profile, error: profError } = await supabase
       .from('profiles')
       .select('id, full_name, college_email, student_id, role, department, year, phone, profile_photo_path')
       .eq('id', user.id)
       .single();
 
-    if (profError) {
+    if (profError && (profError.code === '42703' || profError.message?.includes('profile_photo_path'))) {
+      const fallback = await supabase
+        .from('profiles')
+        .select('id, full_name, college_email, student_id, role, department, year, phone')
+        .eq('id', user.id)
+        .single();
+      profile = fallback.data ? { ...fallback.data, profile_photo_path: null } : null;
+      profError = fallback.error;
+    }
+
+    if (profError || !profile) {
       console.error('Fetch profile error:', profError);
       return NextResponse.json({ error: 'Unable to load your profile.' }, { status: 500 });
     }

@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-11-04T17:22:34.438Z",
+  "status": "PASS",
+  "counts": {
+    "profiles": 7,
+    "student_profiles": 2,
+    "incidents": 2,
+    "incident_locations": 2,
+    "audit_logs": 9,
+    "safe_box_private_notes": 0
+  }
+}

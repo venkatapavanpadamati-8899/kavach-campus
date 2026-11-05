@@ -363,3 +363,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Failed to create SOS incident' }, { status: 500 });
   }
 }
+
+export async function GET() {
+  return NextResponse.json(
+    { error: 'Method Not Allowed' },
+    { status: 405, headers: { Allow: 'POST' } }
+  );
+}

@@ -1,0 +1,245 @@
+{
+  "timestamp": "2026-11-04T17:32:40.628Z",
+  "totalTests": 23,
+  "passedTests": 23,
+  "results": [
+    {
+      "suite": "Suite 1 — Student Peer Isolation",
+      "testName": "Student A reads own incident",
+      "persona": "Student A (SRKR)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM incidents WHERE id = 'e1000000-0000-0000-0000-000000000001'",
+      "expected": "1 row returned (Owner access permitted)",
+      "actual": "1 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 1 — Student Peer Isolation",
+      "testName": "Student B cannot read Student A incident",
+      "persona": "Student B (SRKR peer)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM incidents WHERE id = 'e1000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows returned (Peer access denied by RLS)",
+      "actual": "0 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 1 — Student Peer Isolation",
+      "testName": "Student B cannot update Student A incident",
+      "persona": "Student B (SRKR peer)",
+      "sessionType": "Authenticated JWT",
+      "operation": "UPDATE incidents SET description = 'HACKED' WHERE id = 'e1000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows affected (Denied by RLS)",
+      "actual": "0 row(s) affected",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 1 — Student Peer Isolation",
+      "testName": "Student B cannot delete Student A incident",
+      "persona": "Student B (SRKR peer)",
+      "sessionType": "Authenticated JWT",
+      "operation": "DELETE FROM incidents WHERE id = 'e1000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows affected (Denied by RLS)",
+      "actual": "0 row(s) affected",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 2 — Cross-College Isolation",
+      "testName": "VITB Student cannot read SRKR incident",
+      "persona": "Student C (VITB)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM incidents WHERE id = 'e1000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows returned (Cross-college access blocked)",
+      "actual": "0 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 2 — Cross-College Isolation",
+      "testName": "SRKR Staff sees same-college incidents only",
+      "persona": "Staff A (SRKR)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT incidents WHERE id IN ('e1000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000002')",
+      "expected": "Sees SRKR incident (1 row), VITB incident blocked (0 rows)",
+      "actual": "seesSRKR=true, seesVITB=false",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 2 — Cross-College Isolation",
+      "testName": "SRKR Admin cannot see VITB incidents",
+      "persona": "Admin A (SRKR)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT incidents WHERE id IN ('e1000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000002')",
+      "expected": "Sees SRKR only; VITB blocked",
+      "actual": "seesSRKR=true, seesVITB=false",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 2 — Cross-College Isolation",
+      "testName": "Super Admin has cross-college governance visibility",
+      "persona": "Super Admin",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT incidents WHERE id IN ('e1000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000002')",
+      "expected": "Sees both SRKR and VITB incidents (2 rows)",
+      "actual": "seesSRKR=true, seesVITB=true (2 rows)",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 3 — Safe Box Privacy",
+      "testName": "Student A reads own Safe Box private note",
+      "persona": "Student A (Owner)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM safe_box_private_notes WHERE evidence_id = 'e2000000-0000-0000-0000-000000000001'",
+      "expected": "1 row returned (Owner permitted)",
+      "actual": "1 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 3 — Safe Box Privacy",
+      "testName": "Student B cannot read Student A private note",
+      "persona": "Student B (Peer)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM safe_box_private_notes WHERE evidence_id = 'e2000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows returned (Peer access denied)",
+      "actual": "0 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 3 — Safe Box Privacy",
+      "testName": "Staff cannot read Student Safe Box private note",
+      "persona": "Staff A (SRKR Staff)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM safe_box_private_notes WHERE evidence_id = 'e2000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows returned (Staff access denied by default)",
+      "actual": "0 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 3 — Safe Box Privacy",
+      "testName": "HOD cannot read Student Safe Box private note",
+      "persona": "HOD A (SRKR)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM safe_box_private_notes WHERE evidence_id = 'e2000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows returned (HOD access denied)",
+      "actual": "0 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 3 — Safe Box Privacy",
+      "testName": "Principal cannot read Student Safe Box private note",
+      "persona": "Principal A (SRKR)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM safe_box_private_notes WHERE evidence_id = 'e2000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows returned (Principal access denied)",
+      "actual": "0 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 3 — Safe Box Privacy",
+      "testName": "Campus Admin cannot read Student Safe Box private note",
+      "persona": "Admin A (SRKR Admin)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM safe_box_private_notes WHERE evidence_id = 'e2000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows returned (Admin denied by policy)",
+      "actual": "0 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 3 — Safe Box Privacy",
+      "testName": "Student B cannot insert private note on Student A evidence",
+      "persona": "Student B (SRKR peer)",
+      "sessionType": "Authenticated JWT",
+      "operation": "INSERT INTO safe_box_private_notes",
+      "expected": "Insert rejected (RLS WITH CHECK fails)",
+      "actual": "Insert rejected by RLS",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 4 — Profile Photo Privacy",
+      "testName": "Student A accesses own profile photo in storage",
+      "persona": "Student A (Owner)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM storage.objects WHERE bucket_id = 'kavach-profile-photos'",
+      "expected": "1 row returned (Owner access permitted)",
+      "actual": "1 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 4 — Profile Photo Privacy",
+      "testName": "Student B cannot access Student A profile photo",
+      "persona": "Student B (Peer)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT FROM storage.objects WHERE name = 'f1000000-0000-0000-0000-000000000001/photo.jpg'",
+      "expected": "0 rows returned (Storage RLS folder isolation)",
+      "actual": "0 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 5 — Staff Authorization",
+      "testName": "Staff and Students cannot escalate profile role or approval",
+      "persona": "Staff A & Student A",
+      "sessionType": "Authenticated JWT",
+      "operation": "UPDATE profiles SET role = 'ADMIN'",
+      "expected": "Cross-profile update 0 rows affected; Self-role escalation blocked by trigger",
+      "actual": "crossProfileRows=0, selfEscalateBlocked=true",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 5 — Staff Authorization",
+      "testName": "HOD and Principal view same-college incident queues",
+      "persona": "HOD & Principal (SRKR)",
+      "sessionType": "Authenticated JWT",
+      "operation": "SELECT incidents WHERE id = 'e1000000-0000-0000-0000-000000000001'",
+      "expected": "1 row returned for both HOD and Principal",
+      "actual": "HOD=1, Principal=1",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 6 — Administrative Boundaries",
+      "testName": "Campus Admin cannot alter campus tenant assignment",
+      "persona": "Admin A (SRKR Admin)",
+      "sessionType": "Authenticated JWT",
+      "operation": "UPDATE profiles SET college_id = 'vishnu-bhimavaram'",
+      "expected": "Cross-profile update 0 rows affected; Self-college change blocked by trigger (super-admin only)",
+      "actual": "crossProfileRows=0, selfReassignBlocked=true",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 7 — Authentication & Ownership",
+      "testName": "Anonymous user cannot read protected incidents",
+      "persona": "Anonymous (anon)",
+      "sessionType": "Anonymous Session",
+      "operation": "SELECT FROM incidents WHERE id = 'e1000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows returned (Anonymous access blocked)",
+      "actual": "0 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 7 — Authentication & Ownership",
+      "testName": "Anonymous user cannot read user profiles",
+      "persona": "Anonymous (anon)",
+      "sessionType": "Anonymous Session",
+      "operation": "SELECT FROM profiles WHERE id = 'f1000000-0000-0000-0000-000000000001'",
+      "expected": "0 rows returned (Anonymous access blocked)",
+      "actual": "0 row(s) returned",
+      "status": "PASS"
+    },
+    {
+      "suite": "Suite 7 — Authentication & Ownership",
+      "testName": "User-supplied college_id cannot override profile tenant",
+      "persona": "Student A (SRKR)",
+      "sessionType": "Authenticated Session",
+      "operation": "INSERT incident with forged college_id='FORGED_COLLEGE_XYZ'",
+      "expected": "Derived from student profile ('srkr-bhimavaram')",
+      "actual": "Trigger assigned: srkr-bhimavaram",
+      "status": "PASS"
+    }
+  ],
+  "postTestCounts": {
+    "profiles": 7,
+    "student_profiles": 2,
+    "incidents": 2,
+    "incident_locations": 2,
+    "audit_logs": 9,
+    "safe_box_private_notes": 0
+  }
+}

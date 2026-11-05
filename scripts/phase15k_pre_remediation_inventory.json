@@ -1,0 +1,482 @@
+{
+  "timestamp": "2026-11-05T02:48:48.034Z",
+  "connectionUrl": "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+  "counts": {
+    "profiles": 7,
+    "student_profiles": 2,
+    "staff_profiles": 0,
+    "incidents": 2,
+    "incident_locations": 2,
+    "evidence": 0,
+    "incident_messages": 0,
+    "safe_walks": 0,
+    "escalations": 0,
+    "audit_logs": 9,
+    "staff_locations": 0,
+    "safe_box_private_notes": 0
+  },
+  "storageObjectsCount": 4,
+  "totalPolicies": 46,
+  "policies": [
+    {
+      "schemaname": "public",
+      "tablename": "ai_configuration",
+      "policyname": "Admin modify ai config",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "emergency_configuration",
+      "policyname": "Admin modify emergency config",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "emergency_configuration",
+      "policyname": "Public read emergency config",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "policyname": "Staff update same-college escalations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "UPDATE",
+      "qual": "(is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR (EXISTS ( SELECT 1\n   FROM (incidents i\n     JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.id = escalations.incident_id) AND (p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))",
+      "with_check": "(is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR (EXISTS ( SELECT 1\n   FROM (incidents i\n     JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.id = escalations.incident_id) AND (p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "policyname": "Staff view same-college escalations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR (EXISTS ( SELECT 1\n   FROM (incidents i\n     JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.id = escalations.incident_id) AND (p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "escalations",
+      "policyname": "Users create authorized escalations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(EXISTS ( SELECT 1\n   FROM (incidents i\n     LEFT JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.id = escalations.incident_id) AND ((i.student_id = auth.uid()) OR (is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR ((p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "evidence",
+      "policyname": "Authorized users upload incident evidence",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((uploaded_by = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE (((i.case_id = evidence.case_id) OR ((i.id)::text = evidence.case_id)) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_reviewer())))))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "evidence",
+      "policyname": "Authorized users view incident evidence",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((uploaded_by = auth.uid()) OR is_admin() OR (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE (((i.case_id = evidence.case_id) OR ((i.id)::text = evidence.case_id)) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_reviewer())))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "evidence",
+      "policyname": "Users insert authorized evidence",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((uploaded_by = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM (incidents i\n     LEFT JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.case_id = evidence.case_id) AND ((i.student_id = auth.uid()) OR (is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR ((p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text)))))))))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "evidence",
+      "policyname": "Users view authorized evidence",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM (incidents i\n     LEFT JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.case_id = evidence.case_id) AND ((i.student_id = auth.uid()) OR (is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR ((p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "incident_locations",
+      "policyname": "Authorized users insert incident locations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE ((i.id = incident_locations.incident_id) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_admin()))))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "incident_locations",
+      "policyname": "Authorized users view incident locations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE ((i.id = incident_locations.incident_id) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_admin()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "incident_locations",
+      "policyname": "Staff view same-college incident locations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR (EXISTS ( SELECT 1\n   FROM (incidents i\n     JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.id = incident_locations.incident_id) AND (p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "incident_locations",
+      "policyname": "Students insert own incident locations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE ((i.id = incident_locations.incident_id) AND (i.student_id = auth.uid()))))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "incident_locations",
+      "policyname": "Students view own incident locations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE ((i.id = incident_locations.incident_id) AND (i.student_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "incident_messages",
+      "policyname": "Users insert authorized incident messages",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((sender_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM (incidents i\n     LEFT JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.id = incident_messages.incident_id) AND ((i.student_id = auth.uid()) OR (is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR ((p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text)))))))))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "incident_messages",
+      "policyname": "Users read authorized incident messages",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(((is_internal = false) AND (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE ((i.id = incident_messages.incident_id) AND (i.student_id = auth.uid()))))) OR (EXISTS ( SELECT 1\n   FROM (incidents i\n     JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.id = incident_messages.incident_id) AND is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR ((p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text)))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "incidents",
+      "policyname": "Staff view same-college incidents",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = incidents.student_id) AND (p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "incidents",
+      "policyname": "Students insert own incidents",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(auth.uid() = student_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "incidents",
+      "policyname": "Students view own incidents",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = student_id)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "notifications",
+      "policyname": "Users view own notifications",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "profiles",
+      "policyname": "Staff view same-college profiles",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR ((get_user_college_id() IS NOT NULL) AND (get_user_college_id() <> 'PENDING_CAMPUS_VERIFICATION'::text) AND (college_id = get_user_college_id()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "profiles",
+      "policyname": "Users can read own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "profiles",
+      "policyname": "Users can update own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "UPDATE",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "safe_box_private_notes",
+      "policyname": "Students manage own Safe Box notes",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "ALL",
+      "qual": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM evidence\n  WHERE ((evidence.id = safe_box_private_notes.evidence_id) AND (evidence.uploaded_by = auth.uid())))))",
+      "with_check": "((owner_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM evidence\n  WHERE ((evidence.id = safe_box_private_notes.evidence_id) AND (evidence.uploaded_by = auth.uid())))))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "safe_walks",
+      "policyname": "Staff view same-college safe walks",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(is_security_or_admin() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = safe_walks.student_id) AND (p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "safe_walks",
+      "policyname": "Students manage own safe walks",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "ALL",
+      "qual": "(auth.uid() = student_id)",
+      "with_check": "(auth.uid() = student_id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "staff_locations",
+      "policyname": "staff_locations_dispatch_read",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(is_security_or_admin() AND (is_on_duty = true) AND (is_location_sharing_enabled = true))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "staff_locations",
+      "policyname": "staff_locations_self_manage",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "ALL",
+      "qual": "(staff_id = auth.uid())",
+      "with_check": "(staff_id = auth.uid())"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "staff_profiles",
+      "policyname": "Staff read own private profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "staff_profiles",
+      "policyname": "Staff update own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "UPDATE",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "staff_profiles",
+      "policyname": "Staff view same-college staff profiles",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(((get_user_role())::text = ANY (ARRAY['ADMIN'::text, 'SUPER_ADMIN'::text])) AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = staff_profiles.id) AND (p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "student_profiles",
+      "policyname": "Reviewers and student owner read profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((id = auth.uid()) OR is_reviewer())",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "student_profiles",
+      "policyname": "Staff view same-college student profiles",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = student_profiles.id) AND (p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "student_profiles",
+      "policyname": "Students read own private profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "student_profiles",
+      "policyname": "Students update own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "UPDATE",
+      "qual": "(auth.uid() = id)",
+      "with_check": "(auth.uid() = id)"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "trusted_contacts",
+      "policyname": "Students manage own trusted contacts",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(auth.uid() = student_id)",
+      "with_check": null
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "Authenticated users upload own id card",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((bucket_id = 'kavach-id-cards'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR (name ~~ ((auth.uid())::text || '/%'::text))))"
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "Authorized users read incident evidence files",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'kavach-evidence'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR (name ~~ ((auth.uid())::text || '/%'::text)) OR is_admin() OR (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE (((i.case_id = (storage.foldername(objects.name))[1]) OR ((i.id)::text = (storage.foldername(objects.name))[1])) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_reviewer()))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "Authorized users upload incident evidence files",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((bucket_id = 'kavach-evidence'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR (name ~~ ((auth.uid())::text || '/%'::text)) OR (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE (((i.case_id = (storage.foldername(objects.name))[1]) OR ((i.id)::text = (storage.foldername(objects.name))[1])) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_reviewer()))))))"
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "Students upload own ID cards",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((bucket_id = 'kavach-id-cards'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]))"
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "Users and reviewers read authorized id card",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'kavach-id-cards'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR (name ~~ ((auth.uid())::text || '/%'::text)) OR is_reviewer()))",
+      "with_check": null
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "Users read authorized ID cards",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'kavach-id-cards'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR (is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE (((p.id)::text = (storage.foldername(objects.name))[1]) AND (p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "Users read authorized evidence objects",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'kavach-evidence'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR (EXISTS ( SELECT 1\n   FROM (incidents i\n     LEFT JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.case_id = (storage.foldername(objects.name))[1]) AND ((i.student_id = auth.uid()) OR (is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR ((p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text))))))))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "Users read own profile photos",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'kavach-profile-photos'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]))",
+      "with_check": null
+    },
+    {
+      "schemaname": "storage",
+      "tablename": "objects",
+      "policyname": "Users upload authorized evidence objects",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((bucket_id = 'kavach-evidence'::text) AND (EXISTS ( SELECT 1\n   FROM (incidents i\n     LEFT JOIN profiles p ON ((p.id = i.student_id)))\n  WHERE ((i.case_id = (storage.foldername(objects.name))[1]) AND ((i.student_id = auth.uid()) OR (is_campus_staff() AND (((get_user_role())::text = 'SUPER_ADMIN'::text) OR ((p.college_id = get_user_college_id()) AND (p.college_id <> 'PENDING_CAMPUS_VERIFICATION'::text)))))))))"
+    }
+  ]
+}

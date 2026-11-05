@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-11-04T17:19:57.233Z",
+  "status": "PASS",
+  "profiles_college_id": {
+    "column_name": "college_id",
+    "data_type": "text"
+  },
+  "incidents_college_id": {
+    "column_name": "college_id",
+    "data_type": "text"
+  },
+  "triggers": [
+    {
+      "event_object_table": "evidence",
+      "trigger_name": "trg_sync_evidence_incident_reference"
+    },
+    {
+      "event_object_table": "incidents",
+      "trigger_name": "trg_assign_incident_college_id"
+    },
+    {
+      "event_object_table": "profiles",
+      "trigger_name": "trg_prevent_self_role_escalation"
+    },
+    {
+      "event_object_table": "student_profiles",
+      "trigger_name": "trg_prevent_student_self_verification"
+    },
+    {
+      "event_object_table": "evidence",
+      "trigger_name": "trg_sync_evidence_incident_reference"
+    },
+    {
+      "event_object_table": "incidents",
+      "trigger_name": "trg_assign_incident_college_id"
+    }
+  ],
+  "policies_count": 8,
+  "counts": {
+    "profiles": 7,
+    "student_profiles": 2,
+    "incidents": 2,
+    "incident_locations": 2,
+    "audit_logs": 9,
+    "staff_locations": 0
+  },
+  "college_id_distribution": [
+    {
+      "college_id": "PENDING_CAMPUS_VERIFICATION",
+      "cnt": 7
+    }
+  ]
+}

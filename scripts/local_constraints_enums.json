@@ -1,0 +1,324 @@
+{
+  "constraints": [
+    {
+      "conname": "ai_analyses_incident_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE",
+      "table_name": "ai_analyses"
+    },
+    {
+      "conname": "ai_analyses_incident_id_key",
+      "contype": "u",
+      "def": "UNIQUE (incident_id)",
+      "table_name": "ai_analyses"
+    },
+    {
+      "conname": "ai_analyses_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "ai_analyses"
+    },
+    {
+      "conname": "ai_configuration_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "ai_configuration"
+    },
+    {
+      "conname": "ai_configuration_updated_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (updated_by) REFERENCES profiles(id)",
+      "table_name": "ai_configuration"
+    },
+    {
+      "conname": "audit_logs_actor_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (actor_id) REFERENCES profiles(id) ON DELETE SET NULL",
+      "table_name": "audit_logs"
+    },
+    {
+      "conname": "audit_logs_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "audit_logs"
+    },
+    {
+      "conname": "campus_buildings_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "campus_buildings"
+    },
+    {
+      "conname": "campus_buildings_zone_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (zone_id) REFERENCES campus_zones(id)",
+      "table_name": "campus_buildings"
+    },
+    {
+      "conname": "campus_zones_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "campus_zones"
+    },
+    {
+      "conname": "case_actions_actor_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (actor_id) REFERENCES profiles(id) ON DELETE SET NULL",
+      "table_name": "case_actions"
+    },
+    {
+      "conname": "case_actions_incident_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE",
+      "table_name": "case_actions"
+    },
+    {
+      "conname": "case_actions_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "case_actions"
+    },
+    {
+      "conname": "emergency_configuration_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "emergency_configuration"
+    },
+    {
+      "conname": "emergency_configuration_updated_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (updated_by) REFERENCES profiles(id)",
+      "table_name": "emergency_configuration"
+    },
+    {
+      "conname": "escalations_incident_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE",
+      "table_name": "escalations"
+    },
+    {
+      "conname": "escalations_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "escalations"
+    },
+    {
+      "conname": "evidence_incident_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE",
+      "table_name": "evidence"
+    },
+    {
+      "conname": "evidence_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "evidence"
+    },
+    {
+      "conname": "evidence_uploaded_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (uploaded_by) REFERENCES profiles(id) ON DELETE SET NULL",
+      "table_name": "evidence"
+    },
+    {
+      "conname": "incident_locations_incident_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE",
+      "table_name": "incident_locations"
+    },
+    {
+      "conname": "incident_locations_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "incident_locations"
+    },
+    {
+      "conname": "incident_messages_incident_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE",
+      "table_name": "incident_messages"
+    },
+    {
+      "conname": "incident_messages_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "incident_messages"
+    },
+    {
+      "conname": "incident_messages_sender_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (sender_id) REFERENCES profiles(id) ON DELETE SET NULL",
+      "table_name": "incident_messages"
+    },
+    {
+      "conname": "incidents_assigned_to_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (assigned_to) REFERENCES profiles(id)",
+      "table_name": "incidents"
+    },
+    {
+      "conname": "incidents_building_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (building_id) REFERENCES campus_buildings(id)",
+      "table_name": "incidents"
+    },
+    {
+      "conname": "incidents_campus_zone_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (campus_zone_id) REFERENCES campus_zones(id)",
+      "table_name": "incidents"
+    },
+    {
+      "conname": "incidents_case_id_key",
+      "contype": "u",
+      "def": "UNIQUE (case_id)",
+      "table_name": "incidents"
+    },
+    {
+      "conname": "incidents_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "incidents"
+    },
+    {
+      "conname": "incidents_student_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (student_id) REFERENCES profiles(id) ON DELETE SET NULL",
+      "table_name": "incidents"
+    },
+    {
+      "conname": "notifications_incident_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE",
+      "table_name": "notifications"
+    },
+    {
+      "conname": "notifications_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "notifications"
+    },
+    {
+      "conname": "notifications_user_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "table_name": "notifications"
+    },
+    {
+      "conname": "profiles_college_email_key",
+      "contype": "u",
+      "def": "UNIQUE (college_email)",
+      "table_name": "profiles"
+    },
+    {
+      "conname": "profiles_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE",
+      "table_name": "profiles"
+    },
+    {
+      "conname": "profiles_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "profiles"
+    },
+    {
+      "conname": "safe_walks_escalation_incident_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (escalation_incident_id) REFERENCES incidents(id) ON DELETE SET NULL",
+      "table_name": "safe_walks"
+    },
+    {
+      "conname": "safe_walks_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "safe_walks"
+    },
+    {
+      "conname": "safe_walks_status_check",
+      "contype": "c",
+      "def": "CHECK ((status = ANY (ARRAY['ACTIVE'::text, 'COMPLETED'::text, 'CANCELLED'::text, 'OVERDUE'::text, 'ESCALATED'::text])))",
+      "table_name": "safe_walks"
+    },
+    {
+      "conname": "safe_walks_student_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (student_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "table_name": "safe_walks"
+    },
+    {
+      "conname": "staff_profiles_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "table_name": "staff_profiles"
+    },
+    {
+      "conname": "staff_profiles_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "staff_profiles"
+    },
+    {
+      "conname": "check_admission_type",
+      "contype": "c",
+      "def": "CHECK ((admission_type = ANY (ARRAY['REGULAR'::text, 'LATERAL_ENTRY'::text])))",
+      "table_name": "student_profiles"
+    },
+    {
+      "conname": "check_verification_status",
+      "contype": "c",
+      "def": "CHECK ((verification_status = ANY (ARRAY['PENDING_UPLOAD'::text, 'PENDING_VERIFICATION'::text, 'PENDING_MANUAL_REVIEW'::text, 'VERIFIED'::text, 'REJECTED'::text])))",
+      "table_name": "student_profiles"
+    },
+    {
+      "conname": "student_profiles_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "table_name": "student_profiles"
+    },
+    {
+      "conname": "student_profiles_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "student_profiles"
+    },
+    {
+      "conname": "student_profiles_verified_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (verified_by) REFERENCES profiles(id)",
+      "table_name": "student_profiles"
+    },
+    {
+      "conname": "trusted_contacts_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "trusted_contacts"
+    },
+    {
+      "conname": "trusted_contacts_student_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (student_id) REFERENCES profiles(id) ON DELETE CASCADE",
+      "table_name": "trusted_contacts"
+    },
+    {
+      "conname": "user_otp_verifications_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)",
+      "table_name": "user_otp_verifications"
+    }
+  ],
+  "enums": [
+    {
+      "typname": "app_role",
+      "values": "{STUDENT,STAFF,COUNSELLOR,WOMENS_CELL,HOD,SECURITY,PRINCIPAL,ADMIN,SUPER_ADMIN}"
+    },
+    {
+      "typname": "incident_status",
+      "values": "{RECEIVED,ACKNOWLEDGED,ASSIGNED,IN_PROGRESS,ESCALATED,ACTION_TAKEN,RESOLVED,CLOSED,FALSE_ALARM}"
+    },
+    {
+      "typname": "priority_level",
+      "values": "{LOW,MEDIUM,HIGH,CRITICAL}"
+    }
+  ]
+}

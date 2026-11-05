@@ -60,7 +60,7 @@ export function CollegeSearchInput({
           ? `pincode=${encodeURIComponent(searchTerm.trim())}`
           : `query=${encodeURIComponent(searchTerm.trim())}`;
 
-        const res = await fetch(`/api/colleges/search?${param}`);
+        const res = await fetch(`/api/colleges/search?${param}&includeStatewide=true`);
         if (res.ok) {
           const data = await res.json();
           setResults(data.colleges || []);
@@ -261,6 +261,11 @@ export function CollegeSearchInput({
                       <span style={{ padding: '1px 6px', borderRadius: '4px', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', fontWeight: 700 }}>
                         PIN {col.pincode}
                       </span>
+                      {col.category && (
+                        <span style={{ padding: '1px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.25)', color: '#6ee7b7', fontSize: '0.68rem', fontWeight: 600 }}>
+                          {col.category}
+                        </span>
+                      )}
                       {col.isAutonomous && (
                         <span style={{ padding: '1px 6px', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', fontSize: '0.68rem' }}>
                           Autonomous

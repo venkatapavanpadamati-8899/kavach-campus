@@ -38,6 +38,7 @@
   8. `016_safe_box_private_notes.sql`: Creates `safe_box_private_notes` with `<= 2000` char limit and student-only RLS.
   9. `017_student_college_claims.sql`: Adds `claimed_college_id`, `profile_photo_path`, and creates private bucket `kavach-profile-photos`.
   10. `018_legacy_rls_policy_remediation.sql`: **CRITICAL SECURITY REMEDIATION** — Purges un-scoped historical permissive policies across `incidents`, `incident_locations`, `evidence`, `student_profiles`, and `storage.objects`; hardens `staff_locations` dispatch.
+  11. `019_ap_statewide_colleges_registry.sql`: **PHASE 23-25 AP STATEWIDE EXPANSION** — Seeds 26 official gazetted AP districts (`college_districts`), verified institutions (`colleges` - 145 AP colleges, 152 in total DB benchmark), and onboarding request queue (`college_onboarding_requests`) with public/admin RLS.
 
 - [ ] **1.4 Post-Migration Verification Query (For Post-Approval Use Only):**
   Execute in Supabase SQL Editor:
@@ -93,7 +94,7 @@
 - [ ] **3.2 Production Build Verification:**
   - Build Command: `next build --experimental-app-only`
   - Node.js Version: `20.x`
-  - Production Build Output: 71 routes compiled cleanly in Next.js 16.4.3 Turbopack.
+  - Production Build Output: 72 routes compiled cleanly in Next.js 16.4.3 Turbopack (including dynamic `/api/admin/ai` and static `/admin/ai`).
 
 - [ ] **3.3 Production Deployment Trigger:**
   - Deploy via Vercel Dashboard or Git integration upon owner authorization.

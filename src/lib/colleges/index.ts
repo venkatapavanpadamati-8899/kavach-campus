@@ -1,3 +1,9 @@
+import { AP_26_DISTRICTS, DistrictRecord } from './districts';
+import { AP_STATEWIDE_COLLEGES, CollegeRecord } from './ap-colleges-data';
+
+export { AP_26_DISTRICTS };
+export type { DistrictRecord, CollegeRecord };
+
 export interface CollegeTenant {
   id: string;
   name: string;
@@ -24,6 +30,14 @@ export interface CollegeTenant {
   logoUrl?: string;
   isAutonomous: boolean;
   naacGrade?: string;
+  category?: 'ENGINEERING' | 'POLYTECHNIC' | 'DEGREE' | 'OTHER' | 'PHARMACY' | 'MANAGEMENT' | 'LAW';
+  subcategory?: string;
+  code?: string;
+  aisheCode?: string;
+  districtId?: string;
+  affiliation?: string;
+  approval?: string;
+  sourceReference?: string;
 }
 
 export const INDIAN_ENGINEERING_COLLEGES: CollegeTenant[] = [
@@ -426,13 +440,29 @@ export const INDIAN_ENGINEERING_COLLEGES: CollegeTenant[] = [
 ];
 
 export function getDefaultCollege(): CollegeTenant {
-  return INDIAN_ENGINEERING_COLLEGES[0]; // SRKR Engineering College
+  return getCollegeById('srkr-bhimavaram') || INDIAN_ENGINEERING_COLLEGES[0];
 }
+
+const enrichedIndianColleges: CollegeTenant[] = INDIAN_ENGINEERING_COLLEGES.map((c) => ({
+  ...c,
+  category: (c.category || 'ENGINEERING') as 'ENGINEERING',
+}));
+
+const collegesMap = new Map<string, CollegeTenant>();
+for (const col of enrichedIndianColleges) {
+  collegesMap.set(col.id, col);
+}
+for (const col of AP_STATEWIDE_COLLEGES) {
+  const existing = collegesMap.get(col.id);
+  collegesMap.set(col.id, existing ? { ...existing, ...col } : col);
+}
+
+export const ALL_COLLEGES: CollegeTenant[] = Array.from(collegesMap.values());
 
 export function getCollegeById(idOrSlug: string): CollegeTenant | null {
   const normalized = idOrSlug.trim().toLowerCase();
   return (
-    INDIAN_ENGINEERING_COLLEGES.find(
+    ALL_COLLEGES.find(
       (c) =>
         c.id.toLowerCase() === normalized ||
         c.slug.toLowerCase() === normalized ||
@@ -445,8 +475,20 @@ export function searchColleges(options: {
   query?: string;
   pincode?: string;
   state?: string;
+  district?: string;
+  category?: string;
+  affiliation?: string;
+  includeStatewide?: boolean;
 }): CollegeTenant[] {
-  let results = [...INDIAN_ENGINEERING_COLLEGES];
+  const useAllColleges = Boolean(
+    options.includeStatewide ||
+    (options.district && options.district.toLowerCase() !== 'all') ||
+    (options.category && options.category.toUpperCase() !== 'ALL') ||
+    (options.affiliation && options.affiliation.toUpperCase() !== 'ALL')
+  );
+
+  const sourcePool = useAllColleges ? [...ALL_COLLEGES] : [...INDIAN_ENGINEERING_COLLEGES];
+  let results = sourcePool;
 
   if (options.pincode && options.pincode.trim()) {
     const cleanPincode = options.pincode.trim();
@@ -458,17 +500,61 @@ export function searchColleges(options: {
     results = results.filter((c) => c.state.toLowerCase() === cleanState);
   }
 
+  if (options.district && options.district.trim() && options.district.toLowerCase() !== 'all') {
+    const d = options.district.trim().toLowerCase();
+    results = results.filter((c) => c.district.toLowerCase() === d || c.district.toLowerCase().includes(d));
+  }
+
+  if (options.category && options.category.trim() && options.category.toUpperCase() !== 'ALL') {
+    const cat = options.category.trim().toUpperCase();
+    results = results.filter((c) => (c.category || 'ENGINEERING').toUpperCase() === cat);
+  }
+
+  if (options.affiliation && options.affiliation.trim() && options.affiliation.toUpperCase() !== 'ALL') {
+    const aff = options.affiliation.trim().toUpperCase();
+    results = results.filter((c) => (c.affiliation || '').toUpperCase().includes(aff));
+  }
+
   if (options.query && options.query.trim()) {
     const q = options.query.trim().toLowerCase();
-    results = results.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.shortName.toLowerCase().includes(q) ||
-        c.city.toLowerCase().includes(q) ||
-        c.district.toLowerCase().includes(q) ||
+    const cleanQ = q.replace(/[.\s\-_]/g, '');
+    results = results.filter((c) => {
+      const name = c.name.toLowerCase();
+      const shortName = c.shortName.toLowerCase();
+      const city = c.city.toLowerCase();
+      const district = c.district.toLowerCase();
+      const domain = c.domain.toLowerCase();
+      const code = (c.code || '').toLowerCase();
+      const affiliation = (c.affiliation || '').toLowerCase();
+      const approval = (c.approval || '').toLowerCase();
+
+      // Direct substring match
+      if (
+        name.includes(q) ||
+        shortName.includes(q) ||
+        city.includes(q) ||
+        district.includes(q) ||
         c.pincode.includes(q) ||
-        c.domain.toLowerCase().includes(q)
-    );
+        domain.includes(q) ||
+        code.includes(q) ||
+        affiliation.includes(q) ||
+        approval.includes(q)
+      ) {
+        return true;
+      }
+
+      // Normalized match (ignoring dots, spaces, hyphens for acronyms like S.R.K.R. / SRKR)
+      if (cleanQ.length >= 2) {
+        const cleanName = name.replace(/[.\s\-_]/g, '');
+        const cleanShort = shortName.replace(/[.\s\-_]/g, '');
+        const cleanCode = code.replace(/[.\s\-_]/g, '');
+        if (cleanName.includes(cleanQ) || cleanShort.includes(cleanQ) || cleanCode.includes(cleanQ)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
   }
 
   return results;

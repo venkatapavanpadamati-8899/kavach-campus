@@ -1,0 +1,2271 @@
+{
+  "connectedUrl": "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+  "tableCount": 19,
+  "tables": [
+    {
+      "tablename": "ai_analyses",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "ai_configuration",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "audit_logs",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "campus_buildings",
+      "rowsecurity": false
+    },
+    {
+      "tablename": "campus_zones",
+      "rowsecurity": false
+    },
+    {
+      "tablename": "case_actions",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "emergency_configuration",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "escalations",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "evidence",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "incident_locations",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "incident_messages",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "incidents",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "notifications",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "profiles",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "safe_walks",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "staff_profiles",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "student_profiles",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "trusted_contacts",
+      "rowsecurity": true
+    },
+    {
+      "tablename": "user_otp_verifications",
+      "rowsecurity": true
+    }
+  ],
+  "rowCounts": {
+    "ai_analyses": 0,
+    "ai_configuration": 0,
+    "audit_logs": 8,
+    "campus_buildings": 0,
+    "campus_zones": 0,
+    "case_actions": 0,
+    "emergency_configuration": 0,
+    "escalations": 0,
+    "evidence": 0,
+    "incident_locations": 2,
+    "incident_messages": 0,
+    "incidents": 2,
+    "notifications": 0,
+    "profiles": 7,
+    "safe_walks": 0,
+    "staff_profiles": 0,
+    "student_profiles": 2,
+    "trusted_contacts": 0,
+    "user_otp_verifications": 0
+  },
+  "columns": [
+    {
+      "table_name": "ai_analyses",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "ai_analyses",
+      "column_name": "incident_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ai_analyses",
+      "column_name": "category",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ai_analyses",
+      "column_name": "suggested_severity",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ai_analyses",
+      "column_name": "urgency",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ai_analyses",
+      "column_name": "confidence",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ai_analyses",
+      "column_name": "summary",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ai_analyses",
+      "column_name": "suggested_routing",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ai_analyses",
+      "column_name": "model",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'gemini-2.5-pro'::text"
+    },
+    {
+      "table_name": "ai_analyses",
+      "column_name": "prompt_version",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ai_analyses",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "ai_configuration",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "ai_configuration",
+      "column_name": "enabled",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "table_name": "ai_configuration",
+      "column_name": "model",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'gemini-2.5-pro'::text"
+    },
+    {
+      "table_name": "ai_configuration",
+      "column_name": "confidence_threshold",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": "0.85"
+    },
+    {
+      "table_name": "ai_configuration",
+      "column_name": "fallback_enabled",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "table_name": "ai_configuration",
+      "column_name": "updated_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ai_configuration",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "actor_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "action",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "entity_type",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "entity_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "metadata",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "ip_address",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "user_agent",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "audit_logs",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "campus_buildings",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "campus_buildings",
+      "column_name": "zone_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "campus_buildings",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "campus_buildings",
+      "column_name": "coordinates",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "campus_buildings",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "campus_zones",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "campus_zones",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "campus_zones",
+      "column_name": "description",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "campus_zones",
+      "column_name": "emergency_priority",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "YES",
+      "column_default": "'MEDIUM'::priority_level"
+    },
+    {
+      "table_name": "campus_zones",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "case_actions",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "case_actions",
+      "column_name": "incident_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "case_actions",
+      "column_name": "actor_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "case_actions",
+      "column_name": "action",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "case_actions",
+      "column_name": "from_status",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "case_actions",
+      "column_name": "to_status",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "case_actions",
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "case_actions",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "emergency_configuration",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "emergency_configuration",
+      "column_name": "emergency_number",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "emergency_configuration",
+      "column_name": "campus_security_number",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "emergency_configuration",
+      "column_name": "women_safety_number",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "emergency_configuration",
+      "column_name": "enabled",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "table_name": "emergency_configuration",
+      "column_name": "updated_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "emergency_configuration",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "escalations",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "escalations",
+      "column_name": "incident_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "escalations",
+      "column_name": "from_level",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "escalations",
+      "column_name": "to_level",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "escalations",
+      "column_name": "reason",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "escalations",
+      "column_name": "triggered_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "escalations",
+      "column_name": "acknowledged_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "escalations",
+      "column_name": "resolved_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "evidence",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "evidence",
+      "column_name": "incident_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "evidence",
+      "column_name": "uploaded_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "evidence",
+      "column_name": "storage_path",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "evidence",
+      "column_name": "file_name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "evidence",
+      "column_name": "mime_type",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "evidence",
+      "column_name": "file_size",
+      "data_type": "bigint",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "evidence",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "evidence",
+      "column_name": "case_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "evidence",
+      "column_name": "file_path",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incident_locations",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "incident_locations",
+      "column_name": "incident_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incident_locations",
+      "column_name": "latitude",
+      "data_type": "double precision",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "incident_locations",
+      "column_name": "longitude",
+      "data_type": "double precision",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "incident_locations",
+      "column_name": "accuracy",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incident_locations",
+      "column_name": "recorded_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "incident_messages",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "incident_messages",
+      "column_name": "incident_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incident_messages",
+      "column_name": "sender_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incident_messages",
+      "column_name": "message",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "incident_messages",
+      "column_name": "is_internal",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
+    },
+    {
+      "table_name": "incident_messages",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "case_id",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "student_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "category",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "description",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "severity",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "YES",
+      "column_default": "'MEDIUM'::priority_level"
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "urgency",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "YES",
+      "column_default": "'RECEIVED'::incident_status"
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "is_anonymous",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "latitude",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "longitude",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "location_accuracy",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "campus_zone_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "building_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "assigned_to",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "incidents",
+      "column_name": "resolved_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "incident_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "title",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "message",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "type",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "read",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
+    },
+    {
+      "table_name": "notifications",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "full_name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "phone",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "role",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "NO",
+      "column_default": "'STUDENT'::app_role"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "college_email",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "student_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "department",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "year",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "section",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "is_approved",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "student_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "destination",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "started_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "expires_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'ACTIVE'::text"
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "last_latitude",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "last_longitude",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "last_location_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "auto_sos_enabled",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "auto_sos_timeout_mins",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": "5"
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "start_latitude",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "start_longitude",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "completed_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "safe_walks",
+      "column_name": "escalation_incident_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "staff_profiles",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "staff_profiles",
+      "column_name": "designation",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "staff_profiles",
+      "column_name": "office_location",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "staff_profiles",
+      "column_name": "department_head",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
+    },
+    {
+      "table_name": "staff_profiles",
+      "column_name": "specialization",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "staff_profiles",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "staff_profiles",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "course",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "hostel_room",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "blood_group",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "medical_conditions",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "emergency_contact_name",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "emergency_contact_phone",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "admission_type",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'REGULAR'::text"
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "admission_year",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "expected_graduation_year",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "id_card_url",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "verification_status",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'PENDING_UPLOAD'::text"
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "verified_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "verified_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "verification_notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "student_profiles",
+      "column_name": "ocr_extracted_data",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "trusted_contacts",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "trusted_contacts",
+      "column_name": "student_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "trusted_contacts",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "trusted_contacts",
+      "column_name": "phone",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "trusted_contacts",
+      "column_name": "relationship",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "trusted_contacts",
+      "column_name": "is_verified",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
+    },
+    {
+      "table_name": "trusted_contacts",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "trusted_contacts",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "user_otp_verifications",
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "user_otp_verifications",
+      "column_name": "email",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "user_otp_verifications",
+      "column_name": "otp_hash",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "user_otp_verifications",
+      "column_name": "expires_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "user_otp_verifications",
+      "column_name": "attempts",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": "0"
+    },
+    {
+      "table_name": "user_otp_verifications",
+      "column_name": "max_attempts",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": "5"
+    },
+    {
+      "table_name": "user_otp_verifications",
+      "column_name": "verified",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
+    },
+    {
+      "table_name": "user_otp_verifications",
+      "column_name": "registration_data",
+      "data_type": "jsonb",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "user_otp_verifications",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    }
+  ],
+  "profilesCols": [
+    "id",
+    "full_name",
+    "phone",
+    "role",
+    "college_email",
+    "student_id",
+    "department",
+    "year",
+    "section",
+    "is_approved",
+    "is_active",
+    "created_at",
+    "updated_at"
+  ],
+  "studentProfilesCols": [
+    "id",
+    "course",
+    "hostel_room",
+    "blood_group",
+    "medical_conditions",
+    "emergency_contact_name",
+    "emergency_contact_phone",
+    "created_at",
+    "updated_at",
+    "admission_type",
+    "admission_year",
+    "expected_graduation_year",
+    "id_card_url",
+    "verification_status",
+    "verified_at",
+    "verified_by",
+    "verification_notes",
+    "ocr_extracted_data"
+  ],
+  "incidentsCols": [
+    "id",
+    "case_id",
+    "student_id",
+    "category",
+    "description",
+    "severity",
+    "urgency",
+    "status",
+    "is_anonymous",
+    "latitude",
+    "longitude",
+    "location_accuracy",
+    "campus_zone_id",
+    "building_id",
+    "assigned_to",
+    "created_at",
+    "updated_at",
+    "resolved_at"
+  ],
+  "hasProfilesCollegeId": false,
+  "hasStudentProfilesClaimedCollegeId": false,
+  "hasIncidentsCollegeId": false,
+  "constraints": [
+    {
+      "table_name": "ai_analyses",
+      "constraint_name": "ai_analyses_incident_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "incident_id",
+      "foreign_table_name": "incidents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "ai_analyses",
+      "constraint_name": "ai_analyses_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "ai_analyses",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "ai_analyses",
+      "constraint_name": "ai_analyses_incident_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "incident_id",
+      "foreign_table_name": "ai_analyses",
+      "foreign_column_name": "incident_id"
+    },
+    {
+      "table_name": "ai_configuration",
+      "constraint_name": "ai_configuration_updated_by_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "updated_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "ai_configuration",
+      "constraint_name": "ai_configuration_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "ai_configuration",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "audit_logs",
+      "constraint_name": "audit_logs_actor_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "actor_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "audit_logs",
+      "constraint_name": "audit_logs_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "audit_logs",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "campus_buildings",
+      "constraint_name": "campus_buildings_zone_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "zone_id",
+      "foreign_table_name": "campus_zones",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "campus_buildings",
+      "constraint_name": "campus_buildings_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "campus_buildings",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "campus_zones",
+      "constraint_name": "campus_zones_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "campus_zones",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "case_actions",
+      "constraint_name": "case_actions_actor_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "actor_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "case_actions",
+      "constraint_name": "case_actions_incident_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "incident_id",
+      "foreign_table_name": "incidents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "case_actions",
+      "constraint_name": "case_actions_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "case_actions",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "emergency_configuration",
+      "constraint_name": "emergency_configuration_updated_by_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "updated_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "emergency_configuration",
+      "constraint_name": "emergency_configuration_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "emergency_configuration",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "escalations",
+      "constraint_name": "escalations_incident_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "incident_id",
+      "foreign_table_name": "incidents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "escalations",
+      "constraint_name": "escalations_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "escalations",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "evidence",
+      "constraint_name": "evidence_incident_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "incident_id",
+      "foreign_table_name": "incidents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "evidence",
+      "constraint_name": "evidence_uploaded_by_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "uploaded_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "evidence",
+      "constraint_name": "evidence_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "evidence",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incident_locations",
+      "constraint_name": "incident_locations_incident_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "incident_id",
+      "foreign_table_name": "incidents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incident_locations",
+      "constraint_name": "incident_locations_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "incident_locations",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incident_messages",
+      "constraint_name": "incident_messages_incident_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "incident_id",
+      "foreign_table_name": "incidents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incident_messages",
+      "constraint_name": "incident_messages_sender_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "sender_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incident_messages",
+      "constraint_name": "incident_messages_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "incident_messages",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incidents",
+      "constraint_name": "incidents_assigned_to_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "assigned_to",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incidents",
+      "constraint_name": "incidents_building_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "building_id",
+      "foreign_table_name": "campus_buildings",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incidents",
+      "constraint_name": "incidents_campus_zone_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "campus_zone_id",
+      "foreign_table_name": "campus_zones",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incidents",
+      "constraint_name": "incidents_student_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "student_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incidents",
+      "constraint_name": "incidents_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "incidents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "incidents",
+      "constraint_name": "incidents_case_id_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "case_id",
+      "foreign_table_name": "incidents",
+      "foreign_column_name": "case_id"
+    },
+    {
+      "table_name": "notifications",
+      "constraint_name": "notifications_incident_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "incident_id",
+      "foreign_table_name": "incidents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "notifications",
+      "constraint_name": "notifications_user_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "notifications",
+      "constraint_name": "notifications_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "notifications",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "profiles",
+      "constraint_name": "profiles_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "id",
+      "foreign_table_name": null,
+      "foreign_column_name": null
+    },
+    {
+      "table_name": "profiles",
+      "constraint_name": "profiles_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "profiles",
+      "constraint_name": "profiles_college_email_key",
+      "constraint_type": "UNIQUE",
+      "column_name": "college_email",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "college_email"
+    },
+    {
+      "table_name": "safe_walks",
+      "constraint_name": "safe_walks_escalation_incident_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "escalation_incident_id",
+      "foreign_table_name": "incidents",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "safe_walks",
+      "constraint_name": "safe_walks_student_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "student_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "safe_walks",
+      "constraint_name": "safe_walks_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "safe_walks",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "staff_profiles",
+      "constraint_name": "staff_profiles_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "staff_profiles",
+      "constraint_name": "staff_profiles_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "staff_profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "student_profiles",
+      "constraint_name": "student_profiles_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "student_profiles",
+      "constraint_name": "student_profiles_verified_by_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "verified_by",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "student_profiles",
+      "constraint_name": "student_profiles_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "student_profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "trusted_contacts",
+      "constraint_name": "trusted_contacts_student_id_fkey",
+      "constraint_type": "FOREIGN KEY",
+      "column_name": "student_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "trusted_contacts",
+      "constraint_name": "trusted_contacts_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "trusted_contacts",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "user_otp_verifications",
+      "constraint_name": "user_otp_verifications_pkey",
+      "constraint_type": "PRIMARY KEY",
+      "column_name": "id",
+      "foreign_table_name": "user_otp_verifications",
+      "foreign_column_name": "id"
+    }
+  ],
+  "indexes": [
+    {
+      "tablename": "ai_analyses",
+      "indexname": "ai_analyses_incident_id_key",
+      "indexdef": "CREATE UNIQUE INDEX ai_analyses_incident_id_key ON public.ai_analyses USING btree (incident_id)"
+    },
+    {
+      "tablename": "ai_analyses",
+      "indexname": "ai_analyses_pkey",
+      "indexdef": "CREATE UNIQUE INDEX ai_analyses_pkey ON public.ai_analyses USING btree (id)"
+    },
+    {
+      "tablename": "ai_configuration",
+      "indexname": "ai_configuration_pkey",
+      "indexdef": "CREATE UNIQUE INDEX ai_configuration_pkey ON public.ai_configuration USING btree (id)"
+    },
+    {
+      "tablename": "audit_logs",
+      "indexname": "audit_logs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)"
+    },
+    {
+      "tablename": "campus_buildings",
+      "indexname": "campus_buildings_pkey",
+      "indexdef": "CREATE UNIQUE INDEX campus_buildings_pkey ON public.campus_buildings USING btree (id)"
+    },
+    {
+      "tablename": "campus_zones",
+      "indexname": "campus_zones_pkey",
+      "indexdef": "CREATE UNIQUE INDEX campus_zones_pkey ON public.campus_zones USING btree (id)"
+    },
+    {
+      "tablename": "case_actions",
+      "indexname": "case_actions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX case_actions_pkey ON public.case_actions USING btree (id)"
+    },
+    {
+      "tablename": "emergency_configuration",
+      "indexname": "emergency_configuration_pkey",
+      "indexdef": "CREATE UNIQUE INDEX emergency_configuration_pkey ON public.emergency_configuration USING btree (id)"
+    },
+    {
+      "tablename": "escalations",
+      "indexname": "escalations_pkey",
+      "indexdef": "CREATE UNIQUE INDEX escalations_pkey ON public.escalations USING btree (id)"
+    },
+    {
+      "tablename": "evidence",
+      "indexname": "evidence_pkey",
+      "indexdef": "CREATE UNIQUE INDEX evidence_pkey ON public.evidence USING btree (id)"
+    },
+    {
+      "tablename": "incident_locations",
+      "indexname": "incident_locations_pkey",
+      "indexdef": "CREATE UNIQUE INDEX incident_locations_pkey ON public.incident_locations USING btree (id)"
+    },
+    {
+      "tablename": "incident_messages",
+      "indexname": "incident_messages_pkey",
+      "indexdef": "CREATE UNIQUE INDEX incident_messages_pkey ON public.incident_messages USING btree (id)"
+    },
+    {
+      "tablename": "incidents",
+      "indexname": "incidents_case_id_key",
+      "indexdef": "CREATE UNIQUE INDEX incidents_case_id_key ON public.incidents USING btree (case_id)"
+    },
+    {
+      "tablename": "incidents",
+      "indexname": "incidents_pkey",
+      "indexdef": "CREATE UNIQUE INDEX incidents_pkey ON public.incidents USING btree (id)"
+    },
+    {
+      "tablename": "notifications",
+      "indexname": "notifications_pkey",
+      "indexdef": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)"
+    },
+    {
+      "tablename": "profiles",
+      "indexname": "idx_profiles_student_id",
+      "indexdef": "CREATE UNIQUE INDEX idx_profiles_student_id ON public.profiles USING btree (student_id) WHERE ((student_id IS NOT NULL) AND (role = 'STUDENT'::app_role))"
+    },
+    {
+      "tablename": "profiles",
+      "indexname": "profiles_college_email_key",
+      "indexdef": "CREATE UNIQUE INDEX profiles_college_email_key ON public.profiles USING btree (college_email)"
+    },
+    {
+      "tablename": "profiles",
+      "indexname": "profiles_pkey",
+      "indexdef": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)"
+    },
+    {
+      "tablename": "safe_walks",
+      "indexname": "safe_walks_pkey",
+      "indexdef": "CREATE UNIQUE INDEX safe_walks_pkey ON public.safe_walks USING btree (id)"
+    },
+    {
+      "tablename": "staff_profiles",
+      "indexname": "staff_profiles_pkey",
+      "indexdef": "CREATE UNIQUE INDEX staff_profiles_pkey ON public.staff_profiles USING btree (id)"
+    },
+    {
+      "tablename": "student_profiles",
+      "indexname": "idx_student_profiles_verification_status",
+      "indexdef": "CREATE INDEX idx_student_profiles_verification_status ON public.student_profiles USING btree (verification_status)"
+    },
+    {
+      "tablename": "student_profiles",
+      "indexname": "student_profiles_pkey",
+      "indexdef": "CREATE UNIQUE INDEX student_profiles_pkey ON public.student_profiles USING btree (id)"
+    },
+    {
+      "tablename": "trusted_contacts",
+      "indexname": "trusted_contacts_pkey",
+      "indexdef": "CREATE UNIQUE INDEX trusted_contacts_pkey ON public.trusted_contacts USING btree (id)"
+    },
+    {
+      "tablename": "user_otp_verifications",
+      "indexname": "user_otp_verifications_pkey",
+      "indexdef": "CREATE UNIQUE INDEX user_otp_verifications_pkey ON public.user_otp_verifications USING btree (id)"
+    }
+  ],
+  "policies": [
+    {
+      "tablename": "ai_configuration",
+      "policyname": "Admin modify ai config",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "emergency_configuration",
+      "policyname": "Admin modify emergency config",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "emergency_configuration",
+      "policyname": "Public read emergency config",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "escalations",
+      "policyname": "Staff and admin manage escalations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "ALL",
+      "qual": "is_staff()",
+      "with_check": "is_staff()"
+    },
+    {
+      "tablename": "escalations",
+      "policyname": "Staff and admin view escalations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "is_staff()",
+      "with_check": null
+    },
+    {
+      "tablename": "evidence",
+      "policyname": "Authorized users upload incident evidence",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((uploaded_by = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE (((i.case_id = evidence.case_id) OR ((i.id)::text = evidence.case_id)) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_reviewer())))))"
+    },
+    {
+      "tablename": "evidence",
+      "policyname": "Authorized users view incident evidence",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((uploaded_by = auth.uid()) OR is_admin() OR (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE (((i.case_id = evidence.case_id) OR ((i.id)::text = evidence.case_id)) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_reviewer())))))",
+      "with_check": null
+    },
+    {
+      "tablename": "incident_locations",
+      "policyname": "Authorized users insert incident locations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE ((i.id = incident_locations.incident_id) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_admin()))))"
+    },
+    {
+      "tablename": "incident_locations",
+      "policyname": "Authorized users view incident locations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE ((i.id = incident_locations.incident_id) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_admin()))))",
+      "with_check": null
+    },
+    {
+      "tablename": "incident_messages",
+      "policyname": "Staff read all messages",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['STAFF'::app_role, 'SECURITY'::app_role, 'ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "incident_messages",
+      "policyname": "Students read non-internal messages",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "((is_internal = false) AND (EXISTS ( SELECT 1\n   FROM incidents\n  WHERE ((incidents.id = incident_messages.incident_id) AND (incidents.student_id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "tablename": "incident_messages",
+      "policyname": "Users insert messages",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((sender_id = auth.uid()) AND ((EXISTS ( SELECT 1\n   FROM incidents\n  WHERE ((incidents.id = incident_messages.incident_id) AND (incidents.student_id = auth.uid())))) OR (EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['STAFF'::app_role, 'SECURITY'::app_role, 'ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))))"
+    },
+    {
+      "tablename": "incidents",
+      "policyname": "Authorized users view incidents",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((student_id = auth.uid()) OR (assigned_to = auth.uid()) OR is_reviewer())",
+      "with_check": null
+    },
+    {
+      "tablename": "incidents",
+      "policyname": "Students insert own incidents",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(auth.uid() = student_id)"
+    },
+    {
+      "tablename": "incidents",
+      "policyname": "Students view own incidents",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = student_id)",
+      "with_check": null
+    },
+    {
+      "tablename": "notifications",
+      "policyname": "Users view own notifications",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "Staff can read all profiles",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "is_staff()",
+      "with_check": null
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "Users can read own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "Users can update own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "UPDATE",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tablename": "safe_walks",
+      "policyname": "Staff view safe walks",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['SECURITY'::app_role, 'ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "safe_walks",
+      "policyname": "Students manage own safe walks",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(auth.uid() = student_id)",
+      "with_check": null
+    },
+    {
+      "tablename": "staff_profiles",
+      "policyname": "Admin read staff profiles",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "staff_profiles",
+      "policyname": "Staff read own private profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tablename": "staff_profiles",
+      "policyname": "Staff update own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "UPDATE",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tablename": "student_profiles",
+      "policyname": "Reviewers and student owner read profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((id = auth.uid()) OR is_reviewer())",
+      "with_check": null
+    },
+    {
+      "tablename": "student_profiles",
+      "policyname": "Students update own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "UPDATE",
+      "qual": "(auth.uid() = id)",
+      "with_check": "(auth.uid() = id)"
+    },
+    {
+      "tablename": "trusted_contacts",
+      "policyname": "Students manage own trusted contacts",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(auth.uid() = student_id)",
+      "with_check": null
+    }
+  ],
+  "functions": [
+    {
+      "routine_name": "get_user_role",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "routine_name": "is_admin",
+      "data_type": "boolean"
+    },
+    {
+      "routine_name": "is_reviewer",
+      "data_type": "boolean"
+    },
+    {
+      "routine_name": "is_security_or_admin",
+      "data_type": "boolean"
+    },
+    {
+      "routine_name": "is_staff",
+      "data_type": "boolean"
+    },
+    {
+      "routine_name": "prevent_self_role_escalation",
+      "data_type": "trigger"
+    },
+    {
+      "routine_name": "prevent_student_profile_tampering",
+      "data_type": "trigger"
+    },
+    {
+      "routine_name": "update_updated_at_column",
+      "data_type": "trigger"
+    }
+  ],
+  "buckets": [
+    {
+      "id": "kavach-evidence",
+      "name": "kavach-evidence",
+      "public": false,
+      "file_size_limit": "10485760",
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf",
+        "video/mp4"
+      ]
+    },
+    {
+      "id": "kavach-id-cards",
+      "name": "kavach-id-cards",
+      "public": false,
+      "file_size_limit": "5242880",
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf"
+      ]
+    }
+  ],
+  "storagePolicies": [
+    {
+      "policyname": "Authenticated users upload own id card",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((bucket_id = 'kavach-id-cards'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR (name ~~ ((auth.uid())::text || '/%'::text))))"
+    },
+    {
+      "policyname": "Authorized users read incident evidence files",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'kavach-evidence'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR (name ~~ ((auth.uid())::text || '/%'::text)) OR is_admin() OR (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE (((i.case_id = (storage.foldername(objects.name))[1]) OR ((i.id)::text = (storage.foldername(objects.name))[1])) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_reviewer()))))))",
+      "with_check": null
+    },
+    {
+      "policyname": "Authorized users upload incident evidence files",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((bucket_id = 'kavach-evidence'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR (name ~~ ((auth.uid())::text || '/%'::text)) OR (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE (((i.case_id = (storage.foldername(objects.name))[1]) OR ((i.id)::text = (storage.foldername(objects.name))[1])) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_reviewer()))))))"
+    },
+    {
+      "policyname": "Users and reviewers read authorized id card",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((bucket_id = 'kavach-id-cards'::text) AND (((auth.uid())::text = (storage.foldername(name))[1]) OR (name ~~ ((auth.uid())::text || '/%'::text)) OR is_reviewer()))",
+      "with_check": null
+    }
+  ]
+}

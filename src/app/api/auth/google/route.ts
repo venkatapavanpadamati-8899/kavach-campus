@@ -15,9 +15,9 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const rawNext = requestUrl.searchParams.get('next') || requestUrl.searchParams.get('redirect');
 
-  // Resolve true origin (handling reverse proxies & HTTPS)
+  // Resolve true origin (handling reverse proxies, local LAN & HTTPS)
   const forwardedHost = request.headers.get('x-forwarded-host');
-  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  const forwardedProto = request.headers.get('x-forwarded-proto') || requestUrl.protocol.replace(':', '');
   const origin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : requestUrl.origin;
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -42,6 +42,7 @@ export async function GET(request: Request) {
 
   try {
     const supabase = await createClient();
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

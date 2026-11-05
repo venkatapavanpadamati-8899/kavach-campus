@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import styles from './page.module.css';
@@ -22,10 +22,13 @@ import {
   Navigation,
   Sparkles,
   Radio,
-  UserCheck
+  UserCheck,
+  Menu,
+  X
 } from 'lucide-react';
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const roles = [
     {
       title: "Students",
@@ -137,8 +140,42 @@ export default function LandingPage() {
             <User size={16} />
             <span>Sign In</span>
           </Link>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+            className={styles.mobileMenuBtn}
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
       </nav>
+
+      {/* Mobile Navigation Dropdown */}
+      {mobileMenuOpen && (
+        <div className={styles.mobileNavDropdown}>
+          <Link href="/" className={styles.mobileNavDropdownLink} onClick={() => setMobileMenuOpen(false)}>
+            Home
+          </Link>
+          <a href="#safety-features" className={styles.mobileNavDropdownLink} onClick={() => setMobileMenuOpen(false)}>
+            Safety Features
+          </a>
+          <a href="#how-it-works" className={styles.mobileNavDropdownLink} onClick={() => setMobileMenuOpen(false)}>
+            How It Works
+          </a>
+          <Link href="/features" className={styles.mobileNavDropdownLink} onClick={() => setMobileMenuOpen(false)}>
+            Platform Capabilities
+          </Link>
+          <Link href="/about" className={styles.mobileNavDropdownLink} onClick={() => setMobileMenuOpen(false)}>
+            About Us
+          </Link>
+          <Link href="/contact" className={styles.mobileNavDropdownLink} onClick={() => setMobileMenuOpen(false)}>
+            Campus Helpdesk & Contact
+          </Link>
+          <Link href="/privacy" className={styles.mobileNavDropdownLink} onClick={() => setMobileMenuOpen(false)}>
+            Privacy Charter
+          </Link>
+        </div>
+      )}
 
       {/* Hero Section matching Image 1 */}
       <header className={styles.hero}>

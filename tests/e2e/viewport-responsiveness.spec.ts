@@ -7,13 +7,17 @@ import {
 } from './test-auth-helper';
 
 const VIEWPORTS = [
-  { name: 'Mobile Small (iPhone SE)', width: 320, height: 568 },
-  { name: 'Mobile Medium (iPhone X/11)', width: 375, height: 812 },
-  { name: 'Mobile Modern (iPhone 12/13/14)', width: 390, height: 844 },
-  { name: 'Tablet Portrait (iPad)', width: 768, height: 1024 },
-  { name: 'Tablet Landscape (iPad)', width: 1024, height: 768 },
-  { name: 'Laptop Standard (HD Laptop)', width: 1366, height: 768 },
-  { name: 'Desktop Full HD (1080p)', width: 1920, height: 1080 },
+  { name: 'Small mobile (320x568)', width: 320, height: 568 },
+  { name: 'Mobile (360x800)', width: 360, height: 800 },
+  { name: 'Mobile (375x812)', width: 375, height: 812 },
+  { name: 'Mobile (390x844)', width: 390, height: 844 },
+  { name: 'Mobile (430x932)', width: 430, height: 932 },
+  { name: 'Tablet portrait (768x1024)', width: 768, height: 1024 },
+  { name: 'Tablet landscape (1024x768)', width: 1024, height: 768 },
+  { name: 'Laptop (1280x720)', width: 1280, height: 720 },
+  { name: 'Laptop (1366x768)', width: 1366, height: 768 },
+  { name: 'Desktop (1440x900)', width: 1440, height: 900 },
+  { name: 'Full HD (1920x1080)', width: 1920, height: 1080 },
 ];
 
 test.describe('Kavach Campus — Viewport Responsiveness & Critical Features', () => {

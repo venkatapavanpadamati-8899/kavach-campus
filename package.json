@@ -4,7 +4,8 @@
   "description": "This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname 0.0.0.0",
+    "dev:local": "next dev",
     "prebuild": "node -e \"const fs = require('node:fs'); for (const dir of ['.next-production', '.next']) { for (let i = 0; i < 5; i++) { try { if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); break; } catch {} } }\"",
     "build": "next build --experimental-app-only",
     "start": "next start",

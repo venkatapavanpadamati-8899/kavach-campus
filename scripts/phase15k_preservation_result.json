@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-11-05T03:11:55.721Z",
+  "counts": {
+    "profiles": 7,
+    "student_profiles": 2,
+    "staff_profiles": 0,
+    "incidents": 2,
+    "incident_locations": 2,
+    "evidence": 0,
+    "incident_messages": 0,
+    "safe_walks": 0,
+    "escalations": 0,
+    "audit_logs": 10,
+    "staff_locations": 0,
+    "safe_box_private_notes": 0
+  },
+  "storageObjectsCount": 4,
+  "expectedCounts": {
+    "profiles": 7,
+    "student_profiles": 2,
+    "incidents": 2,
+    "incident_locations": 2,
+    "audit_logs": 10
+  },
+  "verdict": "PASS - 100% PRESERVED"
+}

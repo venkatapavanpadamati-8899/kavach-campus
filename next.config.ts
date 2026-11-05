@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
       { source: '/safe-walk.html', destination: '/student/safe-walk', permanent: true },
       { source: '/contacts.html', destination: '/student/contacts', permanent: true },
       { source: '/report.html', destination: '/student/report', permanent: true },
+      { source: '/hod', destination: '/management', permanent: false },
+      { source: '/principal', destination: '/management', permanent: false },
     ];
   },
 };

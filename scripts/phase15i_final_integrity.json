@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-11-04T17:37:50.746Z",
+  "status": "PASS",
+  "tableCount": 21,
+  "rowCounts": {
+    "ai_analyses": 0,
+    "ai_configuration": 0,
+    "audit_logs": 9,
+    "campus_buildings": 0,
+    "campus_zones": 0,
+    "case_actions": 0,
+    "emergency_configuration": 0,
+    "escalations": 0,
+    "evidence": 0,
+    "incident_locations": 2,
+    "incident_messages": 0,
+    "incidents": 2,
+    "notifications": 0,
+    "profiles": 7,
+    "safe_box_private_notes": 0,
+    "safe_walks": 0,
+    "staff_locations": 0,
+    "staff_profiles": 0,
+    "student_profiles": 2,
+    "trusted_contacts": 0,
+    "user_otp_verifications": 0
+  },
+  "buckets": [
+    {
+      "id": "kavach-evidence",
+      "public": false,
+      "file_size_limit": "26214400",
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "video/mp4",
+        "video/quicktime",
+        "video/webm",
+        "audio/webm",
+        "audio/ogg",
+        "audio/mpeg",
+        "audio/mp4",
+        "application/pdf"
+      ]
+    },
+    {
+      "id": "kavach-id-cards",
+      "public": false,
+      "file_size_limit": "5242880",
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf"
+      ]
+    },
+    {
+      "id": "kavach-profile-photos",
+      "public": false,
+      "file_size_limit": "2097152",
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ]
+    }
+  ],
+  "policiesCount": 37,
+  "studentIdIndexes": [
+    {
+      "indexname": "idx_profiles_college_student_id",
+      "indexdef": "CREATE UNIQUE INDEX idx_profiles_college_student_id ON public.profiles USING btree (college_id, student_id) WHERE ((student_id IS NOT NULL) AND (role = 'STUDENT'::app_role))"
+    }
+  ]
+}

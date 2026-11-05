@@ -744,3 +744,40 @@
     gap: 16px;
   }
 }
+
+
+.mobileMenuBtn {
+  display: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .mobileMenuBtn {
+    display: flex;
+  }
+  .mobileNavDropdown {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 24px;
+    background: rgba(10, 16, 32, 0.96);
+    border-bottom: 1px solid rgba(34, 211, 238, 0.25);
+    backdrop-filter: blur(20px);
+    width: 100%;
+  }
+  .mobileNavDropdownLink {
+    color: #cbd5e1;
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+}

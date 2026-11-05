@@ -1,0 +1,322 @@
+[
+  {
+    "suite": "1. Incident Privacy",
+    "testId": "1.1",
+    "testName": "Student A reads own incident",
+    "persona": "Student A (SRKR)",
+    "operation": "SELECT",
+    "expected": "1 row returned",
+    "actual": "1 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "1. Incident Privacy",
+    "testId": "1.2",
+    "testName": "Student B cannot read Student A incident (Peer Isolation)",
+    "persona": "Student B (SRKR)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "1. Incident Privacy",
+    "testId": "1.3",
+    "testName": "Student B cannot update Student A incident",
+    "persona": "Student B (SRKR)",
+    "operation": "UPDATE",
+    "expected": "0 rows affected",
+    "actual": "0 row(s) affected",
+    "status": "PASS"
+  },
+  {
+    "suite": "1. Incident Privacy",
+    "testId": "1.4",
+    "testName": "College B staff cannot access College A incident",
+    "persona": "Staff B (VITB)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "1. Incident Privacy",
+    "testId": "1.5",
+    "testName": "College A staff cannot access College B incident",
+    "persona": "Staff A (SRKR)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "1. Incident Privacy",
+    "testId": "1.6",
+    "testName": "College A staff can access College A incident",
+    "persona": "Staff A (SRKR)",
+    "operation": "SELECT",
+    "expected": "1 row returned",
+    "actual": "1 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "2. Incident Location Privacy",
+    "testId": "2.1",
+    "testName": "Student A reads own incident location",
+    "persona": "Student A (SRKR)",
+    "operation": "SELECT",
+    "expected": "1 row returned",
+    "actual": "1 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "2. Incident Location Privacy",
+    "testId": "2.2",
+    "testName": "Student B cannot read Student A GPS location",
+    "persona": "Student B (SRKR)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "2. Incident Location Privacy",
+    "testId": "2.3",
+    "testName": "College B staff cannot read College A GPS location",
+    "persona": "Staff B (VITB)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "2. Incident Location Privacy",
+    "testId": "2.4",
+    "testName": "College A staff can read same-college incident GPS location",
+    "persona": "Staff A (SRKR)",
+    "operation": "SELECT",
+    "expected": "1 row returned",
+    "actual": "1 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "3. Evidence Privacy",
+    "testId": "3.1",
+    "testName": "Student A reads own evidence",
+    "persona": "Student A (SRKR)",
+    "operation": "SELECT",
+    "expected": "1 row returned",
+    "actual": "1 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "3. Evidence Privacy",
+    "testId": "3.2",
+    "testName": "Student B cannot read Student A evidence",
+    "persona": "Student B (SRKR)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "3. Evidence Privacy",
+    "testId": "3.3",
+    "testName": "College B staff cannot read College A evidence",
+    "persona": "Staff B (VITB)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "3. Evidence Privacy",
+    "testId": "3.4",
+    "testName": "College B staff cannot read College A evidence storage file",
+    "persona": "Staff B (VITB)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "3. Evidence Privacy",
+    "testId": "3.5",
+    "testName": "College A staff can read same-college evidence storage file",
+    "persona": "Staff A (SRKR)",
+    "operation": "SELECT",
+    "expected": "1 row returned",
+    "actual": "1 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "4. Student Profile Privacy",
+    "testId": "4.1",
+    "testName": "Student A reads own student profile",
+    "persona": "Student A (SRKR)",
+    "operation": "SELECT",
+    "expected": "1 row returned",
+    "actual": "1 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "4. Student Profile Privacy",
+    "testId": "4.2",
+    "testName": "Student B cannot read Student A student profile",
+    "persona": "Student B (SRKR)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "4. Student Profile Privacy",
+    "testId": "4.3",
+    "testName": "College B staff cannot read College A student profile",
+    "persona": "Staff B (VITB)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "4. Student Profile Privacy",
+    "testId": "4.4",
+    "testName": "College A staff can read same-college student profile",
+    "persona": "Staff A (SRKR)",
+    "operation": "SELECT",
+    "expected": "1 row returned",
+    "actual": "1 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "5. Safe Box Private Notes",
+    "testId": "5.1",
+    "testName": "Student A reads own Safe Box note",
+    "persona": "Student A (SRKR)",
+    "operation": "SELECT",
+    "expected": "1 row returned",
+    "actual": "1 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "5. Safe Box Private Notes",
+    "testId": "5.2",
+    "testName": "Student B cannot read Student A Safe Box note",
+    "persona": "Student B (SRKR)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "5. Safe Box Private Notes",
+    "testId": "5.3",
+    "testName": "Campus Staff cannot read Safe Box note",
+    "persona": "Staff A (SRKR)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "5. Safe Box Private Notes",
+    "testId": "5.4",
+    "testName": "HOD cannot read Safe Box note",
+    "persona": "HOD A (SRKR)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "5. Safe Box Private Notes",
+    "testId": "5.5",
+    "testName": "Principal cannot read Safe Box note",
+    "persona": "Principal A (SRKR)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "5. Safe Box Private Notes",
+    "testId": "5.6",
+    "testName": "Campus Admin cannot read Safe Box note",
+    "persona": "Admin A (SRKR)",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "5. Safe Box Private Notes",
+    "testId": "5.7",
+    "testName": "Student B cannot update Student A Safe Box note",
+    "persona": "Student B (SRKR)",
+    "operation": "UPDATE",
+    "expected": "0 rows affected",
+    "actual": "0 row(s) affected",
+    "status": "PASS"
+  },
+  {
+    "suite": "6. Administrative Boundaries",
+    "testId": "6.1",
+    "testName": "Campus Admin A cannot modify College B student profile",
+    "persona": "Admin A (SRKR)",
+    "operation": "UPDATE",
+    "expected": "0 rows affected",
+    "actual": "0 row(s) affected",
+    "status": "PASS"
+  },
+  {
+    "suite": "6. Administrative Boundaries",
+    "testId": "6.2",
+    "testName": "Super Admin can oversee both College A and College B incidents",
+    "persona": "Super Admin",
+    "operation": "SELECT",
+    "expected": "2 rows returned",
+    "actual": "2 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "7. Anonymous Access",
+    "testId": "7.1",
+    "testName": "Anonymous user cannot read incidents",
+    "persona": "Anonymous",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "7. Anonymous Access",
+    "testId": "7.2",
+    "testName": "Anonymous user cannot read profiles",
+    "persona": "Anonymous",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "7. Anonymous Access",
+    "testId": "7.3",
+    "testName": "Anonymous user cannot read evidence",
+    "persona": "Anonymous",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  },
+  {
+    "suite": "7. Anonymous Access",
+    "testId": "7.4",
+    "testName": "Anonymous user cannot read Safe Box notes",
+    "persona": "Anonymous",
+    "operation": "SELECT",
+    "expected": "0 rows returned",
+    "actual": "0 row(s) returned",
+    "status": "PASS"
+  }
+]

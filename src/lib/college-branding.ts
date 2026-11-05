@@ -8,6 +8,8 @@ export type PageKey =
   | 'identity_verification'
   | 'file_report'
   | 'voice_report'
+  | 'safe_box'
+  | 'student_profile'
   | 'sos'
   | 'safe_walk'
   | 'my_cases'
@@ -15,7 +17,13 @@ export type PageKey =
   | 'settings'
   | 'staff_dashboard'
   | 'admin_dashboard'
-  | 'management_dashboard';
+  | 'management_dashboard'
+  | 'super_admin'
+  | 'landing'
+  | 'about'
+  | 'features'
+  | 'contact'
+  | 'privacy';
 
 export interface PageBackgroundConfig {
   imageUrl: string;
@@ -117,6 +125,46 @@ const SRKR_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
     overlay: 'linear-gradient(180deg, rgba(6, 45, 34, 0.48) 0%, rgba(4, 20, 13, 0.75) 100%)',
     caption: 'SRKR Campus Command & Security Operations Center'
   },
+  safe_box: {
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(10, 15, 30, 0.85) 100%)',
+    caption: 'SRKR Confidential Vault & Encrypted Student Locker'
+  },
+  student_profile: {
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(20, 20, 35, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
+    caption: 'SRKR Student Identity & Verified Credentials'
+  },
+  super_admin: {
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.50) 0%, rgba(8, 12, 24, 0.80) 100%)',
+    caption: 'Kavach Campus Multi-Institutional Command Infrastructure'
+  },
+  landing: {
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.40) 0%, rgba(8, 13, 26, 0.85) 100%)',
+    caption: 'SRKR Engineering College — Campus Gateway'
+  },
+  about: {
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.45) 0%, rgba(8, 13, 26, 0.85) 100%)',
+    caption: 'SRKR Engineering Excellence & Student Dignity Network'
+  },
+  features: {
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.45) 0%, rgba(8, 13, 26, 0.85) 100%)',
+    caption: 'SRKR Smart Campus Security & Rapid Telemetry Suite'
+  },
+  contact: {
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.45) 0%, rgba(8, 13, 26, 0.85) 100%)',
+    caption: 'SRKR Emergency Helpdesk & Campus Dispatch Desk'
+  },
+  privacy: {
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.55) 0%, rgba(8, 13, 26, 0.90) 100%)',
+    caption: 'SRKR Institutional Privacy & Data Protection Standard'
+  },
   management_dashboard: {
     imageUrl: '/images/desktop_hero_banner.jpg',
     overlay: 'linear-gradient(180deg, rgba(4, 32, 24, 0.45) 0%, rgba(4, 20, 13, 0.72) 100%)',
@@ -194,6 +242,46 @@ const VISHNU_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
     imageUrl: '/images/campus_hero_bg.jpg',
     overlay: 'linear-gradient(180deg, rgba(6, 45, 34, 0.48) 0%, rgba(4, 20, 13, 0.75) 100%)',
     caption: 'Vishnu Central Campus Command & Control Tower'
+  },
+    safe_box: {
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(4, 20, 13, 0.85) 100%)',
+    caption: 'Vishnu Encrypted Student Safe Box & Document Vault'
+  },
+  student_profile: {
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(20, 20, 35, 0.45) 0%, rgba(4, 20, 13, 0.70) 100%)',
+    caption: 'Vishnu Student Credentials & Profile Verification'
+  },
+  super_admin: {
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.50) 0%, rgba(8, 12, 24, 0.80) 100%)',
+    caption: 'Kavach Campus Multi-Institutional Command Infrastructure'
+  },
+  landing: {
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.40) 0%, rgba(4, 20, 13, 0.85) 100%)',
+    caption: 'Vishnu Institute of Technology — Main Gateway'
+  },
+  about: {
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.45) 0%, rgba(4, 20, 13, 0.85) 100%)',
+    caption: 'Vishnu Institute of Technology — Academic Excellence'
+  },
+  features: {
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.45) 0%, rgba(4, 20, 13, 0.85) 100%)',
+    caption: 'Vishnu Safety Systems & Real-Time Incident Response'
+  },
+  contact: {
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.45) 0%, rgba(4, 20, 13, 0.85) 100%)',
+    caption: 'Vishnu Security Office & Student Assistance'
+  },
+  privacy: {
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.55) 0%, rgba(4, 20, 13, 0.90) 100%)',
+    caption: 'Vishnu Student Privacy Charter & Security Guardrails'
   },
   management_dashboard: {
     imageUrl: '/images/desktop_hero_banner.jpg',
@@ -273,6 +361,46 @@ const DEFAULT_FALLBACK_BACKGROUNDS: Record<PageKey, PageBackgroundConfig> = {
     imageUrl: '/images/campus_hero_bg.jpg',
     overlay: 'linear-gradient(180deg, rgba(6, 45, 34, 0.48) 0%, rgba(4, 20, 13, 0.75) 100%)',
     caption: 'Campus Central Command Tower'
+  },
+    safe_box: {
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(10, 15, 30, 0.85) 100%)',
+    caption: 'Confidential Safe Box & Encrypted Evidence Vault'
+  },
+  student_profile: {
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(17, 24, 39, 0.45) 0%, rgba(10, 15, 30, 0.70) 100%)',
+    caption: 'Student Profile & Campus Accreditation'
+  },
+  super_admin: {
+    imageUrl: '/images/staff_admin_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(15, 23, 42, 0.50) 0%, rgba(8, 12, 24, 0.80) 100%)',
+    caption: 'Kavach Campus Multi-Campus System Governance'
+  },
+  landing: {
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.40) 0%, rgba(8, 13, 26, 0.85) 100%)',
+    caption: 'Kavach Campus — Smart Student Safety Platform'
+  },
+  about: {
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.45) 0%, rgba(8, 13, 26, 0.85) 100%)',
+    caption: 'About Kavach Campus Safety Network'
+  },
+  features: {
+    imageUrl: '/images/campus_hero_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.45) 0%, rgba(8, 13, 26, 0.85) 100%)',
+    caption: 'Kavach Campus Advanced Safety Capabilities'
+  },
+  contact: {
+    imageUrl: '/images/auth_campus_bg.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.45) 0%, rgba(8, 13, 26, 0.85) 100%)',
+    caption: 'Campus Helpdesk & Technical Support'
+  },
+  privacy: {
+    imageUrl: '/images/desktop_hero_banner.jpg',
+    overlay: 'linear-gradient(180deg, rgba(10, 15, 30, 0.55) 0%, rgba(8, 13, 26, 0.90) 100%)',
+    caption: 'Kavach Campus Privacy & Security Policy'
   },
   management_dashboard: {
     imageUrl: '/images/desktop_hero_banner.jpg',

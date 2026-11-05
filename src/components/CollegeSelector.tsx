@@ -23,7 +23,8 @@ export default function CollegeSelector({
   useEffect(() => {
     const results = searchColleges({
       pincode: pincode.trim(),
-      query: searchQuery.trim()
+      query: searchQuery.trim(),
+      includeStatewide: true,
     });
     setColleges(results);
   }, [pincode, searchQuery]);

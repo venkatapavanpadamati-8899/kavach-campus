@@ -1,0 +1,337 @@
+{
+  "buckets": [
+    {
+      "id": "kavach-evidence",
+      "name": "kavach-evidence",
+      "public": false,
+      "file_size_limit": "10485760",
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf",
+        "video/mp4"
+      ]
+    },
+    {
+      "id": "kavach-id-cards",
+      "name": "kavach-id-cards",
+      "public": false,
+      "file_size_limit": "5242880",
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "routine_name": "get_user_role",
+      "routine_type": "FUNCTION",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "routine_name": "is_admin",
+      "routine_type": "FUNCTION",
+      "data_type": "boolean"
+    },
+    {
+      "routine_name": "is_reviewer",
+      "routine_type": "FUNCTION",
+      "data_type": "boolean"
+    },
+    {
+      "routine_name": "is_security_or_admin",
+      "routine_type": "FUNCTION",
+      "data_type": "boolean"
+    },
+    {
+      "routine_name": "is_staff",
+      "routine_type": "FUNCTION",
+      "data_type": "boolean"
+    },
+    {
+      "routine_name": "prevent_self_role_escalation",
+      "routine_type": "FUNCTION",
+      "data_type": "trigger"
+    },
+    {
+      "routine_name": "prevent_student_profile_tampering",
+      "routine_type": "FUNCTION",
+      "data_type": "trigger"
+    },
+    {
+      "routine_name": "update_updated_at_column",
+      "routine_type": "FUNCTION",
+      "data_type": "trigger"
+    }
+  ],
+  "triggers": [
+    {
+      "event_object_table": "profiles",
+      "trigger_name": "trg_prevent_self_role_escalation",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "profiles",
+      "trigger_name": "update_profiles_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "event_object_table": "student_profiles",
+      "trigger_name": "trg_prevent_student_profile_tampering",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    }
+  ],
+  "policiesCount": 27,
+  "policies": [
+    {
+      "tablename": "ai_configuration",
+      "policyname": "Admin modify ai config",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "emergency_configuration",
+      "policyname": "Admin modify emergency config",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "emergency_configuration",
+      "policyname": "Public read emergency config",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "escalations",
+      "policyname": "Staff and admin manage escalations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "ALL",
+      "qual": "is_staff()",
+      "with_check": "is_staff()"
+    },
+    {
+      "tablename": "escalations",
+      "policyname": "Staff and admin view escalations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "is_staff()",
+      "with_check": null
+    },
+    {
+      "tablename": "evidence",
+      "policyname": "Authorized users upload incident evidence",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((uploaded_by = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE (((i.case_id = evidence.case_id) OR ((i.id)::text = evidence.case_id)) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_reviewer())))))"
+    },
+    {
+      "tablename": "evidence",
+      "policyname": "Authorized users view incident evidence",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((uploaded_by = auth.uid()) OR is_admin() OR (EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE (((i.case_id = evidence.case_id) OR ((i.id)::text = evidence.case_id)) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_reviewer())))))",
+      "with_check": null
+    },
+    {
+      "tablename": "incident_locations",
+      "policyname": "Authorized users insert incident locations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE ((i.id = incident_locations.incident_id) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_admin()))))"
+    },
+    {
+      "tablename": "incident_locations",
+      "policyname": "Authorized users view incident locations",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM incidents i\n  WHERE ((i.id = incident_locations.incident_id) AND ((i.student_id = auth.uid()) OR (i.assigned_to = auth.uid()) OR is_admin()))))",
+      "with_check": null
+    },
+    {
+      "tablename": "incident_messages",
+      "policyname": "Staff read all messages",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['STAFF'::app_role, 'SECURITY'::app_role, 'ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "incident_messages",
+      "policyname": "Students read non-internal messages",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "((is_internal = false) AND (EXISTS ( SELECT 1\n   FROM incidents\n  WHERE ((incidents.id = incident_messages.incident_id) AND (incidents.student_id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "tablename": "incident_messages",
+      "policyname": "Users insert messages",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "((sender_id = auth.uid()) AND ((EXISTS ( SELECT 1\n   FROM incidents\n  WHERE ((incidents.id = incident_messages.incident_id) AND (incidents.student_id = auth.uid())))) OR (EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['STAFF'::app_role, 'SECURITY'::app_role, 'ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))))"
+    },
+    {
+      "tablename": "incidents",
+      "policyname": "Authorized users view incidents",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((student_id = auth.uid()) OR (assigned_to = auth.uid()) OR is_reviewer())",
+      "with_check": null
+    },
+    {
+      "tablename": "incidents",
+      "policyname": "Students insert own incidents",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(auth.uid() = student_id)"
+    },
+    {
+      "tablename": "incidents",
+      "policyname": "Students view own incidents",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = student_id)",
+      "with_check": null
+    },
+    {
+      "tablename": "notifications",
+      "policyname": "Users view own notifications",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = user_id)",
+      "with_check": null
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "Staff can read all profiles",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "is_staff()",
+      "with_check": null
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "Users can read own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tablename": "profiles",
+      "policyname": "Users can update own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "UPDATE",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tablename": "safe_walks",
+      "policyname": "Staff view safe walks",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['SECURITY'::app_role, 'ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "safe_walks",
+      "policyname": "Students manage own safe walks",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(auth.uid() = student_id)",
+      "with_check": null
+    },
+    {
+      "tablename": "staff_profiles",
+      "policyname": "Admin read staff profiles",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['ADMIN'::app_role, 'SUPER_ADMIN'::app_role])))))",
+      "with_check": null
+    },
+    {
+      "tablename": "staff_profiles",
+      "policyname": "Staff read own private profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "SELECT",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tablename": "staff_profiles",
+      "policyname": "Staff update own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "UPDATE",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tablename": "student_profiles",
+      "policyname": "Reviewers and student owner read profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "SELECT",
+      "qual": "((id = auth.uid()) OR is_reviewer())",
+      "with_check": null
+    },
+    {
+      "tablename": "student_profiles",
+      "policyname": "Students update own profile",
+      "permissive": "PERMISSIVE",
+      "roles": "{authenticated}",
+      "cmd": "UPDATE",
+      "qual": "(auth.uid() = id)",
+      "with_check": "(auth.uid() = id)"
+    },
+    {
+      "tablename": "trusted_contacts",
+      "policyname": "Students manage own trusted contacts",
+      "permissive": "PERMISSIVE",
+      "roles": "{public}",
+      "cmd": "ALL",
+      "qual": "(auth.uid() = student_id)",
+      "with_check": null
+    }
+  ]
+}
