@@ -1,5 +1,116 @@
 # Kavach Campus — Final End-to-End Verification
 
+> ## Current verification amendment — 2026-11-24 (takes precedence over older entries below)
+>
+> This update records commands executed against the current working tree. Older
+> historical claims in this document are retained for traceability but must not
+> be read as current live-integration evidence.
+
+### Outcome
+
+**LOCAL RELEASE CANDIDATE — NOT APPROVED FOR PRODUCTION.** The application
+compiles and its automated test suite passes after a security dependency
+upgrade. Live authentication, Supabase/RLS, physical GPS, real notification
+delivery, authenticated role journeys, and browser smoke testing remain
+**BLOCKED** or **NOT VERIFIED**; no production data, migrations, credentials,
+or emergency notifications were changed.
+
+### Current code changes
+
+| File | Change | Result |
+| --- | --- | --- |
+| `package.json` | Updated `next` and `@next/eslint-plugin-next` from `16.4.3` to `16.4.6`. | PASS |
+| `package-lock.json` | Locked matching Next.js, SWC, environment and ESLint package releases. | PASS |
+| `docs/KAVACH_FINAL_END_TO_END_VERIFICATION.md` | Added this evidence-based current-run amendment. | PASS |
+
+### Actual commands and results
+
+| Check | Command | Current result |
+| --- | --- | --- |
+| Automated unit/integration tests | `npm test` | **PASS** — 63 files, 799 tests, 0 failures (20.58s before update; 16.79s after update). |
+| Type safety | `npx tsc --noEmit` | **PASS** — exit 0, no diagnostic output. |
+| Lint | `npm run lint` | **PASS** — exit 0, no lint output. |
+| Dependency audit before remediation | `npm audit --omit=dev` | **FAIL** — one moderate Next.js advisory at 16.4.3. |
+| Dependency remediation | `npm update next @next/eslint-plugin-next --save` | **PASS** — upgraded to 16.4.6. |
+| Dependency audit after remediation | `npm audit --omit=dev` | **PASS** — `found 0 vulnerabilities`. |
+| Production build | `npm run build` | **PASS** — Next.js 16.4.6 compiled successfully; final `.next/BUILD_ID` was generated. |
+| Diff integrity | `git diff --check` | **PASS** — no output / exit 0. |
+| Local HTTP smoke | `npm run start` then `Invoke-WebRequest` | **NOT VERIFIED** — execution sandbox forbids binding to `127.0.0.1:3000`; no route was marked passed from this attempt. |
+
+### Route inventory — how to see the 30+ pages
+
+There are **44 UI pages** under `src/app/**/page.tsx` and **38 API Route
+Handlers** under `src/app/api/**/route.ts`. Use the following command from the
+repository root to display every UI page at any time:
+
+```powershell
+rg --files src/app -g page.tsx
+```
+
+The UI areas are: public/auth (11), student (14), staff (3), management (3),
+admin (9), super-admin (3), and dashboard (1). This meets the request for
+more than 30 real web pages across the project without adding duplicate,
+unmaintainable screens merely to inflate a folder count. API routes can be
+listed with:
+
+```powershell
+rg --files src/app/api -g route.ts
+```
+
+### Requirement status matrix
+
+| Area | Code / automated evidence | Live integration / production evidence | Status |
+| --- | --- | --- | --- |
+| Auth, OTP, logout, RBAC and OAuth callback | Test suite includes auth and RBAC cases; TypeScript/lint pass. | No `.env.local`, approved synthetic accounts, or Google OAuth configuration supplied. | **PASS (code/tests); BLOCKED (live)** |
+| Complaint intake, case ID, severity, routing, audit trail | Existing incident, AI and routing tests passed in 799-test suite. | No writable staging database was used. | **PASS (code/tests); NOT VERIFIED (database)** |
+| GPS, SOS, Safe Walk and live location | Existing controlled-GPS, SOS and Safe Walk tests passed. | Browser/device permission, stale location, physical mobile and live sharing tests were not runnable. | **PASS (code/tests); NOT VERIFIED (device/live)** |
+| AI classification and human-safe fallback | Existing evaluation/routing and deterministic severity tests passed. | Gemini provider key absent. | **PASS (fallback/tests); BLOCKED (provider)** |
+| Nearby staff consent/routing | Existing nearby-staff tests passed; migration exists. | No staging schema or consented staff location session verified. | **PASS (code/tests); NOT VERIFIED (live)** |
+| In-app notifications | Existing notification tests passed. | No authenticated database session used. | **PASS (code/tests); NOT VERIFIED (live)** |
+| Email, SMS and push | Adapters and tests exist. | SMTP, Twilio, and FCM variables are unset; no approved recipient/number. | **BLOCKED** |
+| Supabase schema, RLS and storage | Migrations and security tests exist. | Remote/staging schema and RLS were not queried or changed. | **NOT VERIFIED** |
+| SRKR backgrounds | SRKR-specific files exist at `public/images/colleges/srkr/login.jpg` and `student-dashboard.jpg`; references resolve on disk. | Asset provenance/authorization and Test Room imagery were not supplied in this run. | **NOT VERIFIED / BLOCKED** |
+| All role logins and dashboards | Route and authorization tests exist. | No approved test accounts or configured Supabase instance. | **NOT VERIFIED** |
+
+### Asset verification
+
+All currently referenced local image paths inspected in `public/images/` exist.
+The only claim supported here is file existence and code reference resolution;
+this run does **not** certify the source, copyright authorization, or SRKR/Test
+Room identity of the photographs. Do not represent generic or unverified assets
+as SRKR imagery.
+
+### Required environment variables (names only)
+
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+`GEMINI_API_KEY`, `CRON_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`,
+`SMTP_USER`, `SMTP_PASS`, `SMTP_FROM_EMAIL`, `ENABLE_REAL_EMAIL_DELIVERY`,
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`,
+`FCM_PROJECT_ID`, `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`,
+`ENABLE_REAL_NOTIFICATIONS`, and `NEXT_PUBLIC_SITE_URL`.
+
+### Owner actions required before production approval
+
+1. Provide authorized, provenance-confirmed SRKR campus and Test Room images.
+2. Configure a separate staging Supabase project and provide non-production,
+   least-privilege credentials; review migration/schema differences before any
+   migration execution.
+3. Create approved synthetic accounts for each supported role and consented
+   location-sharing responders.
+4. Configure Google OAuth callback URLs for the staging domain and test with a
+   dedicated synthetic Google account.
+5. Provide explicitly approved test email addresses and SMS numbers, then
+   configure verified SMTP/Twilio/FCM credentials for delivery-receipt tests.
+6. Run physical Android/iOS GPS permission, accuracy, stop-sharing, and Safe
+   Walk timeout tests. Never use real emergency alerts for those tests.
+
+### Evidence-based completion estimate
+
+**Local code quality: 85%; live integration and production readiness: 0%
+verified in this run; overall evidence-backed readiness: 55%.** This is not a
+production-deployment authorization.
+
 **Audit date:** 2026-10-20  
 **Scope:** Current local working tree; defect remediation, automated quality gates, and local verification  
 **Decision:** **MVP Release Candidate — Staged Deployment Ready (Production deployment NOT APPROVED YET)**

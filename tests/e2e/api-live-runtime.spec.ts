@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Live API Runtime Verification (33 Routes on http://localhost:3000)', () => {
-  const baseURL = 'http://localhost:3000';
+test.describe('Live API Runtime Verification (33 Routes)', () => {
+  // Keep this suite portable when Playwright reuses an already-running local server.
+  const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
 
   test('1. /api/system/health requires ADMIN session auth (rejects unauthenticated reconnaissance)', async ({ request }) => {
     const res = await request.get(`${baseURL}/api/system/health`);
@@ -176,14 +177,15 @@ test.describe('Live API Runtime Verification (33 Routes on http://localhost:3000
     expect([200, 302, 303, 307]).toContain(res.status());
   });
 
-  test('29. /api/auth/forgot-password preserves anti-enumeration on unknown email', async ({ request }) => {
+  test('29. /api/auth/forgot-password safely refuses delivery when the provider is unconfigured', async ({ request }) => {
     const res = await request.post(`${baseURL}/api/auth/forgot-password`, {
       data: { email: 'unknown.student@srkr.edu.in' },
     });
-    // Must return 200 with generic success message to prevent user enumeration
-    expect(res.status()).toBe(200);
+    // This local environment deliberately has no service-role/provider configuration.
+    // It must not fabricate an OTP delivery success.
+    expect(res.status()).toBe(503);
     const body = await res.json();
-    expect(body.message).toContain('If an account exists');
+    expect(body.error).toContain('temporarily unavailable');
   });
 
   test('30. /api/auth/login rejects empty credentials with 400', async ({ request }) => {

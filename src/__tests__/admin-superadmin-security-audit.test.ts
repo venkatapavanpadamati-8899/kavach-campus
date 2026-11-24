@@ -26,7 +26,7 @@ describe('Admin & Super Admin Security Audit Suite', () => {
 
   describe('1. Static Code Analysis: No Hardcoded Credentials or Bypass Buttons', () => {
     it('verifies that login/page.tsx contains no hardcoded passwords, emails, 1-click bypass buttons, or public Super Admin button', () => {
-      const loginCode = fs.readFileSync(path.join(process.cwd(), 'src/app/login/page.tsx'), 'utf8');
+      const loginCode = fs.readFileSync(path.join(process.cwd(), 'src/app/(pages)/(auth)/login/page.tsx'), 'utf8');
       expect(loginCode).not.toContain('Pavan@123');
       expect(loginCode).not.toContain('handleDirectLogin');
       expect(loginCode).not.toContain('btn-direct-admin-login');
@@ -42,7 +42,7 @@ describe('Admin & Super Admin Security Audit Suite', () => {
     });
 
     it('verifies that super-admin/login/page.tsx contains no hardcoded passwords, emails, or 1-click bypass buttons', () => {
-      const superAdminCode = fs.readFileSync(path.join(process.cwd(), 'src/app/super-admin/login/page.tsx'), 'utf8');
+      const superAdminCode = fs.readFileSync(path.join(process.cwd(), 'src/app/(pages)/super-admin/login/page.tsx'), 'utf8');
       expect(superAdminCode).not.toContain('Pavan@123');
       expect(superAdminCode).not.toContain('handleDirectSuperAdminLogin');
       expect(superAdminCode).not.toContain('btn-direct-superadmin-login');
@@ -51,7 +51,7 @@ describe('Admin & Super Admin Security Audit Suite', () => {
     });
 
     it('verifies that admin/login/page.tsx exists and enforces server-side role check', () => {
-      const adminCode = fs.readFileSync(path.join(process.cwd(), 'src/app/admin/login/page.tsx'), 'utf8');
+      const adminCode = fs.readFileSync(path.join(process.cwd(), 'src/app/(pages)/admin/login/page.tsx'), 'utf8');
       expect(adminCode).toContain('Campus Administrator');
       expect(adminCode).toContain('signInWithPassword');
       expect(adminCode).toContain('is_approved');
@@ -59,6 +59,36 @@ describe('Admin & Super Admin Security Audit Suite', () => {
   });
 
   describe('2. Edge Proxy Server-Side RBAC Enforcement', () => {
+    it('fails closed for protected routes when Supabase public authentication configuration is absent', async () => {
+      const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const originalKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const originalServerUrl = process.env.SUPABASE_URL;
+      const originalPublishableKey = process.env.PUBLISHABLE_KEY;
+
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      delete process.env.SUPABASE_URL;
+      delete process.env.PUBLISHABLE_KEY;
+
+      try {
+        const dashboardResponse = await proxy(new NextRequest('https://kavach-campus.example/student'));
+        expect(dashboardResponse.status).toBe(307);
+        expect(dashboardResponse.headers.get('location')).toContain('/login?redirect=%2Fstudent');
+
+        const apiResponse = await proxy(new NextRequest('https://kavach-campus.example/api/protected/test'));
+        expect(apiResponse.status).toBe(503);
+      } finally {
+        if (originalUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+        else process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+        if (originalKey === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        else process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey;
+        if (originalServerUrl === undefined) delete process.env.SUPABASE_URL;
+        else process.env.SUPABASE_URL = originalServerUrl;
+        if (originalPublishableKey === undefined) delete process.env.PUBLISHABLE_KEY;
+        else process.env.PUBLISHABLE_KEY = originalPublishableKey;
+      }
+    });
+
     it('allows public access to /admin/login and /super-admin/login without authentication', async () => {
       const reqAdmin = new NextRequest('https://kavach-campus.vercel.app/admin/login');
       const resAdmin = await proxy(reqAdmin);

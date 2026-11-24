@@ -209,7 +209,7 @@ export default function VoiceReportPage() {
           Voice Incident Report
         </h1>
         <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '1rem' }}>
-          Confidential voice reporting for {activeTenant.shortName}. Speak freely—your audio report will be routed to authorized responders.
+          Confidential voice reporting for {activeTenant.shortName}. Your recording is uploaded as incident evidence for authorized responders.
         </p>
       </div>
 
@@ -285,7 +285,7 @@ export default function VoiceReportPage() {
           </div>
           <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '8px' }}>Voice Report Dispatched</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
-            Your audio complaint has been encrypted and routed with priority tracking.
+            Your audio complaint was submitted and linked to the case for authorized review.
           </p>
           <div style={{ display: 'inline-block', padding: '8px 20px', borderRadius: '20px', background: 'rgba(255, 255, 255, 0.08)', fontWeight: 600, color: 'var(--accent-blue)', marginBottom: '32px' }}>
             Case Reference: {caseId}
@@ -386,7 +386,7 @@ export default function VoiceReportPage() {
                 ? 'Speak clearly. Tap the square button to stop recording.' 
                 : recordState === 'stopped' 
                   ? 'Review your audio playback below before submitting.' 
-                  : 'Your voice message will be confidentially transcribed and logged.'}
+                : 'Your recording will be attached to the incident report after submission.'}
             </p>
 
             {/* Audio Playback Element */}

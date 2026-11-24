@@ -53,10 +53,9 @@ test.describe('Authentication & User Interface Flows', () => {
     const submitBtn = page.locator('button[type="submit"]').first();
     await submitBtn.click();
 
-    // Should display anti-enumeration message or redirect to verify-otp / reset-password
-    await expect(
-      page.getByRole('heading', { name: 'Recovery Code Dispatched!' })
-    ).toBeVisible({ timeout: 10000 });
+    // The local environment intentionally has no password-recovery provider.
+    // It must show a truthful error rather than claim that an OTP was sent.
+    await expect(page.getByText(/Password recovery service is temporarily unavailable/i)).toBeVisible({ timeout: 10000 });
   });
 
   test('Super Admin login page enforces isolation and rejects unauthorized access', async ({ page }) => {

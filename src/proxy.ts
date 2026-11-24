@@ -42,7 +42,33 @@ export default async function proxy(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.PUBLISHABLE_KEY;
 
+  const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
+
   if (!supabaseUrl || !supabaseAnonKey) {
+    // Authentication configuration must never make a protected route public.
+    // Fail closed until the deployment is configured, while keeping public pages
+    // usable for diagnostics and configuration recovery.
+    if (isProtected) {
+      if (pathname.startsWith('/api/protected')) {
+        return NextResponse.json(
+          { error: 'Authentication service is not configured' },
+          { status: 503 },
+        );
+      }
+
+      if (pathname.startsWith('/super-admin')) {
+        return redirectWithCookies(new URL('/super-admin/login?error=auth_not_configured', request.url), supabaseResponse);
+      }
+
+      if (pathname.startsWith('/admin')) {
+        return redirectWithCookies(new URL('/admin/login?error=auth_not_configured', request.url), supabaseResponse);
+      }
+
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      loginUrl.searchParams.set('error', 'auth_not_configured');
+      return redirectWithCookies(loginUrl, supabaseResponse);
+    }
     return supabaseResponse;
   }
 
@@ -74,8 +100,6 @@ export default async function proxy(request: NextRequest) {
       },
     }
   );
-
-  const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
 
   if (!isProtected) {
     return supabaseResponse;

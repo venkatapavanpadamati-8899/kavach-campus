@@ -85,7 +85,7 @@ export default function SafeWalkPage() {
     }
 
     if (!consentGranted) {
-      setError('Explicit consent is required to share encrypted GPS telemetry during Safe Walk.');
+      setError('Explicit consent is required to share GPS telemetry during Safe Walk.');
       return;
     }
     
@@ -352,7 +352,7 @@ export default function SafeWalkPage() {
                 style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer' }}
               />
               <label htmlFor="consent" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', lineHeight: 1.4 }}>
-                <strong>Location Consent:</strong> I agree to transmit encrypted periodic GPS coordinates to campus security responders and designated emergency contacts until I click &quot;End Walk Safely&quot;.
+                <strong>Location Consent:</strong> I agree to transmit periodic GPS coordinates to authorized campus responders and designated emergency contacts until I click &quot;End Walk Safely&quot;.
               </label>
             </div>
           )}

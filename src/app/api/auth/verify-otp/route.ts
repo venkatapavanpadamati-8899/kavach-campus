@@ -6,6 +6,14 @@ import { verifyDemoSmsOtp } from '@/lib/demo-sms';
 
 export async function POST(req: Request) {
   try {
+    const body = await req.json().catch(() => ({}));
+    const { email, otp } = body || {};
+
+    if (!email || typeof email !== 'string' || !otp || typeof otp !== 'string') {
+      return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 });
+    }
+    const normalizedEmail = email.trim().toLowerCase();
+
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SERVICE_ROLE_KEY || '';
     const isServiceRoleConfigured =
       !!serviceRoleKey &&
@@ -21,13 +29,6 @@ export async function POST(req: Request) {
     }
 
     const supabase = createAdminClient();
-    const body = await req.json().catch(() => ({}));
-    const { email, otp } = body || {};
-
-    if (!email || typeof email !== 'string' || !otp || typeof otp !== 'string') {
-      return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 });
-    }
-    const normalizedEmail = email.trim().toLowerCase();
 
     // Find the OTP record
     const { data: record, error: fetchError } = await supabase

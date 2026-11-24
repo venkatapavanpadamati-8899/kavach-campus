@@ -97,11 +97,6 @@ function LoginForm() {
 
   // Handle URL search params on mount
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      setError('Authentication service is temporarily unavailable. Institutional administrator configuration required.');
-      return;
-    }
-
     const paramError = searchParams.get('error');
     const paramVerified = searchParams.get('verified');
     const paramNotice = searchParams.get('notice');
@@ -123,6 +118,10 @@ function LoginForm() {
       setError(decodeURIComponent(paramError));
     } else if (paramNotice === 'verification_required') {
       setMsg('Campus or student ID verification is required for full portal access.');
+    } else if (!isSupabaseConfigured()) {
+      // Preserve actionable callback errors instead of replacing them with the
+      // generic missing-configuration state.
+      setError('Authentication service is temporarily unavailable. Institutional administrator configuration required.');
     }
   }, [searchParams]);
 

@@ -4,8 +4,11 @@ import {
   getPlaywrightCookiesForUser,
   cleanupTestUsers,
   type TestUser,
+  hasE2EIntegrationConfig,
   adminClient,
 } from '../e2e/test-auth-helper';
+
+test.skip(!hasE2EIntegrationConfig, 'BLOCKED: configure isolated staging Supabase credentials to run authenticated API integration tests.');
 
 test.describe('Kavach Campus — Comprehensive Live API Route Matrix (33 Endpoints)', () => {
   const createdUserIds: string[] = [];

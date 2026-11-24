@@ -8,7 +8,7 @@ const readSource = (relativePath: string) =>
 
 describe('frontend navigation contract', () => {
   it('keeps public sign-in and registration links on Next.js routes', () => {
-    const home = readSource('src/app/page.tsx');
+    const home = readSource('src/app/(pages)/page.tsx');
 
     expect(home).toContain('href="/login"');
     expect(home).toContain('href="/register"');
@@ -16,7 +16,7 @@ describe('frontend navigation contract', () => {
   });
 
   it('points staff case links at the implemented incident detail route', () => {
-    const staffDashboard = readSource('src/app/staff/page.tsx');
+    const staffDashboard = readSource('src/app/(pages)/staff/page.tsx');
     const dashboardLayout = readSource('src/components/layouts/DashboardLayout.tsx');
     const staffNavigation = dashboardLayout.slice(
       dashboardLayout.indexOf('const staffNav'),
@@ -30,8 +30,8 @@ describe('frontend navigation contract', () => {
   });
 
   it('keeps named college branding off the public authentication views', () => {
-    const login = readSource('src/app/login/page.tsx');
-    const register = readSource('src/app/register/page.tsx');
+    const login = readSource('src/app/(pages)/(auth)/login/page.tsx');
+    const register = readSource('src/app/(pages)/(auth)/register/page.tsx');
 
     for (const source of [login, register]) {
       expect(source).not.toMatch(/\bSRKR\b/i);

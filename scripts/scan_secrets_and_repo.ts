@@ -16,7 +16,13 @@ try {
 }
 
 // 2. Check git diff for secrets
-const diff = execSync('git diff', { encoding: 'utf8' });
+// Documentation and route reorganizations can legitimately produce a diff
+// larger than Node's 1 MiB default exec buffer. Allow a bounded 10 MiB scan so
+// the security check reports findings instead of terminating with ENOBUFS.
+const diff = execSync('git diff --no-ext-diff', {
+  encoding: 'utf8',
+  maxBuffer: 10 * 1024 * 1024,
+});
 const secretPatterns = [
   { name: 'Supabase Service Role Key JWT', regex: /eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/ },
   { name: 'Private Key header', regex: /BEGIN (RSA|EC|OPENSSH|DSA|PGP)? PRIVATE KEY/ },

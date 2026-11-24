@@ -3,8 +3,11 @@ import {
   createTestUser,
   getPlaywrightCookiesForUser,
   cleanupTestUsers,
+  hasE2EIntegrationConfig,
   type TestUser,
 } from './test-auth-helper';
+
+test.skip(!hasE2EIntegrationConfig, 'BLOCKED: configure isolated staging Supabase credentials to run authenticated browser tests.');
 
 test.describe('Kavach Campus — Comprehensive E2E Page Verification', () => {
   const createdUserIds: string[] = [];

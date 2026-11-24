@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import ManagementIncidentsPage from '@/app/management/incidents/page';
+import ManagementIncidentsPage from '@/app/(pages)/management/incidents/page';
 import { createClient } from '@/lib/supabase/server';
 
 const mocks = vi.hoisted(() => ({

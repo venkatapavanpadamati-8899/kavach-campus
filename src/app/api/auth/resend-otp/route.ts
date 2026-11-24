@@ -10,6 +10,16 @@ const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
 export async function POST(req: Request) {
   try {
+    const body = await req.json().catch(() => null);
+    if (!body || !body.email || typeof body.email !== 'string') {
+      return NextResponse.json({ error: 'Valid college email address is required' }, { status: 400 });
+    }
+
+    const normalizedEmail = body.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return NextResponse.json({ error: 'Valid college email address is required' }, { status: 400 });
+    }
+
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SERVICE_ROLE_KEY || '';
     const isServiceRoleConfigured =
       !!serviceRoleKey &&
@@ -22,16 +32,6 @@ export async function POST(req: Request) {
         { error: 'Resend OTP service is temporarily unavailable. Institutional administrator configuration required.' },
         { status: 503 }
       );
-    }
-
-    const body = await req.json().catch(() => null);
-    if (!body || !body.email || typeof body.email !== 'string') {
-      return NextResponse.json({ error: 'Valid college email address is required' }, { status: 400 });
-    }
-
-    const normalizedEmail = body.email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      return NextResponse.json({ error: 'Valid college email address is required' }, { status: 400 });
     }
 
     const supabase = createAdminClient();

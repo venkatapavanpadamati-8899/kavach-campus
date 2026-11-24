@@ -314,7 +314,16 @@ async function runRealPostgresTests() {
       VALUES
         ('${incidentAId}', 'KC-2026-SYNTH-01', 'Test incident A', 'HARASSMENT', 'HIGH', 'IN_PROGRESS', '${studentAId}', '${responderId}'),
         ('${incidentBId}', 'KC-2026-SYNTH-02', 'Test incident B', 'THEFT', 'LOW', 'RECEIVED', '${studentBId}', NULL)
-      ON CONFLICT (id) DO NOTHING;
+      -- The fixed UUIDs are reserved solely for this disposable runner. Reset them
+      -- on rerun so an earlier fixture cannot silently test a different assignment.
+      ON CONFLICT (id) DO UPDATE SET
+        case_id = EXCLUDED.case_id,
+        description = EXCLUDED.description,
+        category = EXCLUDED.category,
+        severity = EXCLUDED.severity,
+        status = EXCLUDED.status,
+        student_id = EXCLUDED.student_id,
+        assigned_to = EXCLUDED.assigned_to;
 
       INSERT INTO public.incident_locations (id, incident_id, latitude, longitude)
       VALUES

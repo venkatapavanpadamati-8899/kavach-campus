@@ -9,7 +9,15 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+/** Authenticated suites only run against an explicitly configured staging project. */
+export const hasE2EIntegrationConfig = Boolean(
+  supabaseUrl && serviceRoleKey && anonKey
+);
+
+const inertSupabaseUrl = supabaseUrl || 'http://127.0.0.1:54321';
+const inertServiceRoleKey = serviceRoleKey || 'e2e-config-missing';
+
+export const adminClient = createClient(inertSupabaseUrl, inertServiceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
@@ -22,6 +30,9 @@ export interface TestUser {
 }
 
 export async function createTestUser(role: string, isApproved = true, isStudentVerified = true): Promise<TestUser> {
+  if (!hasE2EIntegrationConfig) {
+    throw new Error('E2E staging Supabase configuration is required to create synthetic test users.');
+  }
   const timestamp = Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000);
   const email = `e2e.${role.toLowerCase()}.${timestamp}@kavachcampus.test`;
   const password = `TestPass123!${role}`;
@@ -79,6 +90,9 @@ export async function createTestUser(role: string, isApproved = true, isStudentV
 }
 
 export async function getPlaywrightCookiesForUser(email: string, password: string) {
+  if (!hasE2EIntegrationConfig) {
+    throw new Error('E2E staging Supabase configuration is required to create authenticated browser cookies.');
+  }
   const cookieMap = new Map<string, string>();
 
   const client = createServerClient(supabaseUrl, anonKey, {

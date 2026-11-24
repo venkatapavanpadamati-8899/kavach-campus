@@ -10,6 +10,8 @@ import { isStaffRole } from '@/lib/staff-roles';
 
 export async function POST(req: Request) {
   try {
+    const data = (await req.json().catch(() => ({}))) || {};
+
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SERVICE_ROLE_KEY || '';
     const isServiceRoleConfigured =
       !!serviceRoleKey &&
@@ -17,14 +19,6 @@ export async function POST(req: Request) {
       !serviceRoleKey.includes('YOUR_SERVICE_ROLE_KEY') &&
       !serviceRoleKey.includes('placeholder');
 
-    if (!isServiceRoleConfigured) {
-      return NextResponse.json(
-        { error: 'Registration service is temporarily unavailable. Institutional administrator configuration required.' },
-        { status: 503 }
-      );
-    }
-
-    const data = (await req.json().catch(() => ({}))) || {};
     const {
       name: rawName,
       fullName: rawFullName,
@@ -106,6 +100,13 @@ export async function POST(req: Request) {
 
     if (!normalizedPhone || normalizedPhone.length !== 10 || !/^[6-9]\d{9}$/.test(normalizedPhone)) {
       return NextResponse.json({ error: 'Please enter a valid 10-digit mobile number' }, { status: 400 });
+    }
+
+    if (!isServiceRoleConfigured) {
+      return NextResponse.json(
+        { error: 'Registration service is temporarily unavailable. Institutional administrator configuration required.' },
+        { status: 503 }
+      );
     }
 
     const assignedCollegeId = resolveCollegeIdFromEmail(normalizedEmail);
